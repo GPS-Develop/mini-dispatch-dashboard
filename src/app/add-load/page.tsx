@@ -2,16 +2,22 @@
 import { useState, useEffect } from "react";
 import { useDrivers } from "../drivers/DriverContext";
 import { useLoads } from "../loads/LoadContext";
+import { supabase } from "../../utils/supabaseClient";
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
   const { addLoad, error: loadError, loading: loadLoading } = useLoads();
+  const US_STATES = [
+    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
+  ];
   const [form, setForm] = useState({
     referenceId: "",
-    pickupLocation: "",
-    pickupDateTime: "",
-    deliveryLocation: "",
-    deliveryDateTime: "",
+    pickups: [
+      { address: "", state: "", datetime: "" }
+    ],
+    deliveries: [
+      { address: "", state: "", datetime: "" }
+    ],
     loadType: "Reefer",
     temperature: "",
     rate: "",
@@ -34,13 +40,53 @@ export default function AddLoadPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
+  function handlePickupChange(idx: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = e.target as { name: 'address' | 'state' | 'datetime'; value: string };
+    setForm((prev) => {
+      const pickups = [...prev.pickups];
+      pickups[idx][name] = value;
+      return { ...prev, pickups };
+    });
+  }
+
+  function handleDeliveryChange(idx: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = e.target as { name: 'address' | 'state' | 'datetime'; value: string };
+    setForm((prev) => {
+      const deliveries = [...prev.deliveries];
+      deliveries[idx][name] = value;
+      return { ...prev, deliveries };
+    });
+  }
+
+  function addPickup() {
+    setForm((prev) => ({ ...prev, pickups: [...prev.pickups, { address: "", state: "", datetime: "" }] }));
+  }
+
+  function removePickup(idx: number) {
+    setForm((prev) => ({ ...prev, pickups: prev.pickups.filter((_, i) => i !== idx) }));
+  }
+
+  function addDelivery() {
+    setForm((prev) => ({ ...prev, deliveries: [...prev.deliveries, { address: "", state: "", datetime: "" }] }));
+  }
+
+  function removeDelivery(idx: number) {
+    setForm((prev) => ({ ...prev, deliveries: prev.deliveries.filter((_, i) => i !== idx) }));
+  }
+
   function validate() {
     const newErrors: any = {};
     if (!form.referenceId || !/^[0-9]+$/.test(form.referenceId)) newErrors.referenceId = "Reference ID must be a number";
-    if (!form.pickupLocation) newErrors.pickupLocation = "Required";
-    if (!form.pickupDateTime || isNaN(Date.parse(form.pickupDateTime))) newErrors.pickupDateTime = "Valid date required";
-    if (!form.deliveryLocation) newErrors.deliveryLocation = "Required";
-    if (!form.deliveryDateTime || isNaN(Date.parse(form.deliveryDateTime))) newErrors.deliveryDateTime = "Valid date required";
+    form.pickups.forEach((p, i) => {
+      if (!p.address) newErrors[`pickupAddress${i}`] = "Required";
+      if (!p.state) newErrors[`pickupState${i}`] = "Required";
+      if (!p.datetime || isNaN(Date.parse(p.datetime))) newErrors[`pickupDatetime${i}`] = "Valid date required";
+    });
+    form.deliveries.forEach((d, i) => {
+      if (!d.address) newErrors[`deliveryAddress${i}`] = "Required";
+      if (!d.state) newErrors[`deliveryState${i}`] = "Required";
+      if (!d.datetime || isNaN(Date.parse(d.datetime))) newErrors[`deliveryDatetime${i}`] = "Valid date required";
+    });
     if (!form.loadType) newErrors.loadType = "Required";
     if (form.loadType === "Reefer" && (form.temperature === "" || isNaN(Number(form.temperature)))) newErrors.temperature = "Valid temperature required";
     if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) <= 0) newErrors.rate = "Valid rate required";
@@ -58,41 +104,71 @@ export default function AddLoadPage() {
     if (Object.keys(validation).length === 0) {
       const driverObj = drivers.find((d) => d.name === form.driver);
       const driverId = driverObj ? driverObj.id : "";
-      await addLoad({
-        reference_id: form.referenceId,
-        pickup_location: form.pickupLocation,
-        pickup_datetime: form.pickupDateTime,
-        delivery_location: form.deliveryLocation,
-        delivery_datetime: form.deliveryDateTime,
-        load_type: form.loadType,
-        temperature: form.temperature,
-        rate: form.rate,
-        driver_id: driverId,
-        notes: form.notes,
-        broker_name: form.brokerName,
-        broker_contact: form.brokerContact,
-        broker_email: form.brokerEmail,
-        status: "Scheduled",
-      });
-      if (!loadError) {
-        setSuccess(true);
-        setForm({
-          referenceId: "",
-          pickupLocation: "",
-          pickupDateTime: "",
-          deliveryLocation: "",
-          deliveryDateTime: "",
-          loadType: "Reefer",
-          temperature: "",
-          rate: "",
-          driver: "",
-          notes: "",
-          brokerName: "",
-          brokerContact: "",
-          brokerEmail: "",
-        });
-        setTimeout(() => setSuccess(false), 2000);
+      // 1. Create the load
+      const { data, error } = await supabase.from("loads").insert([
+        {
+          reference_id: form.referenceId,
+          load_type: form.loadType,
+          temperature: form.temperature,
+          rate: form.rate,
+          driver_id: driverId,
+          notes: form.notes,
+          broker_name: form.brokerName,
+          broker_contact: form.brokerContact,
+          broker_email: form.brokerEmail,
+          status: "Scheduled",
+        }
+      ]).select();
+      if (error || !data || !data[0]) {
+        setErrors({ submit: error?.message || "Failed to create load" });
+        return;
       }
+      const loadId = data[0].id;
+      // 2. Insert pickups
+      for (const p of form.pickups) {
+        const { error: pickupError } = await supabase.from("pickups").insert([
+          {
+            load_id: loadId,
+            address: p.address,
+            state: p.state,
+            datetime: p.datetime,
+          }
+        ]);
+        if (pickupError) {
+          setErrors({ submit: pickupError.message });
+          return;
+        }
+      }
+      // 3. Insert deliveries
+      for (const d of form.deliveries) {
+        const { error: deliveryError } = await supabase.from("deliveries").insert([
+          {
+            load_id: loadId,
+            address: d.address,
+            state: d.state,
+            datetime: d.datetime,
+          }
+        ]);
+        if (deliveryError) {
+          setErrors({ submit: deliveryError.message });
+          return;
+        }
+      }
+      setSuccess(true);
+      setForm({
+        referenceId: "",
+        pickups: [{ address: "", state: "", datetime: "" }],
+        deliveries: [{ address: "", state: "", datetime: "" }],
+        loadType: "Reefer",
+        temperature: "",
+        rate: "",
+        driver: "",
+        notes: "",
+        brokerName: "",
+        brokerContact: "",
+        brokerEmail: "",
+      });
+      setTimeout(() => setSuccess(false), 2000);
     }
   }
 
@@ -106,24 +182,48 @@ export default function AddLoadPage() {
           {errors.referenceId && <div className="text-red-500 text-sm">{errors.referenceId}</div>}
         </div>
         <div>
-          <label className="block font-medium mb-1">Pickup Location *</label>
-          <input name="pickupLocation" value={form.pickupLocation} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
-          {errors.pickupLocation && <div className="text-red-500 text-sm">{errors.pickupLocation}</div>}
+          <label className="block font-medium mb-1">Pickups *</label>
+          {form.pickups.map((pickup, idx) => (
+            <div key={idx} className="mb-2 border rounded p-2 bg-gray-50">
+              <div className="flex gap-2 mb-1">
+                <input name="address" placeholder="Address" value={pickup.address} onChange={e => handlePickupChange(idx, e)} className="flex-1 border rounded px-3 py-2 bg-white text-gray-900" />
+                <select name="state" value={pickup.state} onChange={e => handlePickupChange(idx, e)} className="border rounded px-3 py-2 bg-white text-gray-900">
+                  <option value="">State</option>
+                  {US_STATES.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+                <input type="datetime-local" name="datetime" value={pickup.datetime} onChange={e => handlePickupChange(idx, e)} className="border rounded px-3 py-2 bg-white text-gray-900" />
+                <button type="button" onClick={() => removePickup(idx)} className="text-red-600 font-bold px-2">-</button>
+              </div>
+              {errors[`pickupAddress${idx}`] && <div className="text-red-500 text-sm">{errors[`pickupAddress${idx}`]}</div>}
+              {errors[`pickupState${idx}`] && <div className="text-red-500 text-sm">{errors[`pickupState${idx}`]}</div>}
+              {errors[`pickupDatetime${idx}`] && <div className="text-red-500 text-sm">{errors[`pickupDatetime${idx}`]}</div>}
+            </div>
+          ))}
+          <button type="button" onClick={addPickup} className="text-blue-600 font-bold">+ Add Pickup</button>
         </div>
         <div>
-          <label className="block font-medium mb-1">Pickup Date & Time *</label>
-          <input type="datetime-local" name="pickupDateTime" value={form.pickupDateTime} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
-          {errors.pickupDateTime && <div className="text-red-500 text-sm">{errors.pickupDateTime}</div>}
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Delivery Location *</label>
-          <input name="deliveryLocation" value={form.deliveryLocation} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
-          {errors.deliveryLocation && <div className="text-red-500 text-sm">{errors.deliveryLocation}</div>}
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Delivery Date & Time *</label>
-          <input type="datetime-local" name="deliveryDateTime" value={form.deliveryDateTime} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
-          {errors.deliveryDateTime && <div className="text-red-500 text-sm">{errors.deliveryDateTime}</div>}
+          <label className="block font-medium mb-1">Deliveries *</label>
+          {form.deliveries.map((delivery, idx) => (
+            <div key={idx} className="mb-2 border rounded p-2 bg-gray-50">
+              <div className="flex gap-2 mb-1">
+                <input name="address" placeholder="Address" value={delivery.address} onChange={e => handleDeliveryChange(idx, e)} className="flex-1 border rounded px-3 py-2 bg-white text-gray-900" />
+                <select name="state" value={delivery.state} onChange={e => handleDeliveryChange(idx, e)} className="border rounded px-3 py-2 bg-white text-gray-900">
+                  <option value="">State</option>
+                  {US_STATES.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+                <input type="datetime-local" name="datetime" value={delivery.datetime} onChange={e => handleDeliveryChange(idx, e)} className="border rounded px-3 py-2 bg-white text-gray-900" />
+                <button type="button" onClick={() => removeDelivery(idx)} className="text-red-600 font-bold px-2">-</button>
+              </div>
+              {errors[`deliveryAddress${idx}`] && <div className="text-red-500 text-sm">{errors[`deliveryAddress${idx}`]}</div>}
+              {errors[`deliveryState${idx}`] && <div className="text-red-500 text-sm">{errors[`deliveryState${idx}`]}</div>}
+              {errors[`deliveryDatetime${idx}`] && <div className="text-red-500 text-sm">{errors[`deliveryDatetime${idx}`]}</div>}
+            </div>
+          ))}
+          <button type="button" onClick={addDelivery} className="text-blue-600 font-bold">+ Add Delivery</button>
         </div>
         <div>
           <label className="block font-medium mb-1">Load Type *</label>

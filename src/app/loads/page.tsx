@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLoads, Load } from "./LoadContext";
 import { useDrivers } from "../drivers/DriverContext";
+import { supabase } from "../../utils/supabaseClient";
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
 
@@ -14,25 +15,59 @@ export default function LoadsPage() {
   const [selected, setSelected] = useState<Load | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<any>(null);
+  const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
+  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
 
   const filteredLoads = useMemo(() => {
     return loads.filter((l) => {
       const matchesStatus = statusFilter === "All" || l.status === statusFilter;
       const driver = drivers.find((d) => d.id === l.driver_id);
       const matchesDriver = !driverFilter || (driver && driver.name === driverFilter);
+      const pickupSearch = (pickupsMap[l.id] || []).some(
+        (p) =>
+          (p.address || "").toLowerCase().includes(search.toLowerCase()) ||
+          (p.state || "").toLowerCase().includes(search.toLowerCase())
+      );
+      const deliverySearch = (deliveriesMap[l.id] || []).some(
+        (d) =>
+          (d.address || "").toLowerCase().includes(search.toLowerCase()) ||
+          (d.state || "").toLowerCase().includes(search.toLowerCase())
+      );
       const matchesSearch =
         (l.reference_id || "").toLowerCase().includes(search.toLowerCase()) ||
-        (l.pickup_location || "").toLowerCase().includes(search.toLowerCase()) ||
-        (l.delivery_location || "").toLowerCase().includes(search.toLowerCase());
+        pickupSearch ||
+        deliverySearch;
       return matchesStatus && matchesDriver && matchesSearch;
     });
-  }, [loads, statusFilter, driverFilter, search, drivers]);
+  }, [loads, pickupsMap, deliveriesMap, statusFilter, driverFilter, search, drivers]);
 
   useEffect(() => {
     if (selected && editMode) {
       setEditForm({ ...selected });
     }
   }, [selected, editMode]);
+
+  useEffect(() => {
+    async function fetchAllPickupsDeliveries() {
+      if (loads.length === 0) return;
+      const loadIds = loads.map(l => l.id);
+      const { data: pickups } = await supabase.from("pickups").select("*" ).in("load_id", loadIds);
+      const { data: deliveries } = await supabase.from("deliveries").select("*" ).in("load_id", loadIds);
+      const pickupsByLoad: Record<string, any[]> = {};
+      const deliveriesByLoad: Record<string, any[]> = {};
+      pickups?.forEach(p => {
+        if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
+        pickupsByLoad[p.load_id].push(p);
+      });
+      deliveries?.forEach(d => {
+        if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
+        deliveriesByLoad[d.load_id].push(d);
+      });
+      setPickupsMap(pickupsByLoad);
+      setDeliveriesMap(deliveriesByLoad);
+    }
+    fetchAllPickupsDeliveries();
+  }, [loads]);
 
   function getDriverName(driverId: string) {
     const driver = drivers.find((d) => d.id === driverId);
@@ -116,10 +151,20 @@ export default function LoadsPage() {
             >
               <div className="font-medium text-lg">Load #{load.reference_id}</div>
               <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Pickup:</span> {load.pickup_location} ({load.pickup_datetime})
+                <span className="font-semibold">Pickup:</span>
+                <ol className="list-decimal ml-5">
+                  {(pickupsMap[load.id] || []).map((p, i) => (
+                    <li key={p.id || i}>{p.address}, {p.state} ({p.datetime})</li>
+                  ))}
+                </ol>
               </div>
               <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Delivery:</span> {load.delivery_location} ({load.delivery_datetime})
+                <span className="font-semibold">Delivery:</span>
+                <ol className="list-decimal ml-5">
+                  {(deliveriesMap[load.id] || []).map((d, i) => (
+                    <li key={d.id || i}>{d.address}, {d.state} ({d.datetime})</li>
+                  ))}
+                </ol>
               </div>
               <div className="text-sm text-gray-700 mb-1">
                 <span className="font-semibold">Driver:</span> {getDriverName(load.driver_id)}
@@ -152,8 +197,20 @@ export default function LoadsPage() {
               <>
                 <h2 className="text-xl font-bold mb-2">Load #{selected.reference_id}</h2>
                 <div className="mb-2 text-sm text-gray-700">
-                  <div><span className="font-semibold">Pickup:</span> {selected.pickup_location} ({selected.pickup_datetime})</div>
-                  <div><span className="font-semibold">Delivery:</span> {selected.delivery_location} ({selected.delivery_datetime})</div>
+                  <div><span className="font-semibold">Pickup:</span>
+                    <ol className="list-decimal ml-5">
+                      {(pickupsMap[selected.id] || []).map((p, i) => (
+                        <li key={p.id || i}>{p.address}, {p.state} ({p.datetime})</li>
+                      ))}
+                    </ol>
+                  </div>
+                  <div><span className="font-semibold">Delivery:</span>
+                    <ol className="list-decimal ml-5">
+                      {(deliveriesMap[selected.id] || []).map((d, i) => (
+                        <li key={d.id || i}>{d.address}, {d.state} ({d.datetime})</li>
+                      ))}
+                    </ol>
+                  </div>
                   <div><span className="font-semibold">Driver:</span> {getDriverName(selected.driver_id)}</div>
                   <div><span className="font-semibold">Rate:</span> {selected.rate}</div>
                   <div><span className="font-semibold">Status:</span> {selected.status}</div>

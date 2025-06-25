@@ -5,9 +5,11 @@ import { supabase } from "../../utils/supabaseClient";
 export type Load = {
   id: string;
   reference_id: string;
-  pickup_location: string;
+  pickup_address: string;
+  pickup_state: string;
   pickup_datetime: string;
-  delivery_location: string;
+  delivery_address: string;
+  delivery_state: string;
   delivery_datetime: string;
   load_type: string;
   temperature?: string;
