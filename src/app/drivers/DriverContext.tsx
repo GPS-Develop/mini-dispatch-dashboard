@@ -67,11 +67,11 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     setDrivers((prevDrivers) =>
       prevDrivers.map((driver) => {
         const scheduledLoads = loads
-          .filter((l) => l.driverId === driver.id && l.status === "Scheduled")
-          .map((l) => l.referenceId);
+          .filter((l) => l.driver_id === driver.id && l.status === "Scheduled")
+          .map((l) => l.reference_id);
         const inTransitLoads = loads
-          .filter((l) => l.driverId === driver.id && l.status === "In-Transit")
-          .map((l) => l.referenceId);
+          .filter((l) => l.driver_id === driver.id && l.status === "In-Transit")
+          .map((l) => l.reference_id);
         const status = (scheduledLoads.length > 0 || inTransitLoads.length > 0) ? "On Load" : "Available";
         return {
           ...driver,
