@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import ClientRoot from "./ClientRoot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,12 +25,44 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Sidebar navigation items
+  const navItems = [
+    { name: "Dashboard", href: "/" },
+    { name: "+ Add Load", href: "/add-load" },
+    { name: "Drivers", href: "/drivers" },
+    { name: "Loads", href: "/loads" },
+    { name: "Billing", href: "/billing" },
+    { name: "Pay Statements", href: "/pay-statements" },
+  ];
+
+  // This hook only works in client components, so we need a workaround for SSR
+  // We'll use a custom Sidebar component for the navigation
+
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100`}>
+        <ClientRoot>
+          <div className="min-h-screen flex">
+            {/* Sidebar */}
+            <aside className="w-64 bg-gray-800 text-white flex flex-col py-6 px-4">
+              <div className="text-2xl font-semibold mb-8">Mini Dispatch</div>
+              <nav className="flex flex-col gap-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="rounded px-3 py-2 text-left hover:bg-gray-700 transition-colors"
+                    prefetch={false}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            </aside>
+            {/* Main content */}
+            <main className="flex-1 p-8">{children}</main>
+          </div>
+        </ClientRoot>
       </body>
     </html>
   );
