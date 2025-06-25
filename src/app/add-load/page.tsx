@@ -2,11 +2,12 @@
 import { useState, useEffect } from "react";
 import { useDrivers } from "../drivers/DriverContext";
 import { useLoads } from "../loads/LoadContext";
-import { supabase } from "../../utils/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
-  const { addLoad, error: loadError, loading: loadLoading } = useLoads();
+  const { addFullLoad, error: loadError, loading: loadLoading } = useLoads();
+  const router = useRouter();
   const US_STATES = [
     "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
   ];
@@ -104,71 +105,20 @@ export default function AddLoadPage() {
     if (Object.keys(validation).length === 0) {
       const driverObj = drivers.find((d) => d.name === form.driver);
       const driverId = driverObj ? driverObj.id : "";
-      // 1. Create the load
-      const { data, error } = await supabase.from("loads").insert([
-        {
-          reference_id: form.referenceId,
-          load_type: form.loadType,
-          temperature: form.temperature,
-          rate: form.rate,
-          driver_id: driverId,
-          notes: form.notes,
-          broker_name: form.brokerName,
-          broker_contact: form.brokerContact,
-          broker_email: form.brokerEmail,
-          status: "Scheduled",
-        }
-      ]).select();
-      if (error || !data || !data[0]) {
-        setErrors({ submit: error?.message || "Failed to create load" });
-        return;
-      }
-      const loadId = data[0].id;
-      // 2. Insert pickups
-      for (const p of form.pickups) {
-        const { error: pickupError } = await supabase.from("pickups").insert([
-          {
-            load_id: loadId,
-            address: p.address,
-            state: p.state,
-            datetime: p.datetime,
-          }
-        ]);
-        if (pickupError) {
-          setErrors({ submit: pickupError.message });
-          return;
-        }
-      }
-      // 3. Insert deliveries
-      for (const d of form.deliveries) {
-        const { error: deliveryError } = await supabase.from("deliveries").insert([
-          {
-            load_id: loadId,
-            address: d.address,
-            state: d.state,
-            datetime: d.datetime,
-          }
-        ]);
-        if (deliveryError) {
-          setErrors({ submit: deliveryError.message });
-          return;
-        }
-      }
-      setSuccess(true);
-      setForm({
-        referenceId: "",
-        pickups: [{ address: "", state: "", datetime: "" }],
-        deliveries: [{ address: "", state: "", datetime: "" }],
-        loadType: "Reefer",
-        temperature: "",
-        rate: "",
-        driver: "",
-        notes: "",
-        brokerName: "",
-        brokerContact: "",
-        brokerEmail: "",
-      });
-      setTimeout(() => setSuccess(false), 2000);
+      const loadData = {
+        reference_id: form.referenceId,
+        load_type: form.loadType,
+        temperature: form.temperature,
+        rate: form.rate,
+        driver_id: driverId,
+        notes: form.notes,
+        broker_name: form.brokerName,
+        broker_contact: form.brokerContact,
+        broker_email: form.brokerEmail,
+        status: "Scheduled",
+      };
+      await addFullLoad(loadData, form.pickups, form.deliveries);
+      router.push("/loads");
     }
   }
 

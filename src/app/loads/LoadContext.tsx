@@ -29,6 +29,8 @@ const LoadContext = createContext<{
   deleteLoad: (id: string) => Promise<void>;
   loading: boolean;
   error: string | null;
+  fetchLoads: () => Promise<void>;
+  addFullLoad: (load: Record<string, any>, pickups: any[], deliveries: any[]) => Promise<void>;
 } | null>(null);
 
 export function LoadProvider({ children }: { children: React.ReactNode }) {
@@ -73,8 +75,50 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
     else await fetchLoads();
   }
 
+  async function addFullLoad(load: Record<string, any>, pickups: any[], deliveries: any[]) {
+    setError(null);
+    // 1. Insert the load
+    const { data, error: loadError } = await supabase.from("loads").insert([{ ...load }]).select();
+    if (loadError || !data || !data[0]) {
+      setError(loadError?.message || "Failed to create load");
+      return;
+    }
+    const loadId = data[0].id;
+    // 2. Insert pickups
+    for (const p of pickups) {
+      const { error: pickupError } = await supabase.from("pickups").insert([
+        {
+          load_id: loadId,
+          address: p.address,
+          state: p.state,
+          datetime: p.datetime,
+        }
+      ]);
+      if (pickupError) {
+        setError(pickupError.message);
+        return;
+      }
+    }
+    // 3. Insert deliveries
+    for (const d of deliveries) {
+      const { error: deliveryError } = await supabase.from("deliveries").insert([
+        {
+          load_id: loadId,
+          address: d.address,
+          state: d.state,
+          datetime: d.datetime,
+        }
+      ]);
+      if (deliveryError) {
+        setError(deliveryError.message);
+        return;
+      }
+    }
+    await fetchLoads();
+  }
+
   return (
-    <LoadContext.Provider value={{ loads, addLoad, updateLoad, deleteLoad, loading, error }}>
+    <LoadContext.Provider value={{ loads, addLoad, updateLoad, deleteLoad, loading, error, fetchLoads, addFullLoad }}>
       {children}
     </LoadContext.Provider>
   );

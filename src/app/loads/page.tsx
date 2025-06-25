@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useLoads, Load } from "./LoadContext";
 import { useDrivers } from "../drivers/DriverContext";
 import { supabase } from "../../utils/supabaseClient";
+import { useRouter } from "next/navigation";
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
 const US_STATES = [
@@ -10,7 +11,7 @@ const US_STATES = [
 ];
 
 export default function LoadsPage() {
-  const { loads, updateLoad, error: loadError, loading: loadLoading } = useLoads();
+  const { loads, updateLoad, error: loadError, loading: loadLoading, fetchLoads } = useLoads();
   const { drivers, updateDriver } = useDrivers();
   const [statusFilter, setStatusFilter] = useState("All");
   const [driverFilter, setDriverFilter] = useState("");
@@ -20,6 +21,7 @@ export default function LoadsPage() {
   const [editForm, setEditForm] = useState<any>(null);
   const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
+  const router = useRouter();
 
   const filteredLoads = useMemo(() => {
     return loads.filter((l) => {
