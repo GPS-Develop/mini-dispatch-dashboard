@@ -5,6 +5,9 @@ import { useDrivers } from "../drivers/DriverContext";
 import { supabase } from "../../utils/supabaseClient";
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
+const US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
+];
 
 export default function LoadsPage() {
   const { loads, updateLoad, error: loadError, loading: loadLoading } = useLoads();
@@ -43,29 +46,34 @@ export default function LoadsPage() {
 
   useEffect(() => {
     if (selected && editMode) {
-      setEditForm({ ...selected });
+      setEditForm({
+        ...selected,
+        pickups: pickupsMap[selected.id] ? pickupsMap[selected.id].map(p => ({ ...p })) : [],
+        deliveries: deliveriesMap[selected.id] ? deliveriesMap[selected.id].map(d => ({ ...d })) : [],
+      });
     }
-  }, [selected, editMode]);
+  }, [selected, editMode, pickupsMap, deliveriesMap]);
+
+  const fetchAllPickupsDeliveries = async () => {
+    if (loads.length === 0) return;
+    const loadIds = loads.map(l => l.id);
+    const { data: pickups } = await supabase.from("pickups").select("*").in("load_id", loadIds);
+    const { data: deliveries } = await supabase.from("deliveries").select("*").in("load_id", loadIds);
+    const pickupsByLoad: Record<string, any[]> = {};
+    const deliveriesByLoad: Record<string, any[]> = {};
+    pickups?.forEach(p => {
+      if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
+      pickupsByLoad[p.load_id].push(p);
+    });
+    deliveries?.forEach(d => {
+      if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
+      deliveriesByLoad[d.load_id].push(d);
+    });
+    setPickupsMap(pickupsByLoad);
+    setDeliveriesMap(deliveriesByLoad);
+  };
 
   useEffect(() => {
-    async function fetchAllPickupsDeliveries() {
-      if (loads.length === 0) return;
-      const loadIds = loads.map(l => l.id);
-      const { data: pickups } = await supabase.from("pickups").select("*" ).in("load_id", loadIds);
-      const { data: deliveries } = await supabase.from("deliveries").select("*" ).in("load_id", loadIds);
-      const pickupsByLoad: Record<string, any[]> = {};
-      const deliveriesByLoad: Record<string, any[]> = {};
-      pickups?.forEach(p => {
-        if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
-        pickupsByLoad[p.load_id].push(p);
-      });
-      deliveries?.forEach(d => {
-        if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
-        deliveriesByLoad[d.load_id].push(d);
-      });
-      setPickupsMap(pickupsByLoad);
-      setDeliveriesMap(deliveriesByLoad);
-    }
     fetchAllPickupsDeliveries();
   }, [loads]);
 
@@ -80,6 +88,24 @@ export default function LoadsPage() {
     setSelected(null);
   }
 
+  function handlePickupChange(idx: number, e: any) {
+    const { name, value } = e.target;
+    setEditForm((prev: any) => {
+      const pickups = [...prev.pickups];
+      pickups[idx] = { ...pickups[idx], [name]: value };
+      return { ...prev, pickups };
+    });
+  }
+
+  function handleDeliveryChange(idx: number, e: any) {
+    const { name, value } = e.target;
+    setEditForm((prev: any) => {
+      const deliveries = [...prev.deliveries];
+      deliveries[idx] = { ...deliveries[idx], [name]: value };
+      return { ...prev, deliveries };
+    });
+  }
+
   function handleEditChange(e: any) {
     const { name, value } = e.target;
     setEditForm((prev: any) => ({ ...prev, [name]: value }));
@@ -88,11 +114,8 @@ export default function LoadsPage() {
   async function handleEditSubmit(e: any) {
     e.preventDefault();
     if (!selected) return;
+    // Update main load
     await updateLoad(selected.id, {
-      pickup_location: editForm.pickup_location,
-      pickup_datetime: editForm.pickup_datetime,
-      delivery_location: editForm.delivery_location,
-      delivery_datetime: editForm.delivery_datetime,
       driver_id: editForm.driver_id,
       rate: editForm.rate,
       notes: editForm.notes,
@@ -102,6 +125,23 @@ export default function LoadsPage() {
       load_type: editForm.load_type,
       temperature: editForm.temperature,
     });
+    // Update pickups
+    for (const p of editForm.pickups) {
+      await supabase.from("pickups").update({
+        address: p.address,
+        state: p.state,
+        datetime: p.datetime,
+      }).eq("id", p.id);
+    }
+    // Update deliveries
+    for (const d of editForm.deliveries) {
+      await supabase.from("deliveries").update({
+        address: d.address,
+        state: d.state,
+        datetime: d.datetime,
+      }).eq("id", d.id);
+    }
+    await fetchAllPickupsDeliveries();
     if (!loadError) {
       setEditMode(false);
       setSelected(null);
@@ -258,21 +298,73 @@ export default function LoadsPage() {
             ) : editForm ? (
               <form className="space-y-3" onSubmit={handleEditSubmit}>
                 <h2 className="text-xl font-bold mb-2">Edit Load #{selected.reference_id}</h2>
+                {/* Pickups */}
                 <div>
-                  <label className="block font-medium mb-1">Pickup Location</label>
-                  <input name="pickup_location" value={editForm.pickup_location} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+                  <label className="block font-medium mb-1">Pickups</label>
+                  {editForm.pickups && editForm.pickups.length > 0 && editForm.pickups.map((pickup: any, idx: number) => (
+                    <div key={pickup.id || idx} className="mb-2 border p-2 rounded">
+                      <input
+                        name="address"
+                        value={pickup.address}
+                        onChange={e => handlePickupChange(idx, e)}
+                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
+                        placeholder="Pickup Address"
+                      />
+                      <select
+                        name="state"
+                        value={pickup.state}
+                        onChange={e => handlePickupChange(idx, e)}
+                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
+                      >
+                        <option value="">Select State</option>
+                        {US_STATES.map((st) => (
+                          <option key={st} value={st}>{st}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="datetime-local"
+                        name="datetime"
+                        value={pickup.datetime ? pickup.datetime.slice(0, 16) : ''}
+                        onChange={e => handlePickupChange(idx, e)}
+                        className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+                        placeholder="Pickup Date & Time"
+                      />
+                    </div>
+                  ))}
                 </div>
+                {/* Deliveries */}
                 <div>
-                  <label className="block font-medium mb-1">Pickup Date & Time</label>
-                  <input type="datetime-local" name="pickup_datetime" value={editForm.pickup_datetime} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">Delivery Location</label>
-                  <input name="delivery_location" value={editForm.delivery_location} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">Delivery Date & Time</label>
-                  <input type="datetime-local" name="delivery_datetime" value={editForm.delivery_datetime} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+                  <label className="block font-medium mb-1">Deliveries</label>
+                  {editForm.deliveries && editForm.deliveries.length > 0 && editForm.deliveries.map((delivery: any, idx: number) => (
+                    <div key={delivery.id || idx} className="mb-2 border p-2 rounded">
+                      <input
+                        name="address"
+                        value={delivery.address}
+                        onChange={e => handleDeliveryChange(idx, e)}
+                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
+                        placeholder="Delivery Address"
+                      />
+                      <select
+                        name="state"
+                        value={delivery.state}
+                        onChange={e => handleDeliveryChange(idx, e)}
+                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
+                      >
+                        <option value="">Select State</option>
+                        {US_STATES.map((st) => (
+                          <option key={st} value={st}>{st}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="datetime-local"
+                        name="datetime"
+                        value={delivery.datetime ? delivery.datetime.slice(0, 16) : ''}
+                        onChange={e => handleDeliveryChange(idx, e)}
+                        className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+                        placeholder="Delivery Date & Time"
+                      />
+                    </div>
+                  ))}
                 </div>
                 <div>
                   <label className="block font-medium mb-1">Driver</label>

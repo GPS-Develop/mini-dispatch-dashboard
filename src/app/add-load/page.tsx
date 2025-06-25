@@ -175,55 +175,119 @@ export default function AddLoadPage() {
   return (
     <div className="max-w-xl mx-auto bg-white text-gray-900 rounded-xl shadow-lg p-6 mt-8 mb-8 font-sans">
       <h1 className="text-2xl font-bold mb-6">Add Load</h1>
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <label className="block font-medium mb-1">Load Reference ID *</label>
-          <input name="referenceId" value={form.referenceId} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+          <input name="referenceId" value={form.referenceId} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
           {errors.referenceId && <div className="text-red-500 text-sm">{errors.referenceId}</div>}
         </div>
         <div>
-          <label className="block font-medium mb-1">Pickups *</label>
-          {form.pickups.map((pickup, idx) => (
-            <div key={idx} className="mb-2 border rounded p-2 bg-gray-50">
-              <div className="flex gap-2 mb-1">
-                <input name="address" placeholder="Address" value={pickup.address} onChange={e => handlePickupChange(idx, e)} className="flex-1 border rounded px-3 py-2 bg-white text-gray-900" />
-                <select name="state" value={pickup.state} onChange={e => handlePickupChange(idx, e)} className="border rounded px-3 py-2 bg-white text-gray-900">
+          <label className="block font-medium mb-2">Pickups *</label>
+          <div className="flex flex-col gap-3">
+            {form.pickups.map((pickup, idx) => (
+              <div
+                key={idx}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg shadow-sm px-4 py-3 flex items-center gap-2 relative hover:shadow-md transition-all"
+              >
+                <input
+                  name="address"
+                  placeholder="Address"
+                  value={pickup.address}
+                  onChange={e => handlePickupChange(idx, e)}
+                  className="flex-1 border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                />
+                <select
+                  name="state"
+                  value={pickup.state}
+                  onChange={e => handlePickupChange(idx, e)}
+                  className="border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                >
                   <option value="">State</option>
                   {US_STATES.map((state) => (
                     <option key={state} value={state}>{state}</option>
                   ))}
                 </select>
-                <input type="datetime-local" name="datetime" value={pickup.datetime} onChange={e => handlePickupChange(idx, e)} className="border rounded px-3 py-2 bg-white text-gray-900" />
-                <button type="button" onClick={() => removePickup(idx)} className="text-red-600 font-bold px-2">-</button>
+                <input
+                  type="datetime-local"
+                  name="datetime"
+                  value={pickup.datetime}
+                  onChange={e => handlePickupChange(idx, e)}
+                  className="border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => removePickup(idx)}
+                  className="ml-2 flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:bg-red-100 hover:text-red-700 transition focus:outline-none focus:ring-2 focus:ring-red-400"
+                  title="Remove Pickup"
+                  tabIndex={0}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              {errors[`pickupAddress${idx}`] && <div className="text-red-500 text-sm">{errors[`pickupAddress${idx}`]}</div>}
-              {errors[`pickupState${idx}`] && <div className="text-red-500 text-sm">{errors[`pickupState${idx}`]}</div>}
-              {errors[`pickupDatetime${idx}`] && <div className="text-red-500 text-sm">{errors[`pickupDatetime${idx}`]}</div>}
-            </div>
-          ))}
-          <button type="button" onClick={addPickup} className="text-blue-600 font-bold">+ Add Pickup</button>
+            ))}
+            <button type="button" onClick={addPickup} className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 hover:bg-blue-50 px-3 py-2 rounded-lg transition w-fit">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Pickup
+            </button>
+          </div>
         </div>
         <div>
-          <label className="block font-medium mb-1">Deliveries *</label>
-          {form.deliveries.map((delivery, idx) => (
-            <div key={idx} className="mb-2 border rounded p-2 bg-gray-50">
-              <div className="flex gap-2 mb-1">
-                <input name="address" placeholder="Address" value={delivery.address} onChange={e => handleDeliveryChange(idx, e)} className="flex-1 border rounded px-3 py-2 bg-white text-gray-900" />
-                <select name="state" value={delivery.state} onChange={e => handleDeliveryChange(idx, e)} className="border rounded px-3 py-2 bg-white text-gray-900">
+          <label className="block font-medium mb-2">Deliveries *</label>
+          <div className="flex flex-col gap-3">
+            {form.deliveries.map((delivery, idx) => (
+              <div
+                key={idx}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg shadow-sm px-4 py-3 flex items-center gap-2 relative hover:shadow-md transition-all"
+              >
+                <input
+                  name="address"
+                  placeholder="Address"
+                  value={delivery.address}
+                  onChange={e => handleDeliveryChange(idx, e)}
+                  className="flex-1 border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                />
+                <select
+                  name="state"
+                  value={delivery.state}
+                  onChange={e => handleDeliveryChange(idx, e)}
+                  className="border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                >
                   <option value="">State</option>
                   {US_STATES.map((state) => (
                     <option key={state} value={state}>{state}</option>
                   ))}
                 </select>
-                <input type="datetime-local" name="datetime" value={delivery.datetime} onChange={e => handleDeliveryChange(idx, e)} className="border rounded px-3 py-2 bg-white text-gray-900" />
-                <button type="button" onClick={() => removeDelivery(idx)} className="text-red-600 font-bold px-2">-</button>
+                <input
+                  type="datetime-local"
+                  name="datetime"
+                  value={delivery.datetime}
+                  onChange={e => handleDeliveryChange(idx, e)}
+                  className="border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeDelivery(idx)}
+                  className="ml-2 flex items-center justify-center w-8 h-8 rounded-full text-red-600 hover:bg-red-100 hover:text-red-700 transition focus:outline-none focus:ring-2 focus:ring-red-400"
+                  title="Remove Delivery"
+                  tabIndex={0}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              {errors[`deliveryAddress${idx}`] && <div className="text-red-500 text-sm">{errors[`deliveryAddress${idx}`]}</div>}
-              {errors[`deliveryState${idx}`] && <div className="text-red-500 text-sm">{errors[`deliveryState${idx}`]}</div>}
-              {errors[`deliveryDatetime${idx}`] && <div className="text-red-500 text-sm">{errors[`deliveryDatetime${idx}`]}</div>}
-            </div>
-          ))}
-          <button type="button" onClick={addDelivery} className="text-blue-600 font-bold">+ Add Delivery</button>
+            ))}
+            <button type="button" onClick={addDelivery} className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 hover:bg-blue-50 px-3 py-2 rounded-lg transition w-fit">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Delivery
+            </button>
+          </div>
         </div>
         <div>
           <label className="block font-medium mb-1">Load Type *</label>
@@ -236,7 +300,7 @@ export default function AddLoadPage() {
         </div>
         {showTemp && (
           <div>
-            <label className="block font-medium mb-1">Temperature Requirement (°C) *</label>
+            <label className="block font-medium mb-1">Temperature (°F) *</label>
             <input name="temperature" value={form.temperature} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
             {errors.temperature && <div className="text-red-500 text-sm">{errors.temperature}</div>}
           </div>

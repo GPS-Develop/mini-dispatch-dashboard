@@ -3,13 +3,39 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLoads } from "./loads/LoadContext";
 import { useDrivers } from "./drivers/DriverContext";
+import { supabase } from "../utils/supabaseClient";
 
 export default function Home() {
   const { loads } = useLoads();
   const { drivers } = useDrivers();
+  const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
+  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
+
   const upcomingLoads = loads
     .filter((load) => load.status === "Scheduled")
     .sort((a, b) => new Date(a.pickup_datetime).getTime() - new Date(b.pickup_datetime).getTime());
+
+  useEffect(() => {
+    async function fetchAllPickupsDeliveries() {
+      if (upcomingLoads.length === 0) return;
+      const loadIds = upcomingLoads.map(l => l.id);
+      const { data: pickups } = await supabase.from("pickups").select("*").in("load_id", loadIds);
+      const { data: deliveries } = await supabase.from("deliveries").select("*").in("load_id", loadIds);
+      const pickupsByLoad: Record<string, any[]> = {};
+      const deliveriesByLoad: Record<string, any[]> = {};
+      pickups?.forEach(p => {
+        if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
+        pickupsByLoad[p.load_id].push(p);
+      });
+      deliveries?.forEach(d => {
+        if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
+        deliveriesByLoad[d.load_id].push(d);
+      });
+      setPickupsMap(pickupsByLoad);
+      setDeliveriesMap(deliveriesByLoad);
+    }
+    fetchAllPickupsDeliveries();
+  }, [upcomingLoads]);
 
   const recentActivity = [
     "Driver A submitted Reefer temp: -5°C",
@@ -41,8 +67,22 @@ export default function Home() {
                   >
                     <div className="font-medium">Load #{load.reference_id}</div>
                     <div className="text-sm text-gray-700">Driver: {getDriverName(load.driver_id)}</div>
-                    <div className="text-sm text-gray-700">Pickup: {load.pickup_location} - {load.delivery_location}</div>
-                    <div className="text-sm text-gray-700">Pickup Date: {load.pickup_datetime}</div>
+                    <div className="text-sm text-gray-700">
+                      <span className="font-semibold">Pickups:</span>
+                      <ol className="list-decimal ml-5">
+                        {(pickupsMap[load.id] || []).map((p, i) => (
+                          <li key={p.id || i}>{p.address}, {p.state} ({p.datetime})</li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div className="text-sm text-gray-700">
+                      <span className="font-semibold">Deliveries:</span>
+                      <ol className="list-decimal ml-5">
+                        {(deliveriesMap[load.id] || []).map((d, i) => (
+                          <li key={d.id || i}>{d.address}, {d.state} ({d.datetime})</li>
+                        ))}
+                      </ol>
+                    </div>
                     <div className="text-sm text-gray-500">Status: {load.status}</div>
                   </div>
                 ))
