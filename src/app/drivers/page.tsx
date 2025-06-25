@@ -7,8 +7,6 @@ type DriverForm = {
   phone: string;
   status: "Available" | "On Load";
   payRate: string;
-  scheduledLoads: string[];
-  inTransitLoads: string[];
 };
 
 const emptyDriver: DriverForm = {
@@ -16,12 +14,10 @@ const emptyDriver: DriverForm = {
   phone: "",
   status: "Available",
   payRate: "",
-  scheduledLoads: [],
-  inTransitLoads: [],
 };
 
 export default function DriversPage() {
-  const { drivers, addDriver, updateDriver, deleteDriver } = useDrivers();
+  const { drivers, addDriver, updateDriver, deleteDriver, loading, error: contextError } = useDrivers();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<DriverForm>(emptyDriver);
@@ -39,8 +35,6 @@ export default function DriversPage() {
       phone: driver.phone,
       status: driver.status,
       payRate: driver.payRate,
-      scheduledLoads: driver.scheduledLoads || [],
-      inTransitLoads: driver.inTransitLoads || [],
     });
     setEditId(driver.id);
     setShowForm(true);
@@ -50,14 +44,23 @@ export default function DriversPage() {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
-  function handleSubmit(e: any) {
+  async function handleSubmit(e: any) {
     e.preventDefault();
     if (!form.name || !form.phone || !form.payRate) {
       setError("Name, phone, and pay rate are required.");
       return;
     }
-    if (editId) updateDriver(editId, form);
-    else addDriver(form);
+    const driverData = {
+      name: form.name,
+      phone: form.phone,
+      status: form.status,
+      pay_rate: form.payRate,
+    };
+    if (editId) {
+      await updateDriver(editId, driverData);
+    } else {
+      await addDriver(driverData);
+    }
     setShowForm(false);
   }
   function handleDelete(id: string) {
@@ -135,16 +138,17 @@ export default function DriversPage() {
               </div>
               <div>
                 <label className="block font-medium mb-1">Scheduled</label>
-                <input value={form.scheduledLoads && form.scheduledLoads.length > 0 ? form.scheduledLoads.map(l => `#${l}`).join(", ") : "-"} className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-500" disabled />
+                <input value={editId ? (drivers.find(d => d.id === editId)?.scheduledLoads?.map(l => `#${l}`).join(", ") || "-" ) : "-"} className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-500" disabled />
               </div>
               <div>
                 <label className="block font-medium mb-1">In-Transit</label>
-                <input value={form.inTransitLoads && form.inTransitLoads.length > 0 ? form.inTransitLoads.map(l => `#${l}`).join(", ") : "-"} className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-500" disabled />
+                <input value={editId ? (drivers.find(d => d.id === editId)?.inTransitLoads?.map(l => `#${l}`).join(", ") || "-" ) : "-"} className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-500" disabled />
               </div>
               {error && <div className="text-red-500 text-sm">{error}</div>}
+              {contextError && <div className="text-red-500 text-sm">{contextError}</div>}
               <div className="flex gap-2 justify-end mt-4">
                 <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700">{editId ? "Save" : "Add"}</button>
+                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700" disabled={loading}>{editId ? "Save" : "Add"}</button>
               </div>
             </form>
           </div>

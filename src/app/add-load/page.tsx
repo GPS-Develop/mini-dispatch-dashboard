@@ -5,7 +5,7 @@ import { useLoads } from "../loads/LoadContext";
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
-  const { addLoad } = useLoads();
+  const { addLoad, error: loadError, loading: loadLoading } = useLoads();
   const [form, setForm] = useState({
     referenceId: "",
     pickupLocation: "",
@@ -51,51 +51,48 @@ export default function AddLoadPage() {
     return newErrors;
   }
 
-  function handleSubmit(e: any) {
+  async function handleSubmit(e: any) {
     e.preventDefault();
     const validation = validate();
     setErrors(validation);
     if (Object.keys(validation).length === 0) {
-      // Find driverId by name
       const driverObj = drivers.find((d) => d.name === form.driver);
       const driverId = driverObj ? driverObj.id : "";
-      // Add to LoadContext
-      addLoad({
-        referenceId: form.referenceId,
-        pickupLocation: form.pickupLocation,
-        pickupDateTime: form.pickupDateTime,
-        deliveryLocation: form.deliveryLocation,
-        deliveryDateTime: form.deliveryDateTime,
-        loadType: form.loadType,
+      await addLoad({
+        reference_id: form.referenceId,
+        pickup_location: form.pickupLocation,
+        pickup_datetime: form.pickupDateTime,
+        delivery_location: form.deliveryLocation,
+        delivery_datetime: form.deliveryDateTime,
+        load_type: form.loadType,
         temperature: form.temperature,
         rate: form.rate,
-        driverId,
+        driver_id: driverId,
         notes: form.notes,
-        brokerName: form.brokerName,
-        brokerContact: form.brokerContact,
-        brokerEmail: form.brokerEmail,
+        broker_name: form.brokerName,
+        broker_contact: form.brokerContact,
+        broker_email: form.brokerEmail,
         status: "Scheduled",
-        bolUrl: undefined,
-        podUrl: undefined,
-        driverUpdates: [],
       });
-      setSuccess(true);
-      setForm({
-        referenceId: "",
-        pickupLocation: "",
-        pickupDateTime: "",
-        deliveryLocation: "",
-        deliveryDateTime: "",
-        loadType: "Reefer",
-        temperature: "",
-        rate: "",
-        driver: "",
-        notes: "",
-        brokerName: "",
-        brokerContact: "",
-        brokerEmail: "",
-      });
-      setTimeout(() => setSuccess(false), 2000);
+      if (!loadError) {
+        setSuccess(true);
+        setForm({
+          referenceId: "",
+          pickupLocation: "",
+          pickupDateTime: "",
+          deliveryLocation: "",
+          deliveryDateTime: "",
+          loadType: "Reefer",
+          temperature: "",
+          rate: "",
+          driver: "",
+          notes: "",
+          brokerName: "",
+          brokerContact: "",
+          brokerEmail: "",
+        });
+        setTimeout(() => setSuccess(false), 2000);
+      }
     }
   }
 
@@ -192,10 +189,11 @@ export default function AddLoadPage() {
         <button
           type="submit"
           className="w-full bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition"
-          disabled={drivers.length === 0}
+          disabled={drivers.length === 0 || loadLoading}
         >
-          Submit
+          {loadLoading ? "Submitting..." : "Submit"}
         </button>
+        {loadError && <div className="text-red-600 text-center font-medium mt-2">{loadError}</div>}
         {success && <div className="text-green-600 text-center font-medium mt-2">Load added successfully!</div>}
       </form>
     </div>

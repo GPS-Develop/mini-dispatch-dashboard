@@ -1,114 +1,78 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "../../utils/supabaseClient";
 
 export type Load = {
   id: string;
-  referenceId: string;
-  pickupLocation: string;
-  pickupDateTime: string;
-  deliveryLocation: string;
-  deliveryDateTime: string;
-  loadType: string;
+  reference_id: string;
+  pickup_location: string;
+  pickup_datetime: string;
+  delivery_location: string;
+  delivery_datetime: string;
+  load_type: string;
   temperature?: string;
   rate: string;
-  driverId: string;
+  driver_id: string;
   notes?: string;
-  brokerName: string;
-  brokerContact: string;
-  brokerEmail: string;
+  broker_name: string;
+  broker_contact: string;
+  broker_email: string;
   status: "Scheduled" | "In-Transit" | "Delivered";
-  bolUrl?: string;
-  podUrl?: string;
-  driverUpdates?: Array<{
-    timestamp: string;
-    location?: string;
-    temp?: string;
-    eta?: string;
-    note?: string;
-  }>;
 };
-
-const defaultLoads: Load[] = [
-  {
-    id: "1001",
-    referenceId: "L-1001",
-    pickupLocation: "Dallas, TX",
-    pickupDateTime: "2024-06-01T09:00",
-    deliveryLocation: "Houston, TX",
-    deliveryDateTime: "2024-06-01T17:00",
-    loadType: "Reefer",
-    temperature: "-5",
-    rate: "$1200",
-    driverId: "1",
-    notes: "Urgent delivery.",
-    brokerName: "Acme Logistics",
-    brokerContact: "555-111-2222",
-    brokerEmail: "broker@acme.com",
-    status: "Scheduled",
-    bolUrl: undefined,
-    podUrl: undefined,
-    driverUpdates: [],
-  },
-  {
-    id: "1002",
-    referenceId: "L-1002",
-    pickupLocation: "Austin, TX",
-    pickupDateTime: "2024-06-02T10:00",
-    deliveryLocation: "San Antonio, TX",
-    deliveryDateTime: "2024-06-02T15:00",
-    loadType: "Dry Van",
-    rate: "$900",
-    driverId: "2",
-    notes: "",
-    brokerName: "Best Brokers",
-    brokerContact: "555-333-4444",
-    brokerEmail: "contact@bestbrokers.com",
-    status: "In-Transit",
-    bolUrl: undefined,
-    podUrl: undefined,
-    driverUpdates: [],
-  },
-];
 
 const LoadContext = createContext<{
   loads: Load[];
-  addLoad: (load: Omit<Load, "id">) => void;
-  updateLoad: (id: string, load: Partial<Load>) => void;
-  deleteLoad: (id: string) => void;
+  addLoad: (load: Record<string, any>) => Promise<void>;
+  updateLoad: (id: string, load: Record<string, any>) => Promise<void>;
+  deleteLoad: (id: string) => Promise<void>;
+  loading: boolean;
+  error: string | null;
 } | null>(null);
 
 export function LoadProvider({ children }: { children: React.ReactNode }) {
   const [loads, setLoads] = useState<Load[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function fetchLoads() {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from("loads")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) setError(error.message);
+    else setLoads(data as Load[]);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    const stored = localStorage.getItem("loads");
-    if (stored) setLoads(JSON.parse(stored));
-    else setLoads(defaultLoads);
+    fetchLoads();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("loads", JSON.stringify(loads));
-  }, [loads]);
-
-  function addLoad(load: Omit<Load, "id">) {
-    setLoads((prev) => [
-      { ...load, id: Date.now().toString() },
-      ...prev,
-    ]);
+  async function addLoad(load: Record<string, any>) {
+    setError(null);
+    const { error } = await supabase.from("loads").insert([{ ...load }]);
+    if (error) setError(error.message);
+    else await fetchLoads();
   }
 
-  function updateLoad(id: string, load: Partial<Load>) {
-    setLoads((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, ...load } : l))
-    );
+  async function updateLoad(id: string, load: Record<string, any>) {
+    setError(null);
+    const { error } = await supabase.from("loads").update(load).eq("id", id);
+    if (error) setError(error.message);
+    else await fetchLoads();
   }
 
-  function deleteLoad(id: string) {
-    setLoads((prev) => prev.filter((l) => l.id !== id));
+  async function deleteLoad(id: string) {
+    setError(null);
+    const { error } = await supabase.from("loads").delete().eq("id", id);
+    if (error) setError(error.message);
+    else await fetchLoads();
   }
 
   return (
-    <LoadContext.Provider value={{ loads, addLoad, updateLoad, deleteLoad }}>
+    <LoadContext.Provider value={{ loads, addLoad, updateLoad, deleteLoad, loading, error }}>
       {children}
     </LoadContext.Provider>
   );

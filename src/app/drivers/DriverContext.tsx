@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useLoads } from "../loads/LoadContext";
+import { supabase } from "../../utils/supabaseClient";
 
 export type Driver = {
   id: string;
@@ -12,56 +13,54 @@ export type Driver = {
   inTransitLoads?: string[];
 };
 
-const defaultDrivers: Driver[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    phone: "555-123-4567",
-    status: "Available",
-    payRate: "$0.60/mi",
-    scheduledLoads: [],
-    inTransitLoads: [],
-  },
-  {
-    id: "2",
-    name: "Maria Lopez",
-    phone: "555-987-6543",
-    status: "Available",
-    payRate: "$0.65/mi",
-    scheduledLoads: [],
-    inTransitLoads: [],
-  },
-  {
-    id: "3",
-    name: "Ali Khan",
-    phone: "555-555-5555",
-    status: "Available",
-    payRate: "$0.62/mi",
-    scheduledLoads: [],
-    inTransitLoads: [],
-  },
-];
+// Type for DB fields
+export type DriverDB = {
+  id?: string;
+  name: string;
+  phone: string;
+  status: "Available" | "On Load";
+  pay_rate: string;
+  created_at?: string;
+};
 
 const DriverContext = createContext<{
   drivers: Driver[];
-  addDriver: (driver: Omit<Driver, "id" | "scheduledLoads" | "inTransitLoads">) => void;
-  updateDriver: (id: string, driver: Partial<Driver>) => void;
-  deleteDriver: (id: string) => void;
+  addDriver: (driver: DriverDB) => Promise<void>;
+  updateDriver: (id: string, driver: Partial<DriverDB>) => Promise<void>;
+  deleteDriver: (id: string) => Promise<void>;
+  loading: boolean;
+  error: string | null;
 } | null>(null);
 
 export function DriverProvider({ children }: { children: React.ReactNode }) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { loads } = useLoads();
 
-  useEffect(() => {
-    const stored = localStorage.getItem("drivers");
-    if (stored) setDrivers(JSON.parse(stored));
-    else setDrivers(defaultDrivers);
-  }, []);
+  async function fetchDrivers() {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from("drivers")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) setError(error.message);
+    else setDrivers(
+      (data as DriverDB[]).map((d) => ({
+        id: d.id!,
+        name: d.name,
+        phone: d.phone,
+        status: d.status,
+        payRate: d.pay_rate,
+      }))
+    );
+    setLoading(false);
+  }
 
   useEffect(() => {
-    localStorage.setItem("drivers", JSON.stringify(drivers));
-  }, [drivers]);
+    fetchDrivers();
+  }, []);
 
   // Automatically update driver status and load lists based on assigned loads
   useEffect(() => {
@@ -84,25 +83,29 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     );
   }, [loads]);
 
-  function addDriver(driver: Omit<Driver, "id" | "scheduledLoads" | "inTransitLoads">) {
-    setDrivers((prev) => [
-      { ...driver, id: Date.now().toString(), scheduledLoads: [], inTransitLoads: [] },
-      ...prev,
-    ]);
+  async function addDriver(driver: DriverDB) {
+    setError(null);
+    const { error } = await supabase.from("drivers").insert([{ ...driver }]);
+    if (error) setError(error.message);
+    else await fetchDrivers();
   }
 
-  function updateDriver(id: string, driver: Partial<Driver>) {
-    setDrivers((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, ...driver } : d))
-    );
+  async function updateDriver(id: string, driver: Partial<DriverDB>) {
+    setError(null);
+    const { error } = await supabase.from("drivers").update(driver).eq("id", id);
+    if (error) setError(error.message);
+    else await fetchDrivers();
   }
 
-  function deleteDriver(id: string) {
-    setDrivers((prev) => prev.filter((d) => d.id !== id));
+  async function deleteDriver(id: string) {
+    setError(null);
+    const { error } = await supabase.from("drivers").delete().eq("id", id);
+    if (error) setError(error.message);
+    else await fetchDrivers();
   }
 
   return (
-    <DriverContext.Provider value={{ drivers, addDriver, updateDriver, deleteDriver }}>
+    <DriverContext.Provider value={{ drivers, addDriver, updateDriver, deleteDriver, loading, error }}>
       {children}
     </DriverContext.Provider>
   );
