@@ -1,6 +1,6 @@
 "use client";
-import { DriverProvider } from "./drivers/DriverContext";
-import { LoadProvider } from "./loads/LoadContext";
+import { DriverProvider } from "../features/drivers/DriverContext";
+import { LoadProvider } from "../features/loads/LoadContext";
 
 export default function ClientRoot({ children }: { children: React.ReactNode }) {
   return (

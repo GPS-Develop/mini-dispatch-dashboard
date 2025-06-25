@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useLoads } from "./loads/LoadContext";
-import { useDrivers } from "./drivers/DriverContext";
+import { useLoads } from "../features/loads/LoadContext";
+import { useDrivers } from "../features/drivers/DriverContext";
 import { supabase } from "../utils/supabaseClient";
 
 export default function Home() {
