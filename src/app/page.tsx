@@ -1,20 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLoads } from "./loads/LoadContext";
+import { useDrivers } from "./drivers/DriverContext";
 
 export default function Home() {
-  const [upcomingLoads, setUpcomingLoads] = useState<any[]>([]);
-
-  useEffect(() => {
-    const loads = JSON.parse(localStorage.getItem("loads") || "[]");
-    setUpcomingLoads(loads);
-  }, []);
+  const { loads } = useLoads();
+  const { drivers } = useDrivers();
+  const upcomingLoads = loads
+    .filter((load) => load.status === "Scheduled")
+    .sort((a, b) => new Date(a.pickup_datetime).getTime() - new Date(b.pickup_datetime).getTime());
 
   const recentActivity = [
     "Driver A submitted Reefer temp: -5°C",
     "ETA updated",
     "POD uploaded",
   ];
+
+  function getDriverName(driver_id: string) {
+    const driver = drivers.find((d) => d.id === driver_id);
+    return driver ? driver.name : driver_id;
+  }
 
   return (
     <>
@@ -30,12 +36,13 @@ export default function Home() {
               ) : (
                 upcomingLoads.map((load, idx) => (
                   <div
-                    key={idx}
+                    key={load.id}
                     className="rounded border bg-white p-4 shadow-sm"
                   >
-                    <div className="font-medium">Load #{load.referenceId}</div>
-                    <div className="text-sm text-gray-700">Driver: {load.driver}</div>
-                    <div className="text-sm text-gray-700">Pickup: {load.pickupLocation} - {load.deliveryLocation}</div>
+                    <div className="font-medium">Load #{load.reference_id}</div>
+                    <div className="text-sm text-gray-700">Driver: {getDriverName(load.driver_id)}</div>
+                    <div className="text-sm text-gray-700">Pickup: {load.pickup_location} - {load.delivery_location}</div>
+                    <div className="text-sm text-gray-700">Pickup Date: {load.pickup_datetime}</div>
                     <div className="text-sm text-gray-500">Status: {load.status}</div>
                   </div>
                 ))

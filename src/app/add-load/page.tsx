@@ -36,18 +36,18 @@ export default function AddLoadPage() {
 
   function validate() {
     const newErrors: any = {};
-    if (!form.referenceId) newErrors.referenceId = "Required";
+    if (!form.referenceId || !/^[0-9]+$/.test(form.referenceId)) newErrors.referenceId = "Reference ID must be a number";
     if (!form.pickupLocation) newErrors.pickupLocation = "Required";
-    if (!form.pickupDateTime) newErrors.pickupDateTime = "Required";
+    if (!form.pickupDateTime || isNaN(Date.parse(form.pickupDateTime))) newErrors.pickupDateTime = "Valid date required";
     if (!form.deliveryLocation) newErrors.deliveryLocation = "Required";
-    if (!form.deliveryDateTime) newErrors.deliveryDateTime = "Required";
+    if (!form.deliveryDateTime || isNaN(Date.parse(form.deliveryDateTime))) newErrors.deliveryDateTime = "Valid date required";
     if (!form.loadType) newErrors.loadType = "Required";
-    if (form.loadType === "Reefer" && !form.temperature) newErrors.temperature = "Required";
-    if (!form.rate) newErrors.rate = "Required";
+    if (form.loadType === "Reefer" && (form.temperature === "" || isNaN(Number(form.temperature)))) newErrors.temperature = "Valid temperature required";
+    if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) <= 0) newErrors.rate = "Valid rate required";
     if (!form.driver) newErrors.driver = "Required";
     if (!form.brokerName) newErrors.brokerName = "Required";
-    if (!form.brokerContact) newErrors.brokerContact = "Required";
-    if (!form.brokerEmail) newErrors.brokerEmail = "Required";
+    if (!form.brokerContact || !/^[0-9]{10}$/.test(form.brokerContact)) newErrors.brokerContact = "Broker contact must be a 10-digit phone number";
+    if (!form.brokerEmail || !/^[^@]+@[^@]+\.[^@]+$/.test(form.brokerEmail)) newErrors.brokerEmail = "Valid email required";
     return newErrors;
   }
 
