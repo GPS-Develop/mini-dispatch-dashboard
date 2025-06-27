@@ -111,7 +111,21 @@ export default function DriversPage() {
           {error || contextError}
         </div>
       )}
-      <div className="overflow-x-auto">
+      
+      {loading && (
+        <div className="text-center py-8">
+          <div className="text-gray-600">Loading drivers...</div>
+        </div>
+      )}
+      
+      {!loading && drivers.length === 0 && (
+        <div className="text-center py-8">
+          <div className="text-gray-600">No drivers found. Click "Add Driver" to get started.</div>
+        </div>
+      )}
+      
+      {!loading && drivers.length > 0 && (
+        <div className="overflow-x-auto">
         <table className="w-full text-left border border-gray-200 bg-white">
           <thead>
             <tr className="bg-gray-100 text-gray-900 font-semibold">
@@ -167,6 +181,7 @@ export default function DriversPage() {
           </tbody>
         </table>
       </div>
+      )}
       
       {showForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">

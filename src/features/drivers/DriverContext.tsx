@@ -39,7 +39,8 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { loads } = useLoads();
+  const { loads, loading: loadsLoading } = useLoads();
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
 
   // Helper function to sort drivers: active first, then inactive
   const sortDrivers = (drivers: Driver[]) => {
@@ -81,6 +82,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
       });
       
       setDrivers(sortedDrivers);
+      setHasInitiallyLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -94,24 +96,27 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
 
   // Automatically update driver status and load lists based on assigned loads
   useEffect(() => {
-    setDrivers((prevDrivers) =>
-      sortDrivers(prevDrivers.map((driver) => {
-        const scheduledLoads = loads
-          .filter((l) => l.driver_id === driver.id && l.status === "Scheduled")
-          .map((l) => l.reference_id);
-        const inTransitLoads = loads
-          .filter((l) => l.driver_id === driver.id && l.status === "In-Transit")
-          .map((l) => l.reference_id);
-        const status = (scheduledLoads.length > 0 || inTransitLoads.length > 0) ? "On Load" : "Available";
-        return {
-          ...driver,
-          status,
-          scheduledLoads,
-          inTransitLoads,
-        };
-      }))
-    );
-  }, [loads]);
+    // Only update driver status if both contexts have finished their initial loading
+    if (!loadsLoading && hasInitiallyLoaded && drivers.length > 0) {
+      setDrivers((prevDrivers) =>
+        sortDrivers(prevDrivers.map((driver) => {
+          const scheduledLoads = loads
+            .filter((l) => l.driver_id === driver.id && l.status === "Scheduled")
+            .map((l) => l.reference_id);
+          const inTransitLoads = loads
+            .filter((l) => l.driver_id === driver.id && l.status === "In-Transit")
+            .map((l) => l.reference_id);
+          const status = (scheduledLoads.length > 0 || inTransitLoads.length > 0) ? "On Load" : "Available";
+          return {
+            ...driver,
+            status,
+            scheduledLoads,
+            inTransitLoads,
+          };
+        }))
+      );
+    }
+  }, [loads, loadsLoading, hasInitiallyLoaded]);
 
   async function addDriver(driver: DriverDB) {
     setError(null);
