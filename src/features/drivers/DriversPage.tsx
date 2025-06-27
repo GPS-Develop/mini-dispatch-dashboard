@@ -89,7 +89,6 @@ export default function DriversPage() {
         if (errorMessage.includes("currently on load")) {
           // The error message is already user-friendly from the context
           // Just make sure it's displayed prominently
-          console.log("Driver deletion blocked due to active loads");
         }
       }
     }
