@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useDrivers } from "../../features/drivers/DriverContext";
 import { useLoads } from "../../features/loads/LoadContext";
 import { useRouter } from "next/navigation";
+import Button from '../../components/Button/Button';
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
@@ -177,12 +178,12 @@ export default function AddLoadPage() {
                 </button>
               </div>
             ))}
-            <button type="button" onClick={addPickup} className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 hover:bg-blue-50 px-3 py-2 rounded-lg transition w-fit">
+            <Button type="button" onClick={addPickup} className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 hover:bg-blue-50 px-3 py-2 rounded-lg transition w-fit">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               Add Pickup
-            </button>
+            </Button>
           </div>
         </div>
         <div>
@@ -231,12 +232,12 @@ export default function AddLoadPage() {
                 </button>
               </div>
             ))}
-            <button type="button" onClick={addDelivery} className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 hover:bg-blue-50 px-3 py-2 rounded-lg transition w-fit">
+            <Button type="button" onClick={addDelivery} className="flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-900 hover:bg-blue-50 px-3 py-2 rounded-lg transition w-fit">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               Add Delivery
-            </button>
+            </Button>
           </div>
         </div>
         <div>
@@ -273,7 +274,7 @@ export default function AddLoadPage() {
             disabled={drivers.length === 0}
           >
             <option value="">Select driver</option>
-            {drivers.map((d) => (
+            {drivers.filter(d => d.driver_status === "active").map((d) => (
               <option key={d.id} value={d.name}>{d.name}</option>
             ))}
           </select>
@@ -300,13 +301,13 @@ export default function AddLoadPage() {
             {errors.brokerEmail && <div className="text-red-500 text-sm">{errors.brokerEmail}</div>}
           </div>
         </div>
-        <button
+        <Button
           type="submit"
           className="w-full bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition"
           disabled={drivers.length === 0 || loadLoading}
         >
           {loadLoading ? "Submitting..." : "Submit"}
-        </button>
+        </Button>
         {loadError && <div className="text-red-600 text-center font-medium mt-2">{loadError}</div>}
         {success && <div className="text-green-600 text-center font-medium mt-2">Load added successfully!</div>}
       </form>

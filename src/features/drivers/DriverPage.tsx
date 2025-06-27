@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Button from '../../components/Button/Button';
 
 export default function DriverMobileView() {
   const [showLocation, setShowLocation] = useState(false);
@@ -16,12 +17,13 @@ export default function DriverMobileView() {
       </div>
       <div className="flex flex-col gap-3">
         {/* Update Location */}
-        <button
+        <Button
           className="flex items-center gap-2 border rounded-lg px-4 py-2 bg-gray-50 hover:bg-gray-100 text-base font-medium text-gray-800 transition"
           onClick={() => setShowLocation((v) => !v)}
+          variant="primary"
         >
           <span className="text-lg">📍</span> Update Location
-        </button>
+        </Button>
         {showLocation && (
           <input
             type="text"
@@ -30,12 +32,13 @@ export default function DriverMobileView() {
           />
         )}
         {/* Enter Reefer Temp */}
-        <button
+        <Button
           className="flex items-center gap-2 border rounded-lg px-4 py-2 bg-gray-50 hover:bg-gray-100 text-base font-medium text-gray-800 transition"
           onClick={() => setShowReefer((v) => !v)}
+          variant="primary"
         >
           <span className="text-lg">❄️</span> Enter Reefer Temp
-        </button>
+        </Button>
         {showReefer && (
           <input
             type="number"
@@ -44,12 +47,13 @@ export default function DriverMobileView() {
           />
         )}
         {/* Update ETA */}
-        <button
+        <Button
           className="flex items-center gap-2 border rounded-lg px-4 py-2 bg-gray-50 hover:bg-gray-100 text-base font-medium text-gray-800 transition"
           onClick={() => setShowETA((v) => !v)}
+          variant="primary"
         >
           <span className="text-lg">⏱️</span> Update ETA
-        </button>
+        </Button>
         {showETA && (
           <input
             type="datetime-local"
@@ -57,12 +61,13 @@ export default function DriverMobileView() {
           />
         )}
         {/* Upload BOL or POD */}
-        <button
+        <Button
           className="flex items-center gap-2 border rounded-lg px-4 py-2 bg-gray-50 hover:bg-gray-100 text-base font-medium text-gray-800 transition"
           onClick={() => setShowUpload((v) => !v)}
+          variant="primary"
         >
           <span className="text-lg">📤</span> Upload BOL or POD
-        </button>
+        </Button>
         {showUpload && (
           <input
             type="file"

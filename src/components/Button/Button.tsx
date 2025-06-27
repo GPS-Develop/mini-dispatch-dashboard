@@ -1,0 +1,20 @@
+import React from 'react';
+import styles from './Button.module.css';
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+}
+
+const Button: React.FC<ButtonProps> = ({ children, className = '', variant = 'primary', ...props }) => {
+  return (
+    <button
+      className={`${styles.button} ${styles[variant]} ${className}`.trim()}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+export default Button; 

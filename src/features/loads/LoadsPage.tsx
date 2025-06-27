@@ -4,6 +4,7 @@ import { useLoads, Load } from "./LoadContext";
 import { useDrivers } from "../../features/drivers/DriverContext";
 import { supabase } from "../../utils/supabaseClient";
 import { useRouter } from "next/navigation";
+import Button from '../../components/Button/Button';
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
 const US_STATES = [
@@ -21,6 +22,8 @@ export default function LoadsPage() {
   const [editForm, setEditForm] = useState<any>(null);
   const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const filteredLoads = useMemo(() => {
@@ -58,9 +61,16 @@ export default function LoadsPage() {
 
   const fetchAllPickupsDeliveries = async () => {
     if (loads.length === 0) return;
+    try {
     const loadIds = loads.map(l => l.id);
-    const { data: pickups } = await supabase.from("pickups").select("*").in("load_id", loadIds);
-    const { data: deliveries } = await supabase.from("deliveries").select("*").in("load_id", loadIds);
+      const { data: pickups, error: pickupsError } = await supabase.from("pickups").select("*").in("load_id", loadIds);
+      const { data: deliveries, error: deliveriesError } = await supabase.from("deliveries").select("*").in("load_id", loadIds);
+      
+      if (pickupsError || deliveriesError) {
+        setError(pickupsError?.message || deliveriesError?.message || 'Failed to fetch pickup/delivery data');
+        return;
+      }
+      
     const pickupsByLoad: Record<string, any[]> = {};
     const deliveriesByLoad: Record<string, any[]> = {};
     pickups?.forEach(p => {
@@ -73,6 +83,9 @@ export default function LoadsPage() {
     });
     setPickupsMap(pickupsByLoad);
     setDeliveriesMap(deliveriesByLoad);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch pickup/delivery data');
+    }
   };
 
   useEffect(() => {
@@ -81,13 +94,21 @@ export default function LoadsPage() {
 
   function getDriverName(driverId: string) {
     const driver = drivers.find((d) => d.id === driverId);
-    return driver ? driver.name : "Unknown";
+    if (!driver) return "Unknown";
+    if (driver.driver_status !== "active") {
+      return `${driver.name} (${driver.driver_status.charAt(0).toUpperCase() + driver.driver_status.slice(1)})`;
+    }
+    return driver.name;
   }
 
-  function setStatus(load: Load, status: "Scheduled" | "In-Transit" | "Delivered") {
-    updateLoad(load.id, { status });
-    // Set driver status back to Available if delivered (handled by DriverContext effect)
+  async function setStatus(load: Load, status: "Scheduled" | "In-Transit" | "Delivered") {
+    setError("");
+    try {
+      await updateLoad(load.id, { status });
     setSelected(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update load status');
+    }
   }
 
   function handlePickupChange(idx: number, e: any) {
@@ -116,6 +137,11 @@ export default function LoadsPage() {
   async function handleEditSubmit(e: any) {
     e.preventDefault();
     if (!selected) return;
+    
+    setIsSubmitting(true);
+    setError("");
+    
+    try {
     // Update main load
     await updateLoad(selected.id, {
       driver_id: editForm.driver_id,
@@ -127,32 +153,56 @@ export default function LoadsPage() {
       load_type: editForm.load_type,
       temperature: editForm.temperature,
     });
+      
     // Update pickups
     for (const p of editForm.pickups) {
-      await supabase.from("pickups").update({
+        const { error: pickupError } = await supabase.from("pickups").update({
         address: p.address,
         state: p.state,
         datetime: p.datetime,
       }).eq("id", p.id);
+        
+        if (pickupError) {
+          throw new Error(`Failed to update pickup: ${pickupError.message}`);
+        }
     }
+      
     // Update deliveries
     for (const d of editForm.deliveries) {
-      await supabase.from("deliveries").update({
+        const { error: deliveryError } = await supabase.from("deliveries").update({
         address: d.address,
         state: d.state,
         datetime: d.datetime,
       }).eq("id", d.id);
+        
+        if (deliveryError) {
+          throw new Error(`Failed to update delivery: ${deliveryError.message}`);
+        }
     }
+      
+      // Refresh pickup/delivery data
     await fetchAllPickupsDeliveries();
-    if (!loadError) {
+      
       setEditMode(false);
       setSelected(null);
+      setEditForm(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update load');
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   return (
     <div className="max-w-5xl mx-auto p-6 bg-white text-gray-900 rounded-xl shadow-lg mt-8 mb-8 font-sans">
       <h1 className="text-2xl font-bold mb-6">Loads</h1>
+      
+      {(error || loadError) && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error || loadError}
+        </div>
+      )}
+      
       <div className="flex flex-wrap gap-4 mb-4 items-center">
         <input
           type="text"
@@ -181,6 +231,7 @@ export default function LoadsPage() {
           ))}
         </select>
       </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredLoads.length === 0 ? (
           <div className="text-gray-500 col-span-2">No loads found.</div>
@@ -224,13 +275,14 @@ export default function LoadsPage() {
           ))
         )}
       </div>
+      
       {/* Modal for load details */}
       {selected && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-md relative max-h-[80vh] overflow-y-auto">
             <button
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
-              onClick={() => { setSelected(null); setEditMode(false); }}
+              onClick={() => { setSelected(null); setEditMode(false); setError(""); }}
               aria-label="Close"
             >
               ×
@@ -265,35 +317,39 @@ export default function LoadsPage() {
                   {/* Removed BOL and POD links */}
                 </div>
                 <div className="flex flex-col gap-2 mt-4">
-                  <button
+                  <Button
+                    variant="secondary"
                     className="w-full bg-gray-200 text-gray-900 rounded px-4 py-2 font-semibold hover:bg-gray-300 transition"
                     onClick={() => setEditMode(true)}
                   >
                     Edit
-                  </button>
+                  </Button>
                   {selected.status !== "Delivered" && (
-                    <button
+                    <Button
+                      variant="success"
                       className="w-full bg-green-600 text-white rounded px-4 py-2 font-semibold hover:bg-green-700 transition"
                       onClick={() => setStatus(selected, "Delivered")}
                     >
                       Mark as Delivered
-                    </button>
+                    </Button>
                   )}
                   {selected.status !== "In-Transit" && (
-                    <button
+                    <Button
+                      variant="warning"
                       className="w-full bg-yellow-500 text-white rounded px-4 py-2 font-semibold hover:bg-yellow-600 transition"
                       onClick={() => setStatus(selected, "In-Transit")}
                     >
                       Set as In-Transit
-                    </button>
+                    </Button>
                   )}
                   {selected.status !== "Scheduled" && (
-                    <button
+                    <Button
+                      variant="primary"
                       className="w-full bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition"
                       onClick={() => setStatus(selected, "Scheduled")}
                     >
                       Set as Scheduled
-                    </button>
+                    </Button>
                   )}
                 </div>
               </>
@@ -411,10 +467,9 @@ export default function LoadsPage() {
                   <textarea name="notes" value={editForm.notes || ""} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" rows={2} />
                 </div>
                 <div className="flex gap-2 justify-end mt-4">
-                  <button type="button" onClick={() => setEditMode(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
-                  <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700" disabled={loadLoading}>Save</button>
+                  <Button type="button" variant="secondary" onClick={() => setEditMode(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</Button>
+                  <Button type="submit" variant="primary" className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700" disabled={isSubmitting || loadLoading}>Save</Button>
                 </div>
-                {loadError && <div className="text-red-600 text-center font-medium mt-2">{loadError}</div>}
               </form>
             ) : null}
           </div>

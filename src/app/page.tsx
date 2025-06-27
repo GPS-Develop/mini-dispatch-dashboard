@@ -45,7 +45,11 @@ export default function Home() {
 
   function getDriverName(driver_id: string) {
     const driver = drivers.find((d) => d.id === driver_id);
-    return driver ? driver.name : driver_id;
+    if (!driver) return driver_id;
+    if (driver.driver_status && driver.driver_status !== "active") {
+      return `${driver.name} (${driver.driver_status.charAt(0).toUpperCase() + driver.driver_status.slice(1)})`;
+    }
+    return driver.name;
   }
 
   return (

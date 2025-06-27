@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useDrivers, Driver } from "./DriverContext";
+import Button from '../../components/Button/Button';
 
 type DriverForm = {
   name: string;
@@ -17,7 +18,7 @@ const emptyDriver: DriverForm = {
 };
 
 export default function DriversPage() {
-  const { drivers, addDriver, updateDriver, deleteDriver, loading, error: contextError } = useDrivers();
+  const { drivers, addDriver, updateDriver, deleteDriver, reactivateDriver, loading, error: contextError } = useDrivers();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<DriverForm>(emptyDriver);
@@ -29,6 +30,7 @@ export default function DriversPage() {
     setShowForm(true);
     setError("");
   }
+  
   function openEdit(driver: Driver) {
     setForm({
       name: driver.name,
@@ -40,39 +42,75 @@ export default function DriversPage() {
     setShowForm(true);
     setError("");
   }
+  
   function handleChange(e: any) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
+  
   async function handleSubmit(e: any) {
     e.preventDefault();
     if (!form.name || !form.phone || !form.payRate) {
       setError("Name, phone, and pay rate are required.");
       return;
     }
+    
     const driverData = {
       name: form.name,
       phone: form.phone,
       status: form.status,
       pay_rate: form.payRate,
     };
+    
+    try {
     if (editId) {
       await updateDriver(editId, driverData);
     } else {
       await addDriver(driverData);
     }
     setShowForm(false);
+      setForm(emptyDriver);
+      setEditId(null);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Operation failed');
+    }
   }
-  function handleDelete(id: string) {
-    if (window.confirm("Delete this driver?")) deleteDriver(id);
+  
+  async function handleDelete(id: string) {
+    if (window.confirm("Delete this driver?")) {
+      try {
+        await deleteDriver(id);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to delete driver';
+        setError(errorMessage);
+        
+        // If it's a foreign key constraint error, provide more helpful guidance
+        if (errorMessage.includes("currently on load")) {
+          // The error message is already user-friendly from the context
+          // Just make sure it's displayed prominently
+          console.log("Driver deletion blocked due to active loads");
+        }
+      }
+    }
+  }
+
+  async function handleReactivate(id: string) {
+    await reactivateDriver(id);
+    setError("");
   }
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white text-gray-900 rounded-xl shadow-lg mt-8 mb-8 font-sans">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Drivers</h1>
-        <button onClick={openAdd} className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 transition">+ Add Driver</button>
+        <Button variant="primary" onClick={openAdd} className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 transition">+ Add Driver</Button>
       </div>
+      {(error || contextError) && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error || contextError}
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-left border border-gray-200 bg-white">
           <thead>
@@ -80,6 +118,7 @@ export default function DriversPage() {
               <th className="p-2">Name</th>
               <th className="p-2">Phone</th>
               <th className="p-2">Status</th>
+              <th className="p-2">Driver Status</th>
               <th className="p-2">Pay Rate</th>
               <th className="p-2">Scheduled</th>
               <th className="p-2">In-Transit</th>
@@ -100,18 +139,35 @@ export default function DriversPage() {
                     {d.status}
                   </span>
                 </td>
+                <td className="p-2">
+                  <span className={
+                    d.driver_status === "active"
+                      ? "text-green-600 font-semibold"
+                      : "text-gray-400 font-semibold"
+                  }>
+                    {d.driver_status.charAt(0).toUpperCase() + d.driver_status.slice(1)}
+                  </span>
+                </td>
                 <td className="p-2">{d.payRate}</td>
                 <td className="p-2">{d.scheduledLoads && d.scheduledLoads.length > 0 ? d.scheduledLoads.map(l => `#${l}`).join(", ") : <span className="text-gray-400">-</span>}</td>
                 <td className="p-2">{d.inTransitLoads && d.inTransitLoads.length > 0 ? d.inTransitLoads.map(l => `#${l}`).join(", ") : <span className="text-gray-400">-</span>}</td>
                 <td className="p-2 flex gap-2">
-                  <button onClick={() => openEdit(d)} className="text-blue-600 hover:underline">Edit</button>
-                  <button onClick={() => handleDelete(d.id)} className="text-red-600 hover:underline">Delete</button>
+                  {d.driver_status === "active" && (
+                    <>
+                      <Button variant="secondary" onClick={() => openEdit(d)} className="text-blue-600 hover:underline">Edit</Button>
+                      <Button variant="danger" onClick={() => handleDelete(d.id)} className="text-red-600 hover:underline">Deactivate</Button>
+                    </>
+                  )}
+                  {d.driver_status === "inactive" && (
+                    <Button variant="primary" onClick={() => handleReactivate(d.id)} className="text-green-600 hover:underline">Reactivate</Button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      
       {showForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
@@ -145,10 +201,9 @@ export default function DriversPage() {
                 <input value={editId ? (drivers.find(d => d.id === editId)?.inTransitLoads?.map(l => `#${l}`).join(", ") || "-" ) : "-"} className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-500" disabled />
               </div>
               {error && <div className="text-red-500 text-sm">{error}</div>}
-              {contextError && <div className="text-red-500 text-sm">{contextError}</div>}
               <div className="flex gap-2 justify-end mt-4">
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700" disabled={loading}>{editId ? "Save" : "Add"}</button>
+                <Button type="button" variant="secondary" onClick={() => setShowForm(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</Button>
+                <Button type="submit" variant="primary" className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700" disabled={loading}>{editId ? "Save" : "Add"}</Button>
               </div>
             </form>
           </div>
