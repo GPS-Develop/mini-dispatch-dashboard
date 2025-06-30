@@ -55,6 +55,13 @@ export const formatPhoneForDisplay = (phone: string | number): string => {
   return cleaned;
 };
 
+// Format rate for display (integer with comma separators)
+export const formatRateForDisplay = (rate: number | string): string => {
+  const numRate = typeof rate === 'string' ? parseFloat(rate) : rate;
+  const integerRate = Math.floor(numRate);
+  return integerRate.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
 // Validate positive number
 export const validatePositiveNumber = (value: string): boolean => {
   const num = parseFloat(value);

@@ -4,7 +4,7 @@ import { useDrivers } from "../../features/drivers/DriverContext";
 import { useLoads } from "../../features/loads/LoadContext";
 import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
-import { sanitizePhone } from '../../utils/validation';
+import { sanitizePhone, validateRate } from '../../utils/validation';
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
@@ -86,15 +86,10 @@ export default function AddLoadPage() {
     if (form.loadType === "Reefer" && (!form.temperature || isNaN(parseFloat(form.temperature)))) {
       newErrors.temperature = "Temperature is required for reefer loads";
     }
-    if (!form.rate) {
-      newErrors.rate = "Required";
-    } else {
-      const rate = parseFloat(form.rate);
-      if (isNaN(rate)) {
-        newErrors.rate = "Rate must be a valid number";
-      } else if (rate <= 0) {
-        newErrors.rate = "Rate must be greater than 0";
-      }
+    // Use the validateRate function for consistent validation
+    const rateValidation = validateRate(form.rate);
+    if (!rateValidation.isValid) {
+      newErrors.rate = rateValidation.error || "Invalid rate";
     }
     if (!form.driver) newErrors.driver = "Required";
     if (!form.brokerName) newErrors.brokerName = "Required";
@@ -120,11 +115,16 @@ export default function AddLoadPage() {
     if (Object.keys(validation).length === 0) {
       const driverObj = drivers.find((d) => d.name === form.driver);
       const driverId = driverObj ? driverObj.id : "";
+      
+      // Use validated rate value to ensure it's an integer
+      const rateValidation = validateRate(form.rate);
+      const validatedRate = rateValidation.isValid ? rateValidation.sanitizedValue : 0;
+      
       const loadData = {
         reference_id: form.referenceId,
         load_type: form.loadType,
         temperature: form.temperature === "" ? null : parseFloat(form.temperature),
-        rate: form.rate === "" ? 0 : parseFloat(form.rate),
+        rate: validatedRate, // Use validated integer value
         driver_id: driverId,
         notes: form.notes,
         broker_name: form.brokerName,

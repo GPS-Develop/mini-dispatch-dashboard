@@ -5,7 +5,7 @@ import { useDrivers } from "../../features/drivers/DriverContext";
 import { supabase } from "../../utils/supabaseClient";
 import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
-import { formatPhoneForDisplay, sanitizePhone } from '../../utils/validation';
+import { formatPhoneForDisplay, sanitizePhone, formatRateForDisplay } from '../../utils/validation';
 import DocumentUploadModal from '../../components/DocumentUploadModal/DocumentUploadModal';
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
@@ -304,7 +304,7 @@ export default function LoadsPage() {
                 <span className="font-semibold">Driver:</span> {getDriverName(load.driver_id)}
               </div>
               <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Rate:</span> ${load.rate.toLocaleString()}
+                <span className="font-semibold">Rate:</span> ${formatRateForDisplay(load.rate)}
               </div>
               <div className="text-sm text-gray-500 mb-1">
                 <span className="font-semibold">Status:</span> {load.status}
@@ -347,7 +347,7 @@ export default function LoadsPage() {
                     </ol>
                   </div>
                   <div><span className="font-semibold">Driver:</span> {getDriverName(selected.driver_id)}</div>
-                  <div><span className="font-semibold">Rate:</span> ${selected.rate.toFixed(2)}</div>
+                  <div><span className="font-semibold">Rate:</span> ${formatRateForDisplay(selected.rate)}</div>
                   <div><span className="font-semibold">Status:</span> {selected.status}</div>
                 </div>
                 <div className="mb-2 text-sm text-gray-700">
