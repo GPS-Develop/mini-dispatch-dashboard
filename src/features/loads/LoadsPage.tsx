@@ -145,13 +145,13 @@ export default function LoadsPage() {
     // Update main load
     await updateLoad(selected.id, {
       driver_id: editForm.driver_id,
-      rate: editForm.rate,
+      rate: typeof editForm.rate === 'string' ? parseFloat(editForm.rate) || 0 : editForm.rate,
       notes: editForm.notes,
       broker_name: editForm.broker_name,
       broker_contact: editForm.broker_contact,
       broker_email: editForm.broker_email,
       load_type: editForm.load_type,
-      temperature: editForm.temperature,
+      temperature: editForm.temperature === "" || editForm.temperature == null ? null : parseFloat(editForm.temperature.toString()),
     });
       
     // Update pickups
@@ -263,7 +263,7 @@ export default function LoadsPage() {
                 <span className="font-semibold">Driver:</span> {getDriverName(load.driver_id)}
               </div>
               <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Rate:</span> {load.rate}
+                <span className="font-semibold">Rate:</span> ${load.rate.toFixed(2)}
               </div>
               <div className="text-sm text-gray-500 mb-1">
                 <span className="font-semibold">Status:</span> {load.status}
@@ -306,7 +306,7 @@ export default function LoadsPage() {
                     </ol>
                   </div>
                   <div><span className="font-semibold">Driver:</span> {getDriverName(selected.driver_id)}</div>
-                  <div><span className="font-semibold">Rate:</span> {selected.rate}</div>
+                  <div><span className="font-semibold">Rate:</span> ${selected.rate.toFixed(2)}</div>
                   <div><span className="font-semibold">Status:</span> {selected.status}</div>
                 </div>
                 <div className="mb-2 text-sm text-gray-700">
@@ -433,8 +433,17 @@ export default function LoadsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-medium mb-1">Rate</label>
-                  <input name="rate" value={editForm.rate} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+                  <label className="block font-medium mb-1">Rate ($)</label>
+                  <input 
+                    name="rate" 
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editForm.rate || ""} 
+                    onChange={handleEditChange} 
+                    className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+                    placeholder="0.00"
+                  />
                 </div>
                 <div>
                   <label className="block font-medium mb-1">Load Type</label>
@@ -446,8 +455,18 @@ export default function LoadsPage() {
                 </div>
                 {editForm.load_type === "Reefer" && (
                   <div>
-                    <label className="block font-medium mb-1">Temperature</label>
-                    <input name="temperature" value={editForm.temperature || ""} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+                                  <label className="block font-medium mb-1">Temperature (°F)</label>
+              <input 
+                name="temperature" 
+                type="number"
+                step="0.1"
+                min="-100"
+                max="200"
+                value={editForm.temperature || ""} 
+                onChange={handleEditChange} 
+                className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+                placeholder="e.g., -10, 35, 72"
+              />
                   </div>
                 )}
                 <div>

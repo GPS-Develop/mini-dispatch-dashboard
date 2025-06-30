@@ -22,13 +22,13 @@ export interface FormErrors {
 
 export interface EditForm {
   driver_id: string;
-  rate: string;
+  rate: number;
   notes: string;
   broker_name: string;
   broker_contact: string;
   broker_email: string;
   load_type: string;
-  temperature: string;
+  temperature: number | null;
   pickups: Pickup[];
   deliveries: Delivery[];
 }
@@ -46,8 +46,8 @@ export interface AddLoadForm {
     datetime: string;
   }>;
   loadType: string;
-  temperature: string;
-  rate: string;
+  temperature: number | null;
+  rate: number;
   driver: string;
   notes: string;
   brokerName: string;
@@ -59,7 +59,7 @@ export interface DriverForm {
   name: string;
   phone: string;
   status: "Available" | "On Load";
-  payRate: string;
+  payRate: number;
 }
 
 // Pay Statement Types

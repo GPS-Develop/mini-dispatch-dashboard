@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../../utils/supabaseClient";
-import { validateRate } from "../../utils/validation";
+import { validateRate, validateTemperature } from "../../utils/validation";
 
 export type Load = {
   id: string;
@@ -13,8 +13,8 @@ export type Load = {
   delivery_state: string;
   delivery_datetime: string;
   load_type: string;
-  temperature?: string;
-  rate: string;
+  temperature?: number | null;
+  rate: number;
   driver_id: string;
   notes?: string;
   broker_name: string;

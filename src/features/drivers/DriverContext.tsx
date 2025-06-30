@@ -9,7 +9,7 @@ export type Driver = {
   name: string;
   phone: string;
   status: "Available" | "On Load";
-  payRate: string;
+  payRate: number;
   driver_status: "active" | "inactive";
   scheduledLoads?: string[];
   inTransitLoads?: string[];
@@ -21,7 +21,7 @@ export type DriverDB = {
   name: string;
   phone: string;
   status: "Available" | "On Load";
-  pay_rate: string;
+  pay_rate: number;
   created_at?: string;
   driver_status?: "active" | "inactive";
 };
@@ -70,7 +70,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
         name: d.name,
         phone: d.phone,
         status: d.status,
-        payRate: d.pay_rate,
+        payRate: typeof d.pay_rate === 'string' ? parseFloat(d.pay_rate) || 0 : d.pay_rate,
         driver_status: d.driver_status || "active",
       }));
       
@@ -151,7 +151,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
           name: data.name,
           phone: data.phone,
           status: data.status,
-          payRate: data.pay_rate,
+          payRate: typeof data.pay_rate === 'string' ? parseFloat(data.pay_rate) || 0 : data.pay_rate,
           driver_status: data.driver_status || "active",
         };
         
@@ -197,7 +197,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
                 name: data.name,
                 phone: data.phone,
                 status: data.status,
-                payRate: data.pay_rate,
+                payRate: typeof data.pay_rate === 'string' ? parseFloat(data.pay_rate) || 0 : data.pay_rate,
                 driver_status: data.driver_status || "active",
               }
             : d

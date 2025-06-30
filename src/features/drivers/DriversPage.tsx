@@ -7,7 +7,7 @@ type DriverForm = {
   name: string;
   phone: string;
   status: "Available" | "On Load";
-  payRate: string;
+  payRate: string; // Keep as string for form input, convert to number when submitting
 };
 
 const emptyDriver: DriverForm = {
@@ -36,7 +36,7 @@ export default function DriversPage() {
       name: driver.name,
       phone: driver.phone,
       status: driver.status,
-      payRate: driver.payRate,
+      payRate: driver.payRate.toString(),
     });
     setEditId(driver.id);
     setShowForm(true);
@@ -68,7 +68,7 @@ export default function DriversPage() {
       name: form.name,
       phone: form.phone,
       status: form.status,
-      pay_rate: form.payRate,
+      pay_rate: parseFloat(form.payRate) || 0,
     };
     
     try {
@@ -170,7 +170,7 @@ export default function DriversPage() {
                     {d.driver_status.charAt(0).toUpperCase() + d.driver_status.slice(1)}
                   </span>
                 </td>
-                <td className="p-2">{d.payRate}</td>
+                <td className="p-2">${d.payRate.toFixed(2)}</td>
                 <td className="p-2">{d.scheduledLoads && d.scheduledLoads.length > 0 ? d.scheduledLoads.map(l => `#${l}`).join(", ") : <span className="text-gray-400">-</span>}</td>
                 <td className="p-2">{d.inTransitLoads && d.inTransitLoads.length > 0 ? d.inTransitLoads.map(l => `#${l}`).join(", ") : <span className="text-gray-400">-</span>}</td>
                 <td className="p-2 flex gap-2">
@@ -212,7 +212,7 @@ export default function DriversPage() {
                 </select>
               </div>
               <div>
-                <label className="block font-medium mb-1">Pay Rate *</label>
+                <label className="block font-medium mb-1">Pay Rate ($) *</label>
                 <input 
                   name="payRate" 
                   type="number"
@@ -223,6 +223,7 @@ export default function DriversPage() {
                   className="w-full border rounded px-3 py-2 bg-white text-gray-900"
                   placeholder="0.00"
                 />
+                <div className="text-xs text-gray-500 mt-1">Enter pay rate per load in USD</div>
               </div>
               <div>
                 <label className="block font-medium mb-1">Scheduled</label>

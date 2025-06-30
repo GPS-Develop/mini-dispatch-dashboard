@@ -40,32 +40,63 @@ export const validateRequired = (value: string): boolean => {
 };
 
 // Validate and sanitize rate input (removes $ and validates)
-export const validateRate = (rate: string): { isValid: boolean; sanitizedValue: string; error?: string } => {
-  if (!rate || rate.trim() === '') {
-    return { isValid: false, sanitizedValue: '', error: 'Rate is required' };
+export const validateRate = (rate: string | number): { isValid: boolean; sanitizedValue: number; error?: string } => {
+  const rateStr = rate.toString();
+  
+  if (!rateStr || rateStr.trim() === '') {
+    return { isValid: false, sanitizedValue: 0, error: 'Rate is required' };
   }
   
   // Remove $ sign and whitespace
-  const sanitized = rate.replace(/[$\s]/g, '');
+  const sanitized = rateStr.replace(/[$\s,]/g, '');
   
   // Check if it's a valid positive number
   const num = parseFloat(sanitized);
   if (isNaN(num)) {
-    return { isValid: false, sanitizedValue: sanitized, error: 'Rate must be a valid number' };
+    return { isValid: false, sanitizedValue: 0, error: 'Rate must be a valid number' };
   }
   
   if (num <= 0) {
-    return { isValid: false, sanitizedValue: sanitized, error: 'Rate must be greater than 0' };
+    return { isValid: false, sanitizedValue: 0, error: 'Rate must be greater than 0' };
   }
   
   if (!isFinite(num)) {
-    return { isValid: false, sanitizedValue: sanitized, error: 'Rate must be a finite number' };
+    return { isValid: false, sanitizedValue: 0, error: 'Rate must be a finite number' };
   }
   
   // Limit to 2 decimal places
   const rounded = Math.round(num * 100) / 100;
   
-  return { isValid: true, sanitizedValue: rounded.toString() };
+  return { isValid: true, sanitizedValue: rounded };
+};
+
+// Validate temperature (allows positive and negative numbers)
+export const validateTemperature = (temperature: string): { isValid: boolean; sanitizedValue: number | null; error?: string } => {
+  if (!temperature || temperature.trim() === '') {
+    return { isValid: false, sanitizedValue: null, error: 'Temperature is required for reefer loads' };
+  }
+  
+  // Remove any whitespace and convert to number
+  const sanitized = temperature.trim();
+  const num = parseFloat(sanitized);
+  
+  if (isNaN(num)) {
+    return { isValid: false, sanitizedValue: null, error: 'Temperature must be a valid number' };
+  }
+  
+  if (!isFinite(num)) {
+    return { isValid: false, sanitizedValue: null, error: 'Temperature must be a finite number' };
+  }
+  
+  // Reasonable temperature range check (-100°F to 200°F)
+  if (num < -100 || num > 200) {
+    return { isValid: false, sanitizedValue: null, error: 'Temperature must be between -100°F and 200°F' };
+  }
+  
+  // Round to 1 decimal place for precision
+  const rounded = Math.round(num * 10) / 10;
+  
+  return { isValid: true, sanitizedValue: rounded };
 };
 
 // Driver form validation
@@ -154,18 +185,16 @@ export const validateLoadForm = (form: {
 
   // Temperature validation for reefer loads
   if (form.loadType === 'Reefer') {
-    if (!validateRequired(form.temperature)) {
-      errors.temperature = 'Temperature is required for reefer loads';
-    } else if (isNaN(parseFloat(form.temperature))) {
-      errors.temperature = 'Temperature must be a valid number';
+    const tempValidation = validateTemperature(form.temperature);
+    if (!tempValidation.isValid) {
+      errors.temperature = tempValidation.error || 'Invalid temperature';
     }
   }
 
   // Rate validation
-  if (!validateRequired(form.rate)) {
-    errors.rate = 'Rate is required';
-  } else if (!validatePositiveNumber(form.rate)) {
-    errors.rate = 'Rate must be a positive number';
+  const rateValidation = validateRate(form.rate);
+  if (!rateValidation.isValid) {
+    errors.rate = rateValidation.error || 'Invalid rate';
   }
 
   // Driver validation

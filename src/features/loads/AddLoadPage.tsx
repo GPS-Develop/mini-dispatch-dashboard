@@ -90,8 +90,32 @@ export default function AddLoadPage() {
       if (!d.datetime || isNaN(Date.parse(d.datetime))) newErrors[`deliveryDatetime${i}`] = "Valid date required";
     });
     if (!form.loadType) newErrors.loadType = "Required";
-    if (form.loadType === "Reefer" && (form.temperature === "" || isNaN(Number(form.temperature)))) newErrors.temperature = "Valid temperature required";
-    if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) <= 0) newErrors.rate = "Valid rate required";
+    
+    // Enhanced temperature validation for reefer loads
+    if (form.loadType === "Reefer") {
+      if (form.temperature === "") {
+        newErrors.temperature = "Temperature is required for reefer loads";
+      } else {
+        const temp = parseFloat(form.temperature);
+        if (isNaN(temp)) {
+          newErrors.temperature = "Temperature must be a valid number";
+        } else if (temp < -100 || temp > 200) {
+          newErrors.temperature = "Temperature must be between -100°F and 200°F";
+        }
+      }
+    }
+    
+    // Enhanced rate validation
+    if (form.rate === "") {
+      newErrors.rate = "Rate is required";
+    } else {
+      const rate = parseFloat(form.rate);
+      if (isNaN(rate)) {
+        newErrors.rate = "Rate must be a valid number";
+      } else if (rate <= 0) {
+        newErrors.rate = "Rate must be greater than 0";
+      }
+    }
     if (!form.driver) newErrors.driver = "Required";
     if (!form.brokerName) newErrors.brokerName = "Required";
     if (!form.brokerContact || !/^[0-9]{10}$/.test(form.brokerContact)) newErrors.brokerContact = "Broker contact must be a 10-digit phone number";
@@ -109,8 +133,8 @@ export default function AddLoadPage() {
       const loadData = {
         reference_id: form.referenceId,
         load_type: form.loadType,
-        temperature: form.temperature,
-        rate: form.rate,
+        temperature: form.temperature === "" ? null : parseFloat(form.temperature),
+        rate: form.rate === "" ? 0 : parseFloat(form.rate),
         driver_id: driverId,
         notes: form.notes,
         broker_name: form.brokerName,
@@ -252,12 +276,23 @@ export default function AddLoadPage() {
         {showTemp && (
           <div>
             <label className="block font-medium mb-1">Temperature (°F) *</label>
-            <input name="temperature" value={form.temperature} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+            <input 
+              name="temperature" 
+              type="number"
+              step="0.1"
+              min="-100"
+              max="200"
+              value={form.temperature} 
+              onChange={handleChange} 
+              className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+              placeholder="e.g., -10, 35, 72"
+            />
+            <div className="text-xs text-gray-500 mt-1">Enter temperature in Fahrenheit (range: -100°F to 200°F)</div>
             {errors.temperature && <div className="text-red-500 text-sm">{errors.temperature}</div>}
           </div>
         )}
         <div>
-          <label className="block font-medium mb-1">Rate *</label>
+          <label className="block font-medium mb-1">Rate ($) *</label>
           <input 
             name="rate" 
             type="number"
@@ -268,6 +303,7 @@ export default function AddLoadPage() {
             className="w-full border rounded px-3 py-2 bg-white text-gray-900"
             placeholder="0.00"
           />
+          <div className="text-xs text-gray-500 mt-1">Enter rate in USD (e.g., 2500.00)</div>
           {errors.rate && <div className="text-red-500 text-sm">{errors.rate}</div>}
         </div>
         <div>
