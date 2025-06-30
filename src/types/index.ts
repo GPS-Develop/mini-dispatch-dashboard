@@ -109,6 +109,14 @@ export interface TripSummary {
   amount: number;
 }
 
+export interface LoadDocument {
+  id: string;
+  load_id: string;
+  file_name: string;
+  file_url: string;
+  uploaded_at: string;
+}
+
 // Event handler types
 export type InputChangeEvent = React.ChangeEvent<HTMLInputElement>;
 export type SelectChangeEvent = React.ChangeEvent<HTMLSelectElement>;

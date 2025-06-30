@@ -6,6 +6,7 @@ import { supabase } from "../../utils/supabaseClient";
 import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
 import { formatPhoneForDisplay, sanitizePhone } from '../../utils/validation';
+import DocumentUploadModal from '../../components/DocumentUploadModal/DocumentUploadModal';
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
 const US_STATES = [
@@ -25,6 +26,7 @@ export default function LoadsPage() {
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const router = useRouter();
 
   const filteredLoads = useMemo(() => {
@@ -295,7 +297,7 @@ export default function LoadsPage() {
           <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-md relative max-h-[80vh] overflow-y-auto">
             <button
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
-              onClick={() => { setSelected(null); setEditMode(false); setError(""); }}
+              onClick={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
               aria-label="Close"
             >
               ×
@@ -336,6 +338,13 @@ export default function LoadsPage() {
                     onClick={() => setEditMode(true)}
                   >
                     Edit
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="w-full bg-purple-600 text-white rounded px-4 py-2 font-semibold hover:bg-purple-700 transition"
+                    onClick={() => setShowUploadModal(true)}
+                  >
+                    📄 Upload Documents
                   </Button>
                   {selected.status !== "Delivered" && (
                     <Button
@@ -514,6 +523,15 @@ export default function LoadsPage() {
             ) : null}
           </div>
         </div>
+      )}
+
+      {/* Document Upload Modal */}
+      {showUploadModal && selected && (
+        <DocumentUploadModal
+          loadId={selected.id}
+          loadReferenceId={selected.reference_id}
+          onClose={() => setShowUploadModal(false)}
+        />
       )}
     </div>
   );
