@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../../utils/supabaseClient";
+import { validateRate } from "../../utils/validation";
 
 export type Load = {
   id: string;
@@ -66,6 +67,18 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
 
   async function addLoad(load: Record<string, any>) {
     setError(null);
+    
+    // Validate rate before sending to database
+    if (load.rate) {
+      const rateValidation = validateRate(load.rate);
+      if (!rateValidation.isValid) {
+        setError(rateValidation.error || 'Invalid rate');
+        return;
+      }
+      // Use sanitized value
+      load.rate = rateValidation.sanitizedValue;
+    }
+    
     try {
       const { data, error } = await supabase
         .from("loads")
@@ -88,6 +101,18 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
 
   async function updateLoad(id: string, load: Record<string, any>) {
     setError(null);
+    
+    // Validate rate before sending to database
+    if (load.rate) {
+      const rateValidation = validateRate(load.rate);
+      if (!rateValidation.isValid) {
+        setError(rateValidation.error || 'Invalid rate');
+        return;
+      }
+      // Use sanitized value
+      load.rate = rateValidation.sanitizedValue;
+    }
+    
     try {
       const { data, error } = await supabase
         .from("loads")
@@ -132,6 +157,18 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
 
   async function addFullLoad(load: Record<string, any>, pickups: any[], deliveries: any[]) {
     setError(null);
+    
+    // Validate rate before sending to database
+    if (load.rate) {
+      const rateValidation = validateRate(load.rate);
+      if (!rateValidation.isValid) {
+        setError(rateValidation.error || 'Invalid rate');
+        return;
+      }
+      // Use sanitized value
+      load.rate = rateValidation.sanitizedValue;
+    }
+    
     try {
     // 1. Insert the load
       const { data, error: loadError } = await supabase

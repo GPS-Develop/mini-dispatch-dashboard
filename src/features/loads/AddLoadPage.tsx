@@ -258,7 +258,16 @@ export default function AddLoadPage() {
         )}
         <div>
           <label className="block font-medium mb-1">Rate *</label>
-          <input name="rate" value={form.rate} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+          <input 
+            name="rate" 
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.rate} 
+            onChange={handleChange} 
+            className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+            placeholder="0.00"
+          />
           {errors.rate && <div className="text-red-500 text-sm">{errors.rate}</div>}
         </div>
         <div>

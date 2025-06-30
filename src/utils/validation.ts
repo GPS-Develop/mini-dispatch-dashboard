@@ -25,7 +25,7 @@ export const validatePhone = (phone: string): boolean => {
 // Validate positive number
 export const validatePositiveNumber = (value: string): boolean => {
   const num = parseFloat(value);
-  return !isNaN(num) && num > 0;
+  return !isNaN(num) && num > 0 && isFinite(num);
 };
 
 // Validate date string
@@ -37,6 +37,35 @@ export const validateDateTime = (dateTime: string): boolean => {
 // Validate required field
 export const validateRequired = (value: string): boolean => {
   return value.trim().length > 0;
+};
+
+// Validate and sanitize rate input (removes $ and validates)
+export const validateRate = (rate: string): { isValid: boolean; sanitizedValue: string; error?: string } => {
+  if (!rate || rate.trim() === '') {
+    return { isValid: false, sanitizedValue: '', error: 'Rate is required' };
+  }
+  
+  // Remove $ sign and whitespace
+  const sanitized = rate.replace(/[$\s]/g, '');
+  
+  // Check if it's a valid positive number
+  const num = parseFloat(sanitized);
+  if (isNaN(num)) {
+    return { isValid: false, sanitizedValue: sanitized, error: 'Rate must be a valid number' };
+  }
+  
+  if (num <= 0) {
+    return { isValid: false, sanitizedValue: sanitized, error: 'Rate must be greater than 0' };
+  }
+  
+  if (!isFinite(num)) {
+    return { isValid: false, sanitizedValue: sanitized, error: 'Rate must be a finite number' };
+  }
+  
+  // Limit to 2 decimal places
+  const rounded = Math.round(num * 100) / 100;
+  
+  return { isValid: true, sanitizedValue: rounded.toString() };
 };
 
 // Driver form validation

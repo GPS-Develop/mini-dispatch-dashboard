@@ -50,8 +50,17 @@ export default function DriversPage() {
   
   async function handleSubmit(e: any) {
     e.preventDefault();
+    
+    // Enhanced validation
     if (!form.name || !form.phone || !form.payRate) {
       setError("Name, phone, and pay rate are required.");
+      return;
+    }
+    
+    // Validate pay rate is a positive number
+    const payRateNum = parseFloat(form.payRate);
+    if (isNaN(payRateNum) || payRateNum <= 0) {
+      setError("Pay rate must be a positive number greater than 0.");
       return;
     }
     
@@ -204,7 +213,16 @@ export default function DriversPage() {
               </div>
               <div>
                 <label className="block font-medium mb-1">Pay Rate *</label>
-                <input name="payRate" value={form.payRate} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+                <input 
+                  name="payRate" 
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.payRate} 
+                  onChange={handleChange} 
+                  className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+                  placeholder="0.00"
+                />
               </div>
               <div>
                 <label className="block font-medium mb-1">Scheduled</label>

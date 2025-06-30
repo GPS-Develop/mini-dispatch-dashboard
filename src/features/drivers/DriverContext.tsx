@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useLoads } from "../loads/LoadContext";
 import { supabase } from "../../utils/supabaseClient";
+import { validateRate } from "../../utils/validation";
 
 export type Driver = {
   id: string;
@@ -120,6 +121,18 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
 
   async function addDriver(driver: DriverDB) {
     setError(null);
+    
+    // Validate pay rate before sending to database
+    if (driver.pay_rate) {
+      const rateValidation = validateRate(driver.pay_rate);
+      if (!rateValidation.isValid) {
+        setError(rateValidation.error || 'Invalid pay rate');
+        return;
+      }
+      // Use sanitized value
+      driver.pay_rate = rateValidation.sanitizedValue;
+    }
+    
     try {
       const { data, error } = await supabase
         .from("drivers")
@@ -151,6 +164,18 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
 
   async function updateDriver(id: string, driver: Partial<DriverDB>) {
     setError(null);
+    
+    // Validate pay rate before sending to database
+    if (driver.pay_rate) {
+      const rateValidation = validateRate(driver.pay_rate);
+      if (!rateValidation.isValid) {
+        setError(rateValidation.error || 'Invalid pay rate');
+        return;
+      }
+      // Use sanitized value
+      driver.pay_rate = rateValidation.sanitizedValue;
+    }
+    
     try {
       const { data, error } = await supabase
         .from("drivers")

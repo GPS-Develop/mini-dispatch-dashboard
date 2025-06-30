@@ -106,7 +106,7 @@ export default function Home() {
             <div className="mt-4 flex flex-col gap-2">
               <button className="w-full rounded border px-4 py-2 bg-white hover:bg-gray-50 text-gray-800 text-sm font-medium">[ Create invoice ]</button>
               <Link href="/pay-statements">
-                <button className="w-full rounded border px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 text-sm font-medium">Generate Pay Statement</button>
+              <button className="w-full rounded border px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 text-sm font-medium">Generate Pay Statement</button>
               </Link>
             </div>
           </section>
