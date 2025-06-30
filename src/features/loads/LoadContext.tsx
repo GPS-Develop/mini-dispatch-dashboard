@@ -18,7 +18,7 @@ export type Load = {
   driver_id: string;
   notes?: string;
   broker_name: string;
-  broker_contact: string;
+  broker_contact: number;
   broker_email: string;
   status: "Scheduled" | "In-Transit" | "Delivered";
 };
@@ -53,7 +53,14 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      setLoads(data as Load[]);
+      // Convert broker_contact to number if it comes as string from database
+      const mappedLoads = (data || []).map((load: any) => ({
+        ...load,
+        broker_contact: typeof load.broker_contact === 'string' ? 
+          parseInt(load.broker_contact) || 0 : 
+          load.broker_contact
+      }));
+      setLoads(mappedLoads as Load[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -92,7 +99,14 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (data) {
-        setLoads(prev => [data as Load, ...prev]);
+        // Convert broker_contact to number if needed
+        const mappedLoad = {
+          ...data,
+          broker_contact: typeof data.broker_contact === 'string' ? 
+            parseInt(data.broker_contact) || 0 : 
+            data.broker_contact
+        };
+        setLoads(prev => [mappedLoad as Load, ...prev]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add load');
@@ -127,8 +141,15 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (data) {
+        // Convert broker_contact to number if needed
+        const mappedLoad = {
+          ...data,
+          broker_contact: typeof data.broker_contact === 'string' ? 
+            parseInt(data.broker_contact) || 0 : 
+            data.broker_contact
+        };
         setLoads(prev => prev.map(l => 
-          l.id === id ? data as Load : l
+          l.id === id ? mappedLoad as Load : l
         ));
       }
     } catch (err) {
@@ -216,8 +237,14 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       }
     }
       
-      // Add the new load to the state
-      setLoads(prev => [data as Load, ...prev]);
+      // Add the new load to the state with broker_contact converted to number
+      const mappedLoad = {
+        ...data,
+        broker_contact: typeof data.broker_contact === 'string' ? 
+          parseInt(data.broker_contact) || 0 : 
+          data.broker_contact
+      };
+      setLoads(prev => [mappedLoad as Load, ...prev]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add full load');
     }

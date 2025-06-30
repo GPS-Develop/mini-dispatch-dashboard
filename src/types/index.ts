@@ -25,7 +25,7 @@ export interface EditForm {
   rate: number;
   notes: string;
   broker_name: string;
-  broker_contact: string;
+  broker_contact: number;
   broker_email: string;
   load_type: string;
   temperature: number | null;
@@ -55,11 +55,15 @@ export interface AddLoadForm {
   brokerEmail: string;
 }
 
-export interface DriverForm {
+export interface Driver {
+  id: string;
   name: string;
-  phone: string;
+  phone: number;
   status: "Available" | "On Load";
   payRate: number;
+  scheduledLoads?: string[];
+  inTransitLoads?: string[];
+  driver_status?: "active" | "inactive";
 }
 
 // Pay Statement Types

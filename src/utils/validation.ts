@@ -16,10 +16,43 @@ export const validateEmail = (email: string): boolean => {
   return EMAIL_REGEX.test(email);
 };
 
-// Validate phone number
+// Sanitize phone number - remove all non-numeric characters except leading +
+export const sanitizePhone = (phone: string): string => {
+  // Remove all non-numeric characters except + at the beginning
+  let cleaned = phone.replace(/[^\d+]/g, '');
+  
+  // If it starts with +, keep only the first + and remove any others
+  if (cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned.substring(1).replace(/\+/g, '');
+  }
+  
+  return cleaned;
+};
+
+// Validate phone number (now expects numeric-only input)
 export const validatePhone = (phone: string): boolean => {
-  const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+  const cleanPhone = sanitizePhone(phone);
   return PHONE_REGEX.test(cleanPhone);
+};
+
+// Format phone number for display (US format)
+export const formatPhoneForDisplay = (phone: string | number): string => {
+  const phoneStr = phone.toString();
+  const cleaned = phoneStr.replace(/\D/g, '');
+  
+  // Handle different lengths
+  if (cleaned.length === 10) {
+    // US format: (555) 123-4567
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  } else if (cleaned.length === 11 && cleaned.startsWith('1')) {
+    // US with country code: +1 (555) 123-4567
+    return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+  } else if (cleaned.length > 6) {
+    // International or other: format with spaces every 3 digits
+    return cleaned.replace(/(\d{3})(?=\d)/g, '$1 ');
+  }
+  
+  return cleaned;
 };
 
 // Validate positive number

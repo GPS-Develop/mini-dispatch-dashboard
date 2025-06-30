@@ -7,7 +7,7 @@ import { validateRate } from "../../utils/validation";
 export type Driver = {
   id: string;
   name: string;
-  phone: string;
+  phone: number; // Changed to number to match database bigint field
   status: "Available" | "On Load";
   payRate: number;
   driver_status: "active" | "inactive";
@@ -19,7 +19,7 @@ export type Driver = {
 export type DriverDB = {
   id?: string;
   name: string;
-  phone: string;
+  phone: string; // Keep as string for database operations (will be converted to/from number)
   status: "Available" | "On Load";
   pay_rate: number;
   created_at?: string;
@@ -68,7 +68,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
       const mappedDrivers = (data as DriverDB[]).map((d) => ({
         id: d.id!,
         name: d.name,
-        phone: d.phone,
+        phone: typeof d.phone === 'string' ? parseInt(d.phone) || 0 : d.phone,
         status: d.status,
         payRate: typeof d.pay_rate === 'string' ? parseFloat(d.pay_rate) || 0 : d.pay_rate,
         driver_status: d.driver_status || "active",
@@ -149,7 +149,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
         const newDriver: Driver = {
           id: data.id,
           name: data.name,
-          phone: data.phone,
+          phone: typeof data.phone === 'string' ? parseInt(data.phone) || 0 : data.phone,
           status: data.status,
           payRate: typeof data.pay_rate === 'string' ? parseFloat(data.pay_rate) || 0 : data.pay_rate,
           driver_status: data.driver_status || "active",
@@ -195,7 +195,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
             ? {
                 ...d,
                 name: data.name,
-                phone: data.phone,
+                phone: typeof data.phone === 'string' ? parseInt(data.phone) || 0 : data.phone,
                 status: data.status,
                 payRate: typeof data.pay_rate === 'string' ? parseFloat(data.pay_rate) || 0 : data.pay_rate,
                 driver_status: data.driver_status || "active",

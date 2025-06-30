@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useDrivers, Driver } from "./DriverContext";
 import Button from '../../components/Button/Button';
+import { sanitizePhone, formatPhoneForDisplay } from '../../utils/validation';
 
 type DriverForm = {
   name: string;
@@ -34,7 +35,7 @@ export default function DriversPage() {
   function openEdit(driver: Driver) {
     setForm({
       name: driver.name,
-      phone: driver.phone,
+      phone: driver.phone.toString(),
       status: driver.status,
       payRate: driver.payRate.toString(),
     });
@@ -57,6 +58,13 @@ export default function DriversPage() {
       return;
     }
     
+    // Sanitize and validate phone number
+    const sanitizedPhone = sanitizePhone(form.phone);
+    if (!sanitizedPhone || sanitizedPhone.length < 10) {
+      setError("Please enter a valid phone number (at least 10 digits).");
+      return;
+    }
+    
     // Validate pay rate is a positive number
     const payRateNum = parseFloat(form.payRate);
     if (isNaN(payRateNum) || payRateNum <= 0) {
@@ -66,7 +74,7 @@ export default function DriversPage() {
     
     const driverData = {
       name: form.name,
-      phone: form.phone,
+      phone: sanitizedPhone,
       status: form.status,
       pay_rate: parseFloat(form.payRate) || 0,
     };
@@ -151,7 +159,7 @@ export default function DriversPage() {
             {drivers.map((d) => (
               <tr key={d.id} className="border-t border-gray-200 bg-white text-gray-900">
                 <td className="p-2">{d.name}</td>
-                <td className="p-2">{d.phone}</td>
+                <td className="p-2">{formatPhoneForDisplay(d.phone)}</td>
                 <td className="p-2">
                   <span className={
                     d.status === "Available"
@@ -202,7 +210,15 @@ export default function DriversPage() {
               </div>
               <div>
                 <label className="block font-medium mb-1">Phone *</label>
-                <input name="phone" value={form.phone} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+                <input 
+                  name="phone" 
+                  type="tel"
+                  value={form.phone} 
+                  onChange={handleChange} 
+                  className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+                  placeholder="(555) 123-4567"
+                />
+                <div className="text-xs text-gray-500 mt-1">Enter phone number (formatting will be removed)</div>
               </div>
               <div>
                 <label className="block font-medium mb-1">Status *</label>

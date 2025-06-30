@@ -4,6 +4,7 @@ import { useDrivers } from "../../features/drivers/DriverContext";
 import { useLoads } from "../../features/loads/LoadContext";
 import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
+import { sanitizePhone } from '../../utils/validation';
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
@@ -78,36 +79,15 @@ export default function AddLoadPage() {
 
   function validate() {
     const newErrors: any = {};
-    if (!form.referenceId || !/^[0-9]+$/.test(form.referenceId)) newErrors.referenceId = "Reference ID must be a number";
-    form.pickups.forEach((p, i) => {
-      if (!p.address) newErrors[`pickupAddress${i}`] = "Required";
-      if (!p.state) newErrors[`pickupState${i}`] = "Required";
-      if (!p.datetime || isNaN(Date.parse(p.datetime))) newErrors[`pickupDatetime${i}`] = "Valid date required";
-    });
-    form.deliveries.forEach((d, i) => {
-      if (!d.address) newErrors[`deliveryAddress${i}`] = "Required";
-      if (!d.state) newErrors[`deliveryState${i}`] = "Required";
-      if (!d.datetime || isNaN(Date.parse(d.datetime))) newErrors[`deliveryDatetime${i}`] = "Valid date required";
-    });
+    if (!form.referenceId) newErrors.referenceId = "Required";
+    if (form.pickups.length === 0) newErrors.pickups = "At least one pickup required";
+    if (form.deliveries.length === 0) newErrors.deliveries = "At least one delivery required";
     if (!form.loadType) newErrors.loadType = "Required";
-    
-    // Enhanced temperature validation for reefer loads
-    if (form.loadType === "Reefer") {
-      if (form.temperature === "") {
-        newErrors.temperature = "Temperature is required for reefer loads";
-      } else {
-        const temp = parseFloat(form.temperature);
-        if (isNaN(temp)) {
-          newErrors.temperature = "Temperature must be a valid number";
-        } else if (temp < -100 || temp > 200) {
-          newErrors.temperature = "Temperature must be between -100°F and 200°F";
-        }
-      }
+    if (form.loadType === "Reefer" && (!form.temperature || isNaN(parseFloat(form.temperature)))) {
+      newErrors.temperature = "Temperature is required for reefer loads";
     }
-    
-    // Enhanced rate validation
-    if (form.rate === "") {
-      newErrors.rate = "Rate is required";
+    if (!form.rate) {
+      newErrors.rate = "Required";
     } else {
       const rate = parseFloat(form.rate);
       if (isNaN(rate)) {
@@ -118,7 +98,17 @@ export default function AddLoadPage() {
     }
     if (!form.driver) newErrors.driver = "Required";
     if (!form.brokerName) newErrors.brokerName = "Required";
-    if (!form.brokerContact || !/^[0-9]{10}$/.test(form.brokerContact)) newErrors.brokerContact = "Broker contact must be a 10-digit phone number";
+    
+    // Updated broker contact validation
+    if (!form.brokerContact) {
+      newErrors.brokerContact = "Broker contact is required";
+    } else {
+      const sanitizedPhone = sanitizePhone(form.brokerContact);
+      if (!sanitizedPhone || sanitizedPhone.length < 10) {
+        newErrors.brokerContact = "Broker contact must be a valid phone number (at least 10 digits)";
+      }
+    }
+    
     if (!form.brokerEmail || !/^[^@]+@[^@]+\.[^@]+$/.test(form.brokerEmail)) newErrors.brokerEmail = "Valid email required";
     return newErrors;
   }
@@ -138,7 +128,7 @@ export default function AddLoadPage() {
         driver_id: driverId,
         notes: form.notes,
         broker_name: form.brokerName,
-        broker_contact: form.brokerContact,
+        broker_contact: parseInt(sanitizePhone(form.brokerContact)) || 0, // Sanitize and convert to number
         broker_email: form.brokerEmail,
         status: "Scheduled",
       };
@@ -337,7 +327,15 @@ export default function AddLoadPage() {
           </div>
           <div>
             <label className="block font-medium mb-1">Broker Contact *</label>
-            <input name="brokerContact" value={form.brokerContact} onChange={handleChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+            <input 
+              name="brokerContact" 
+              type="tel"
+              value={form.brokerContact} 
+              onChange={handleChange} 
+              className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+              placeholder="(555) 123-4567"
+            />
+            <div className="text-xs text-gray-500 mt-1">Enter phone number (formatting will be removed)</div>
             {errors.brokerContact && <div className="text-red-500 text-sm">{errors.brokerContact}</div>}
           </div>
           <div>

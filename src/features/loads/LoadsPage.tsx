@@ -5,6 +5,7 @@ import { useDrivers } from "../../features/drivers/DriverContext";
 import { supabase } from "../../utils/supabaseClient";
 import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
+import { formatPhoneForDisplay, sanitizePhone } from '../../utils/validation';
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
 const US_STATES = [
@@ -141,18 +142,30 @@ export default function LoadsPage() {
     setIsSubmitting(true);
     setError("");
     
+    // Validate broker contact before submission
+    const brokerContactStr = typeof editForm.broker_contact === 'number' ? 
+      editForm.broker_contact.toString() : 
+      editForm.broker_contact || '';
+    const sanitizedBrokerContact = sanitizePhone(brokerContactStr);
+    if (!sanitizedBrokerContact || sanitizedBrokerContact.length < 10) {
+      setError("Broker contact must be a valid phone number");
+      setIsSubmitting(false);
+      return;
+    }
+    
     try {
     // Update main load
-    await updateLoad(selected.id, {
+    const updatedData = {
       driver_id: editForm.driver_id,
-      rate: typeof editForm.rate === 'string' ? parseFloat(editForm.rate) || 0 : editForm.rate,
+      rate: editForm.rate,
       notes: editForm.notes,
       broker_name: editForm.broker_name,
-      broker_contact: editForm.broker_contact,
+      broker_contact: parseInt(sanitizedBrokerContact) || 0,
       broker_email: editForm.broker_email,
       load_type: editForm.load_type,
       temperature: editForm.temperature === "" || editForm.temperature == null ? null : parseFloat(editForm.temperature.toString()),
-    });
+    };
+    await updateLoad(selected.id, updatedData);
       
     // Update pickups
     for (const p of editForm.pickups) {
@@ -310,7 +323,7 @@ export default function LoadsPage() {
                   <div><span className="font-semibold">Status:</span> {selected.status}</div>
                 </div>
                 <div className="mb-2 text-sm text-gray-700">
-                  <div><span className="font-semibold">Broker:</span> {selected.broker_name}, {selected.broker_contact}, {selected.broker_email}</div>
+                  <div><span className="font-semibold">Broker:</span> {selected.broker_name}, {formatPhoneForDisplay(selected.broker_contact)}, {selected.broker_email}</div>
                   <div><span className="font-semibold">Notes:</span> {selected.notes || <span className="text-gray-400">None</span>}</div>
                 </div>
                 <div className="mb-2 text-sm text-gray-700 flex gap-4">
@@ -475,7 +488,15 @@ export default function LoadsPage() {
                 </div>
                 <div>
                   <label className="block font-medium mb-1">Broker Contact</label>
-                  <input name="broker_contact" value={editForm.broker_contact} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+                  <input 
+                    name="broker_contact" 
+                    type="tel"
+                    value={editForm.broker_contact?.toString() || ""} 
+                    onChange={handleEditChange} 
+                    className="w-full border rounded px-3 py-2 bg-white text-gray-900"
+                    placeholder="(555) 123-4567"
+                  />
+                  <div className="text-xs text-gray-500 mt-1">Enter phone number (formatting will be removed)</div>
                 </div>
                 <div>
                   <label className="block font-medium mb-1">Broker Email</label>
