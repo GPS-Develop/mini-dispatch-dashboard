@@ -62,6 +62,49 @@ export interface DriverForm {
   payRate: string;
 }
 
+// Pay Statement Types
+export interface PayStatement {
+  id: string;
+  driver_id: string;
+  period_start: string;
+  period_end: string;
+  gross_pay: number;
+  additions: Record<string, number>;
+  deductions: Record<string, number>;
+  notes?: string;
+  created_at: string;
+}
+
+export interface PayStatementDB {
+  id?: string;
+  driver_id: string;
+  period_start: string;
+  period_end: string;
+  gross_pay: number;
+  additions: Record<string, number>;
+  deductions: Record<string, number>;
+  notes?: string;
+  created_at?: string;
+}
+
+export interface PayStatementForm {
+  driver_id: string;
+  period_start: string;
+  period_end: string;
+  additions: Record<string, number>;
+  deductions: Record<string, number>;
+  notes: string;
+}
+
+export interface TripSummary {
+  trip_number: string;
+  picked_date: string;
+  from_city: string;
+  drop_date: string;
+  to_city: string;
+  amount: number;
+}
+
 // Event handler types
 export type InputChangeEvent = React.ChangeEvent<HTMLInputElement>;
 export type SelectChangeEvent = React.ChangeEvent<HTMLSelectElement>;

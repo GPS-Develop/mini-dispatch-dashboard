@@ -56,9 +56,9 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       let query = supabase
-        .from("drivers")
-        .select("*")
-        .order("created_at", { ascending: false });
+      .from("drivers")
+      .select("*")
+      .order("created_at", { ascending: false });
       const { data, error } = await query;
       if (error) {
         setError(error.message);
@@ -86,7 +86,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setLoading(false);
+    setLoading(false);
     }
   }
 
@@ -98,23 +98,23 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Only update driver status if both contexts have finished their initial loading
     if (!loadsLoading && hasInitiallyLoaded && drivers.length > 0) {
-      setDrivers((prevDrivers) =>
+    setDrivers((prevDrivers) =>
         sortDrivers(prevDrivers.map((driver) => {
-          const scheduledLoads = loads
-            .filter((l) => l.driver_id === driver.id && l.status === "Scheduled")
-            .map((l) => l.reference_id);
-          const inTransitLoads = loads
-            .filter((l) => l.driver_id === driver.id && l.status === "In-Transit")
-            .map((l) => l.reference_id);
-          const status = (scheduledLoads.length > 0 || inTransitLoads.length > 0) ? "On Load" : "Available";
-          return {
-            ...driver,
-            status,
-            scheduledLoads,
-            inTransitLoads,
-          };
+        const scheduledLoads = loads
+          .filter((l) => l.driver_id === driver.id && l.status === "Scheduled")
+          .map((l) => l.reference_id);
+        const inTransitLoads = loads
+          .filter((l) => l.driver_id === driver.id && l.status === "In-Transit")
+          .map((l) => l.reference_id);
+        const status = (scheduledLoads.length > 0 || inTransitLoads.length > 0) ? "On Load" : "Available";
+        return {
+          ...driver,
+          status,
+          scheduledLoads,
+          inTransitLoads,
+        };
         }))
-      );
+    );
     }
   }, [loads, loadsLoading, hasInitiallyLoaded]);
 

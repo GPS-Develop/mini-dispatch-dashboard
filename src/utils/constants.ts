@@ -20,12 +20,11 @@ export const LOAD_TYPES = ["Reefer", "Dry Van", "Flatbed"] as const;
 
 // Navigation items
 export const NAV_ITEMS = [
-  { name: "Dashboard", href: "/" },
-  { name: "+ Add Load", href: "/add-load" },
-  { name: "Drivers", href: "/drivers" },
-  { name: "Loads", href: "/loads" },
-  { name: "Billing", href: "/billing" },
-  { name: "Pay Statements", href: "/pay-statements" },
+  { href: "/", label: "Dashboard" },
+  { href: "/drivers", label: "Drivers" },
+  { href: "/loads", label: "Loads" },
+  { href: "/add-load", label: "Add Load" },
+  { href: "/pay-statements", label: "Pay Statements" },
 ] as const;
 
 // Error messages

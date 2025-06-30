@@ -124,7 +124,7 @@ export default function DriversPage() {
       )}
       
       {!loading && drivers.length > 0 && (
-        <div className="overflow-x-auto">
+      <div className="overflow-x-auto">
         <table className="w-full text-left border border-gray-200 bg-white">
           <thead>
             <tr className="bg-gray-100 text-gray-900 font-semibold">
@@ -167,7 +167,7 @@ export default function DriversPage() {
                 <td className="p-2 flex gap-2">
                   {d.driver_status === "active" && (
                     <>
-                      <Button variant="secondary" onClick={() => openEdit(d)} className="text-blue-600 hover:underline">Edit</Button>
+                  <Button variant="secondary" onClick={() => openEdit(d)} className="text-blue-600 hover:underline">Edit</Button>
                       <Button variant="danger" onClick={() => handleDelete(d.id)} className="text-red-600 hover:underline">Deactivate</Button>
                     </>
                   )}
