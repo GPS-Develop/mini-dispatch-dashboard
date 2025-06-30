@@ -360,14 +360,14 @@ export default function LoadsPage() {
                 <div className="flex flex-col gap-2 mt-4">
                   <Button
                     variant="secondary"
-                    className="w-full bg-gray-200 text-gray-900 rounded px-4 py-2 font-semibold hover:bg-gray-300 transition"
+                    className="w-full rounded px-4 py-2 font-semibold transition"
                     onClick={() => setEditMode(true)}
                   >
                     Edit
                   </Button>
                   <Button
-                    variant="primary"
-                    className="w-full bg-purple-600 text-white rounded px-4 py-2 font-semibold hover:bg-purple-700 transition"
+                    variant="teal"
+                    className="w-full rounded px-4 py-2 font-semibold transition"
                     onClick={() => setShowUploadModal(true)}
                   >
                     📄 Upload Documents
@@ -375,7 +375,7 @@ export default function LoadsPage() {
                   {selected.status !== "Delivered" && (
                     <Button
                       variant="success"
-                      className="w-full bg-green-600 text-white rounded px-4 py-2 font-semibold hover:bg-green-700 transition"
+                      className="w-full rounded px-4 py-2 font-semibold transition"
                       onClick={() => setStatus(selected, "Delivered")}
                     >
                       Mark as Delivered
@@ -384,7 +384,7 @@ export default function LoadsPage() {
                   {selected.status !== "In-Transit" && (
                     <Button
                       variant="warning"
-                      className="w-full bg-yellow-500 text-white rounded px-4 py-2 font-semibold hover:bg-yellow-600 transition"
+                      className="w-full rounded px-4 py-2 font-semibold transition"
                       onClick={() => setStatus(selected, "In-Transit")}
                     >
                       Set as In-Transit
@@ -392,8 +392,8 @@ export default function LoadsPage() {
                   )}
                   {selected.status !== "Scheduled" && (
                     <Button
-                      variant="primary"
-                      className="w-full bg-blue-600 text-white rounded px-4 py-2 font-semibold hover:bg-blue-700 transition"
+                      variant="indigo"
+                      className="w-full rounded px-4 py-2 font-semibold transition"
                       onClick={() => setStatus(selected, "Scheduled")}
                     >
                       Set as Scheduled
@@ -401,7 +401,7 @@ export default function LoadsPage() {
                   )}
                   <Button
                     variant="danger"
-                    className="w-full bg-red-600 text-white rounded px-4 py-2 font-semibold hover:bg-red-700 transition mt-4 border-t pt-4"
+                    className="w-full rounded px-4 py-2 font-semibold transition mt-4 border-t pt-4"
                     onClick={() => handleDeleteClick(selected)}
                   >
                     🗑️ Delete Load

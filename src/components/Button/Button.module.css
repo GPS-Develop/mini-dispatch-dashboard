@@ -50,4 +50,20 @@
 }
 .danger:hover:not(:disabled) {
   background: #b91c1c;
+}
+
+.teal {
+  background: #0d9488;
+  color: #fff;
+}
+.teal:hover:not(:disabled) {
+  background: #0f766e;
+}
+
+.indigo {
+  background: #4f46e5;
+  color: #fff;
+}
+.indigo:hover:not(:disabled) {
+  background: #4338ca;
 } 

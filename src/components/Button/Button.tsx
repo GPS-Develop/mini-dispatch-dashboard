@@ -3,7 +3,7 @@ import styles from './Button.module.css';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'teal' | 'indigo';
 }
 
 const Button: React.FC<ButtonProps> = ({ children, className = '', variant = 'primary', ...props }) => {
