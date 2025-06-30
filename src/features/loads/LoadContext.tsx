@@ -160,6 +160,8 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
   async function deleteLoad(id: string) {
     setError(null);
     try {
+      // With CASCADE delete, we only need to delete the load
+      // All related pickups, deliveries, and documents will be automatically deleted
       const { error } = await supabase
         .from("loads")
         .delete()

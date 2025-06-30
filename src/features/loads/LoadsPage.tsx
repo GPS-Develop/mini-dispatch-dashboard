@@ -14,7 +14,7 @@ const US_STATES = [
 ];
 
 export default function LoadsPage() {
-  const { loads, updateLoad, error: loadError, loading: loadLoading, fetchLoads } = useLoads();
+  const { loads, updateLoad, deleteLoad, error: loadError, loading: loadLoading, fetchLoads } = useLoads();
   const { drivers, updateDriver } = useDrivers();
   const [statusFilter, setStatusFilter] = useState("All");
   const [driverFilter, setDriverFilter] = useState("");
@@ -27,6 +27,8 @@ export default function LoadsPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [loadToDelete, setLoadToDelete] = useState<Load | null>(null);
   const router = useRouter();
 
   const filteredLoads = useMemo(() => {
@@ -112,6 +114,30 @@ export default function LoadsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update load status');
     }
+  }
+
+  function handleDeleteClick(load: Load) {
+    setLoadToDelete(load);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete() {
+    if (!loadToDelete) return;
+    
+    setError("");
+    try {
+      await deleteLoad(loadToDelete.id);
+      setSelected(null);
+      setShowDeleteConfirm(false);
+      setLoadToDelete(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete load');
+    }
+  }
+
+  function cancelDelete() {
+    setShowDeleteConfirm(false);
+    setLoadToDelete(null);
   }
 
   function handlePickupChange(idx: number, e: any) {
@@ -278,7 +304,7 @@ export default function LoadsPage() {
                 <span className="font-semibold">Driver:</span> {getDriverName(load.driver_id)}
               </div>
               <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Rate:</span> ${load.rate.toFixed(2)}
+                <span className="font-semibold">Rate:</span> ${load.rate.toLocaleString()}
               </div>
               <div className="text-sm text-gray-500 mb-1">
                 <span className="font-semibold">Status:</span> {load.status}
@@ -373,6 +399,13 @@ export default function LoadsPage() {
                       Set as Scheduled
                     </Button>
                   )}
+                  <Button
+                    variant="danger"
+                    className="w-full bg-red-600 text-white rounded px-4 py-2 font-semibold hover:bg-red-700 transition mt-4 border-t pt-4"
+                    onClick={() => handleDeleteClick(selected)}
+                  >
+                    🗑️ Delete Load
+                  </Button>
                 </div>
               </>
             ) : editForm ? (
@@ -460,11 +493,11 @@ export default function LoadsPage() {
                     name="rate" 
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={editForm.rate || ""} 
                     onChange={handleEditChange} 
                     className="w-full border rounded px-3 py-2 bg-white text-gray-900"
-                    placeholder="0.00"
+                    placeholder="2500"
                   />
                 </div>
                 <div>
@@ -532,6 +565,37 @@ export default function LoadsPage() {
           loadReferenceId={selected.reference_id}
           onClose={() => setShowUploadModal(false)}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && loadToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold text-red-600 mb-4">⚠️ Confirm Delete</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete <strong>Load #{loadToDelete.reference_id}</strong>?
+            </p>
+            <p className="text-sm text-gray-600 mb-6">
+              This action cannot be undone. All associated pickups, deliveries, and documents will also be deleted.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="secondary"
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+                onClick={cancelDelete}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-semibold"
+                onClick={confirmDelete}
+              >
+                Delete Load
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

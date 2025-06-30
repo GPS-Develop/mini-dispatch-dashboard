@@ -24,6 +24,8 @@ export default function DriversPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<DriverForm>(emptyDriver);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
 
   function openAdd() {
     setForm(emptyDriver);
@@ -94,21 +96,36 @@ export default function DriversPage() {
     }
   }
   
-  async function handleDelete(id: string) {
-    if (window.confirm("Delete this driver?")) {
-      try {
-        await deleteDriver(id);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to delete driver';
-        setError(errorMessage);
-        
-        // If it's a foreign key constraint error, provide more helpful guidance
-        if (errorMessage.includes("currently on load")) {
-          // The error message is already user-friendly from the context
-          // Just make sure it's displayed prominently
-        }
+  function handleDeleteClick(driver: Driver) {
+    setDriverToDelete(driver);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete() {
+    if (!driverToDelete) return;
+    
+    try {
+      await deleteDriver(driverToDelete.id);
+      setShowDeleteConfirm(false);
+      setDriverToDelete(null);
+      setError("");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to deactivate driver';
+      setError(errorMessage);
+      setShowDeleteConfirm(false);
+      setDriverToDelete(null);
+      
+      // If it's a foreign key constraint error, provide more helpful guidance
+      if (errorMessage.includes("currently on load")) {
+        // The error message is already user-friendly from the context
+        // Just make sure it's displayed prominently
       }
     }
+  }
+
+  function cancelDelete() {
+    setShowDeleteConfirm(false);
+    setDriverToDelete(null);
   }
 
   async function handleReactivate(id: string) {
@@ -178,14 +195,14 @@ export default function DriversPage() {
                     {d.driver_status.charAt(0).toUpperCase() + d.driver_status.slice(1)}
                   </span>
                 </td>
-                <td className="p-2">${d.payRate.toFixed(2)}</td>
+                <td className="p-2">${d.payRate.toLocaleString()}</td>
                 <td className="p-2">{d.scheduledLoads && d.scheduledLoads.length > 0 ? d.scheduledLoads.map(l => `#${l}`).join(", ") : <span className="text-gray-400">-</span>}</td>
                 <td className="p-2">{d.inTransitLoads && d.inTransitLoads.length > 0 ? d.inTransitLoads.map(l => `#${l}`).join(", ") : <span className="text-gray-400">-</span>}</td>
                 <td className="p-2 flex gap-2">
                   {d.driver_status === "active" && (
                     <>
                   <Button variant="secondary" onClick={() => openEdit(d)} className="text-blue-600 hover:underline">Edit</Button>
-                      <Button variant="danger" onClick={() => handleDelete(d.id)} className="text-red-600 hover:underline">Deactivate</Button>
+                      <Button variant="danger" onClick={() => handleDeleteClick(d)} className="text-red-600 hover:underline">Deactivate</Button>
                     </>
                   )}
                   {d.driver_status === "inactive" && (
@@ -233,13 +250,13 @@ export default function DriversPage() {
                   name="payRate" 
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="1"
                   value={form.payRate} 
                   onChange={handleChange} 
                   className="w-full border rounded px-3 py-2 bg-white text-gray-900"
-                  placeholder="0.00"
+                  placeholder="500"
                 />
-                <div className="text-xs text-gray-500 mt-1">Enter pay rate per load in USD</div>
+                <div className="text-xs text-gray-500 mt-1">Enter pay rate per load in USD as whole number</div>
               </div>
               <div>
                 <label className="block font-medium mb-1">Scheduled</label>
@@ -255,6 +272,37 @@ export default function DriversPage() {
                 <Button type="submit" variant="primary" className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700" disabled={loading}>{editId ? "Save" : "Add"}</Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && driverToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold text-red-600 mb-4">⚠️ Confirm Deactivation</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to deactivate <strong>{driverToDelete.name}</strong>?
+            </p>
+            <p className="text-sm text-gray-600 mb-6">
+              This will set the driver status to inactive. The driver can be reactivated later if needed.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="secondary"
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
+                onClick={cancelDelete}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-semibold"
+                onClick={confirmDelete}
+              >
+                Deactivate Driver
+              </Button>
+            </div>
           </div>
         </div>
       )}

@@ -72,7 +72,7 @@ export const validateRequired = (value: string): boolean => {
   return value.trim().length > 0;
 };
 
-// Validate and sanitize rate input (removes $ and validates)
+// Validate and sanitize rate input (removes $ and validates - integers only)
 export const validateRate = (rate: string | number): { isValid: boolean; sanitizedValue: number; error?: string } => {
   const rateStr = rate.toString();
   
@@ -97,10 +97,13 @@ export const validateRate = (rate: string | number): { isValid: boolean; sanitiz
     return { isValid: false, sanitizedValue: 0, error: 'Rate must be a finite number' };
   }
   
-  // Limit to 2 decimal places
-  const rounded = Math.round(num * 100) / 100;
+  // Check if it's a whole number (no decimals allowed)
+  if (num !== Math.floor(num)) {
+    return { isValid: false, sanitizedValue: 0, error: 'Rate must be a whole number (no decimals)' };
+  }
   
-  return { isValid: true, sanitizedValue: rounded };
+  // Return as integer
+  return { isValid: true, sanitizedValue: Math.floor(num) };
 };
 
 // Validate temperature (allows positive and negative numbers)

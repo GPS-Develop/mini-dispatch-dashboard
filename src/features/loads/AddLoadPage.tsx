@@ -287,13 +287,13 @@ export default function AddLoadPage() {
             name="rate" 
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             value={form.rate} 
             onChange={handleChange} 
             className="w-full border rounded px-3 py-2 bg-white text-gray-900"
-            placeholder="0.00"
+            placeholder="2500"
           />
-          <div className="text-xs text-gray-500 mt-1">Enter rate in USD (e.g., 2500.00)</div>
+          <div className="text-xs text-gray-500 mt-1">Enter rate in USD as whole number (e.g., 2500)</div>
           {errors.rate && <div className="text-red-500 text-sm">{errors.rate}</div>}
         </div>
         <div>
