@@ -66,8 +66,8 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
           reference_id,
           rate,
           status,
-          pickups!inner(datetime, address, state),
-          deliveries!inner(datetime, address, state)
+          pickups!inner(datetime, address, state, city),
+          deliveries!inner(datetime, address, state, city)
         `)
         .eq("driver_id", driverId)
         .eq("status", "Delivered");
@@ -92,16 +92,35 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
         const rate = parseFloat(load.rate) || 0;
         grossPay += rate;
 
-        // Extract city from address (take everything before the first comma)
-        const fromCity = load.pickups[0]?.address?.split(',')[0] || load.pickups[0]?.address || '';
-        const toCity = load.deliveries[0]?.address?.split(',')[0] || load.deliveries[0]?.address || '';
+        // Get all pickup locations with numbering
+        const pickupLocations = load.pickups.map((pickup: any, index: number) => {
+          const address = pickup.address || '';
+          const state = pickup.state || '';
+          return `${index + 1}. ${address}, ${state}`;
+        }).join('\n');
+
+        // Get all delivery locations with numbering
+        const deliveryLocations = load.deliveries.map((delivery: any, index: number) => {
+          const address = delivery.address || '';
+          const state = delivery.state || '';
+          return `${index + 1}. ${address}, ${state}`;
+        }).join('\n');
+
+        // Use earliest pickup date and latest delivery date
+        const earliestPickup = load.pickups.reduce((earliest: any, pickup: any) => {
+          return new Date(pickup.datetime) < new Date(earliest.datetime) ? pickup : earliest;
+        });
+
+        const latestDelivery = load.deliveries.reduce((latest: any, delivery: any) => {
+          return new Date(delivery.datetime) > new Date(latest.datetime) ? delivery : latest;
+        });
 
         trips.push({
           trip_number: load.reference_id,
-          picked_date: load.pickups[0]?.datetime?.split('T')[0] || '',
-          from_city: fromCity,
-          drop_date: load.deliveries[0]?.datetime?.split('T')[0] || '',
-          to_city: toCity,
+          picked_date: earliestPickup?.datetime?.split('T')[0] || '',
+          from_city: pickupLocations,
+          drop_date: latestDelivery?.datetime?.split('T')[0] || '',
+          to_city: deliveryLocations,
           amount: rate,
         });
       });

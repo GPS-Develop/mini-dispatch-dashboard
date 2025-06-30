@@ -244,9 +244,9 @@ export default function CreatePayStatementPage() {
                       <tr className="bg-gray-100">
                         <th className="p-2 text-left">Trip#</th>
                         <th className="p-2 text-left">Picked</th>
-                        <th className="p-2 text-left">From City</th>
+                        <th className="p-2 text-left">From Location(s)</th>
                         <th className="p-2 text-left">Drop</th>
-                        <th className="p-2 text-left">To City</th>
+                        <th className="p-2 text-left">To Location(s)</th>
                         <th className="p-2 text-right">Amount</th>
                       </tr>
                     </thead>
@@ -255,9 +255,13 @@ export default function CreatePayStatementPage() {
                         <tr key={index} className="border-t">
                           <td className="p-2">{trip.trip_number}</td>
                           <td className="p-2">{trip.picked_date}</td>
-                          <td className="p-2">{trip.from_city}</td>
+                          <td className="p-2 max-w-xs">
+                            <div className="whitespace-pre-line text-sm">{trip.from_city}</div>
+                          </td>
                           <td className="p-2">{trip.drop_date}</td>
-                          <td className="p-2">{trip.to_city}</td>
+                          <td className="p-2 max-w-xs">
+                            <div className="whitespace-pre-line text-sm">{trip.to_city}</div>
+                          </td>
                           <td className="p-2 text-right font-semibold">{formatCurrency(trip.amount)}</td>
                         </tr>
                       ))}
