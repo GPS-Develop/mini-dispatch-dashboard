@@ -25,7 +25,6 @@ export const NAV_ITEMS = [
   { href: "/loads", label: "Loads" },
   { href: "/add-load", label: "Add Load" },
   { href: "/pay-statements", label: "Pay Statements" },
-  { href: "/driver", label: "Driver Mobile" },
 ] as const;
 
 // Error messages

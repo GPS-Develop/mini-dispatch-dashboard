@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isCheckingDriverStatus, setIsCheckingDriverStatus] = useState(false);
 
   useEffect(() => {
     // Check for invite flow in URL hash and process the session
@@ -73,31 +74,39 @@ export default function LoginPage() {
     // Redirect to dashboard if already authenticated and not in invite flow
     if (user && !isInviteFlow && !isCheckingSession) {
       console.log('User authenticated, checking role...');
+      setIsCheckingDriverStatus(true);
+      
       // Check if this is a driver by looking for their driver record
       const checkUserRole = async () => {
-        const { data: driverData, error: driverError } = await supabase
-          .from('drivers')
-          .select('*')
-          .eq('auth_user_id', user.id)
-          .single();
+        try {
+          const { data: driverData, error: driverError } = await supabase
+            .from('drivers')
+            .select('*')
+            .eq('auth_user_id', user.id)
+            .single();
 
-        console.log('Driver lookup for redirect:', { driverData, driverError });
+          console.log('Driver lookup for redirect:', { driverData, driverError });
 
-        // If driver exists but is inactive, show error and sign out
-        if (driverData && driverData.driver_status === 'inactive') {
-          console.log('Driver is inactive, showing error message');
-          await supabase.auth.signOut();
-          setError('Your driver account has been deactivated. Please contact dispatch for assistance.');
-          return;
-        }
+          // If driver exists but is inactive, show error and sign out
+          if (driverData && driverData.driver_status === 'inactive') {
+            console.log('Driver is inactive, showing error message');
+            await supabase.auth.signOut();
+            setError('Your driver account has been deactivated. Please contact dispatch for assistance.');
+            setIsCheckingDriverStatus(false);
+            return;
+          }
 
-        // Check if user is an active driver
-        if (driverData && driverData.driver_status === 'active') {
-          console.log('Redirecting to /driver');
-          window.location.href = '/driver';
-        } else if (!driverData || driverError) {
-          console.log('Redirecting to admin dashboard');
-          window.location.href = '/';
+          // Check if user is an active driver
+          if (driverData && driverData.driver_status === 'active') {
+            console.log('Redirecting to /driver');
+            window.location.href = '/driver';
+          } else if (!driverData || driverError) {
+            console.log('Redirecting to admin dashboard');
+            window.location.href = '/';
+          }
+        } catch (error) {
+          console.error('Error checking user role:', error);
+          setIsCheckingDriverStatus(false);
         }
       };
 
@@ -112,30 +121,43 @@ export default function LoginPage() {
       
       if (event === 'SIGNED_IN' && session?.user && !isInviteFlow && !isCheckingSession) {
         console.log('Auth state change - SIGNED_IN, checking role...');
-        const { data: driverData, error: driverError } = await supabase
-          .from('drivers')
-          .select('*')
-          .eq('auth_user_id', session.user.id)
-          .single();
+        setIsCheckingDriverStatus(true);
+        
+        try {
+          const { data: driverData, error: driverError } = await supabase
+            .from('drivers')
+            .select('*')
+            .eq('auth_user_id', session.user.id)
+            .single();
 
-        console.log('Auth state change - Driver lookup:', { driverData, driverError });
+          console.log('Auth state change - Driver lookup:', { driverData, driverError });
 
-        // If driver exists but is inactive, show error and sign out
-        if (driverData && driverData.driver_status === 'inactive') {
-          console.log('Auth state change - Driver is inactive, showing error message');
-          await supabase.auth.signOut();
-          setError('Your driver account has been deactivated. Please contact dispatch for assistance.');
-          return;
+          // If driver exists but is inactive, show error and sign out
+          if (driverData && driverData.driver_status === 'inactive') {
+            console.log('Auth state change - Driver is inactive, showing error message');
+            await supabase.auth.signOut();
+            setError('Your driver account has been deactivated. Please contact dispatch for assistance.');
+            setIsCheckingDriverStatus(false);
+            return;
+          }
+
+          // Check if user is an active driver
+          if (driverData && driverData.driver_status === 'active') {
+            console.log('Auth state change - Redirecting to /driver');
+            window.location.href = '/driver';
+          } else if (!driverData || driverError) {
+            console.log('Auth state change - Redirecting to admin dashboard');
+            window.location.href = '/';
+          }
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+          setIsCheckingDriverStatus(false);
         }
+      }
 
-        // Check if user is an active driver
-        if (driverData && driverData.driver_status === 'active') {
-          console.log('Auth state change - Redirecting to /driver');
-          window.location.href = '/driver';
-        } else if (!driverData || driverError) {
-          console.log('Auth state change - Redirecting to admin dashboard');
-          window.location.href = '/';
-        }
+      // Reset checking status when signed out
+      if (event === 'SIGNED_OUT') {
+        setIsCheckingDriverStatus(false);
       }
     });
 
@@ -179,6 +201,8 @@ export default function LoginPage() {
       // Success - redirect based on user role
       if (data.user) {
         console.log('Password updated successfully, checking role...');
+        setIsCheckingDriverStatus(true);
+        
         const { data: driverData, error: driverError } = await supabase
           .from('drivers')
           .select('*')
@@ -192,6 +216,7 @@ export default function LoginPage() {
           console.log('Driver is inactive after password setup, showing error message');
           await supabase.auth.signOut();
           setError('Your driver account has been deactivated. Please contact dispatch for assistance.');
+          setIsCheckingDriverStatus(false);
           return;
         }
 
@@ -208,10 +233,30 @@ export default function LoginPage() {
     } catch (err) {
       console.error('Password setup error:', err);
       setError('An unexpected error occurred');
+      setIsCheckingDriverStatus(false);
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while checking driver status
+  if (isCheckingDriverStatus) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <h2 className="mt-4 text-xl font-semibold text-gray-900">
+              Checking account status...
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Please wait while we verify your account.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading while checking session for invite flow
   if (isInviteFlow && isCheckingSession) {

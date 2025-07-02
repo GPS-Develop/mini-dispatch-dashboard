@@ -20,6 +20,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   
   // Immediately determine if this is a driver route
   const isDriverRoute = pathname === '/driver' || pathname?.startsWith('/driver/');
+  const isLoginRoute = pathname?.startsWith('/login');
   
   useEffect(() => {
     const checkUserRole = async () => {
@@ -30,7 +31,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
       }
 
       // Skip driver status check if on login page to prevent redirect loop
-      if (pathname.startsWith('/login')) {
+      if (isLoginRoute) {
         setIsDriver(false);
         setIsChecking(false);
         return;
@@ -80,7 +81,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
     };
 
     checkUserRole();
-  }, [user, pathname, isDriverRoute, supabase, signOut]);
+  }, [user, pathname, isDriverRoute, isLoginRoute, supabase, signOut]);
 
   // Show nothing while checking to prevent any flash
   if (isChecking && user) {
@@ -91,8 +92,8 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
     );
   }
 
-  // For driver routes, render immediately without sidebar
-  if (isDriverRoute) {
+  // For driver routes and login page, render without sidebar
+  if (isDriverRoute || isLoginRoute) {
     return (
       <div className="min-h-screen">
         {children}
