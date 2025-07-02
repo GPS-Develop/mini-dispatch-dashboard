@@ -67,7 +67,7 @@ export default function DriverDashboard() {
         .from('drivers')
         .select('*')
         .eq('auth_user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (driverError || !driverData) {
         setError('Driver profile not found. Please contact your dispatcher to set up your account.');

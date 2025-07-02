@@ -1,5 +1,15 @@
 // Shared types across the application
 
+// User role types
+export type UserRole = 'admin' | 'driver';
+
+export interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+  created_at: string;
+}
+
 export interface Pickup {
   id?: string;
   load_id: string;

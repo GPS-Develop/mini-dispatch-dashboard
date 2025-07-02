@@ -44,11 +44,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         try {
-          const { data: driverData } = await supabase
+          const { data: driverData, error } = await supabase
             .from('drivers')
             .select('driver_status')
             .eq('auth_user_id', session.user.id)
-            .single();
+            .maybeSingle(); // Use maybeSingle() instead of single()
+
+          // If there's an error or no driver record, skip the check
+          if (error) {
+            console.log('Error checking driver status (treating as admin):', error);
+            return;
+          }
 
           // If driver exists but is inactive, log them out
           if (driverData && driverData.driver_status === 'inactive') {

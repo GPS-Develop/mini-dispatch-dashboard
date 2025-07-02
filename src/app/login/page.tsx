@@ -83,9 +83,16 @@ export default function LoginPage() {
             .from('drivers')
             .select('*')
             .eq('auth_user_id', user.id)
-            .single();
+            .maybeSingle();
 
           console.log('Driver lookup for redirect:', { driverData, driverError });
+
+          // Handle case where auth_user_id column doesn't exist yet (migration not run)
+          if (driverError && (driverError.code === 'PGRST116' || driverError.message?.includes('auth_user_id'))) {
+            console.log('Driver table migration not run yet, redirecting to admin dashboard');
+            window.location.href = '/';
+            return;
+          }
 
           // If driver exists but is inactive, show error and sign out
           if (driverData && driverData.driver_status === 'inactive') {
@@ -128,9 +135,16 @@ export default function LoginPage() {
             .from('drivers')
             .select('*')
             .eq('auth_user_id', session.user.id)
-            .single();
+            .maybeSingle();
 
           console.log('Auth state change - Driver lookup:', { driverData, driverError });
+
+          // Handle case where auth_user_id column doesn't exist yet (migration not run)
+          if (driverError && (driverError.code === 'PGRST116' || driverError.message?.includes('auth_user_id'))) {
+            console.log('Auth state change - Driver table migration not run yet, redirecting to admin dashboard');
+            window.location.href = '/';
+            return;
+          }
 
           // If driver exists but is inactive, show error and sign out
           if (driverData && driverData.driver_status === 'inactive') {
@@ -203,13 +217,46 @@ export default function LoginPage() {
         console.log('Password updated successfully, checking role...');
         setIsCheckingDriverStatus(true);
         
+        // Check if this user was invited as an admin (from user metadata)
+        const userMetadata = data.user.user_metadata;
+        const isAdminInvite = userMetadata?.role === 'admin';
+        
+        console.log('User metadata:', userMetadata, 'Is admin invite:', isAdminInvite);
+        
+        // If this was an admin invite, ensure they have admin role in users table
+        if (isAdminInvite) {
+          console.log('Admin invite detected, updating user role...');
+          const { error: roleError } = await supabase
+            .from('users')
+            .upsert({ 
+              id: data.user.id, 
+              email: data.user.email, 
+              role: 'admin' 
+            }, {
+              onConflict: 'id'
+            });
+          
+          if (roleError) {
+            console.error('Error updating admin role:', roleError);
+          } else {
+            console.log('Admin role assigned successfully');
+          }
+        }
+        
         const { data: driverData, error: driverError } = await supabase
           .from('drivers')
           .select('*')
           .eq('auth_user_id', data.user.id)
-          .single();
+          .maybeSingle();
 
         console.log('Driver lookup after password setup:', { driverData, driverError });
+
+        // Handle case where auth_user_id column doesn't exist yet (migration not run)
+        if (driverError && (driverError.code === 'PGRST116' || driverError.message?.includes('auth_user_id'))) {
+          console.log('Driver table migration not run yet, redirecting to admin dashboard');
+          window.location.href = '/';
+          return;
+        }
 
         // If driver exists but is inactive, show error and sign out
         if (driverData && driverData.driver_status === 'inactive') {
@@ -420,12 +467,17 @@ export default function LoginPage() {
             redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/login` : '/login'}
             onlyThirdPartyProviders={false}
             magicLink={false}
-            showLinks={true}
+            showLinks={false}
             view="sign_in"
             socialLayout="horizontal"
           />
           
-          {/* Auth UI will handle sign up/sign in toggle automatically */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-blue-700 text-xs">
+              <strong>Note:</strong> New accounts can only be created by invitation. 
+              Contact your administrator if you need access.
+            </p>
+          </div>
         </div>
       </div>
     </div>

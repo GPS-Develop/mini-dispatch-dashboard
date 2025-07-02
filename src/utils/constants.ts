@@ -25,6 +25,7 @@ export const NAV_ITEMS = [
   { href: "/loads", label: "Loads" },
   { href: "/add-load", label: "Add Load" },
   { href: "/pay-statements", label: "Pay Statements" },
+  { href: "/invite-admin", label: "Invite Admin" },
 ] as const;
 
 // Error messages

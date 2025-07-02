@@ -43,7 +43,23 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
           .from('drivers')
           .select('id, driver_status')
           .eq('auth_user_id', user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors when no record exists
+
+        // Handle case where auth_user_id column doesn't exist yet (migration not run)
+        if (error && (error.code === 'PGRST116' || error.message?.includes('auth_user_id'))) {
+          console.log('Driver table migration not run yet, treating as admin');
+          setIsDriver(false);
+          setIsChecking(false);
+          return;
+        }
+
+        // Handle other errors (like RLS policy issues)
+        if (error) {
+          console.log('Error querying drivers table, treating as admin:', error);
+          setIsDriver(false);
+          setIsChecking(false);
+          return;
+        }
 
         // If driver exists but is inactive, log them out (only if not on login page)
         if (driverData && driverData.driver_status === 'inactive') {
@@ -74,6 +90,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
 
       } catch (error) {
         console.error('Error checking user role:', error);
+        // If there's an error (like column doesn't exist), treat as admin
         setIsDriver(false);
       } finally {
         setIsChecking(false);
