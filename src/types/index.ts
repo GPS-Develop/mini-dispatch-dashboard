@@ -59,11 +59,13 @@ export interface Driver {
   id: string;
   name: string;
   phone: number;
+  email?: string;
   status: "Available" | "On Load";
   payRate: number;
   scheduledLoads?: string[];
   inTransitLoads?: string[];
   driver_status?: "active" | "inactive";
+  auth_user_id?: string;
 }
 
 // Pay Statement Types
@@ -121,4 +123,12 @@ export interface LoadDocument {
 export type InputChangeEvent = React.ChangeEvent<HTMLInputElement>;
 export type SelectChangeEvent = React.ChangeEvent<HTMLSelectElement>;
 export type TextareaChangeEvent = React.ChangeEvent<HTMLTextAreaElement>;
-export type FormSubmitEvent = React.FormEvent<HTMLFormElement>; 
+export type FormSubmitEvent = React.FormEvent<HTMLFormElement>;
+
+// Driver Account Creation Form
+export interface CreateDriverAccountForm {
+  name: string;
+  email: string;
+  phone: string;
+  payRate: number;
+} 

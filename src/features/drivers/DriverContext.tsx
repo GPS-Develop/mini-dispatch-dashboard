@@ -8,11 +8,13 @@ export type Driver = {
   id: string;
   name: string;
   phone: number; // Changed to number to match database bigint field
+  email?: string;
   status: "Available" | "On Load";
   payRate: number;
   driver_status: "active" | "inactive";
   scheduledLoads?: string[];
   inTransitLoads?: string[];
+  auth_user_id?: string;
 };
 
 // Type for DB fields
@@ -20,10 +22,12 @@ export type DriverDB = {
   id?: string;
   name: string;
   phone: string; // Keep as string for database operations (will be converted to/from number)
+  email?: string;
   status: "Available" | "On Load";
   pay_rate: number;
   created_at?: string;
   driver_status?: "active" | "inactive";
+  auth_user_id?: string;
 };
 
 const DriverContext = createContext<{
@@ -70,9 +74,11 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
         id: d.id!,
         name: d.name,
         phone: typeof d.phone === 'string' ? parseInt(d.phone) || 0 : d.phone,
+        email: d.email,
         status: d.status,
         payRate: typeof d.pay_rate === 'string' ? parseFloat(d.pay_rate) || 0 : d.pay_rate,
         driver_status: d.driver_status || "active",
+        auth_user_id: d.auth_user_id,
       }));
       
       // Sort drivers: active first, then inactive

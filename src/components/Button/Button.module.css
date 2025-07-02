@@ -50,7 +50,7 @@
 }
 .danger:hover:not(:disabled) {
   background: #b91c1c;
-}
+} 
 
 .teal {
   background: #0d9488;

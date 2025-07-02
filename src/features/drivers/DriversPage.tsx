@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useDrivers, Driver } from "./DriverContext";
 import Button from '../../components/Button/Button';
 import { sanitizePhone, formatPhoneForDisplay } from '../../utils/validation';
+import CreateDriverAccountModal from "../../components/CreateDriverAccountModal";
 
 type DriverForm = {
   name: string;
@@ -26,6 +27,7 @@ export default function DriversPage() {
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
+  const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
 
   function openAdd() {
     setForm(emptyDriver);
@@ -104,24 +106,24 @@ export default function DriversPage() {
   async function confirmDelete() {
     if (!driverToDelete) return;
     
-    try {
+      try {
       await deleteDriver(driverToDelete.id);
       setShowDeleteConfirm(false);
       setDriverToDelete(null);
       setError("");
-    } catch (err) {
+      } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to deactivate driver';
-      setError(errorMessage);
+        setError(errorMessage);
       setShowDeleteConfirm(false);
       setDriverToDelete(null);
-      
-      // If it's a foreign key constraint error, provide more helpful guidance
-      if (errorMessage.includes("currently on load")) {
-        // The error message is already user-friendly from the context
-        // Just make sure it's displayed prominently
+        
+        // If it's a foreign key constraint error, provide more helpful guidance
+        if (errorMessage.includes("currently on load")) {
+          // The error message is already user-friendly from the context
+          // Just make sure it's displayed prominently
+        }
       }
     }
-  }
 
   function cancelDelete() {
     setShowDeleteConfirm(false);
@@ -133,11 +135,25 @@ export default function DriversPage() {
     setError("");
   }
 
+  const handleCreateAccountSuccess = () => {
+    // The drivers list will automatically refresh due to the context
+    // You might want to show a success message here
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white text-gray-900 rounded-xl shadow-lg mt-8 mb-8 font-sans">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Drivers</h1>
-        <Button variant="primary" onClick={openAdd} className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 transition">+ Add Driver</Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowCreateAccountModal(true)}
+            variant="primary"
+            className="bg-green-600 hover:bg-green-700"
+          >
+            + Create Driver Account
+          </Button>
+          <Button onClick={openAdd} className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 transition">+ Add Driver</Button>
+        </div>
       </div>
       {(error || contextError) && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -163,6 +179,7 @@ export default function DriversPage() {
           <thead>
             <tr className="bg-gray-100 text-gray-900 font-semibold">
               <th className="p-2">Name</th>
+              <th className="p-2">Email</th>
               <th className="p-2">Phone</th>
               <th className="p-2">Status</th>
               <th className="p-2">Driver Status</th>
@@ -176,6 +193,7 @@ export default function DriversPage() {
             {drivers.map((d) => (
               <tr key={d.id} className="border-t border-gray-200 bg-white text-gray-900">
                 <td className="p-2">{d.name}</td>
+                <td className="p-2">{d.email ? d.email : <span className="text-gray-400">No email</span>}</td>
                 <td className="p-2">{formatPhoneForDisplay(d.phone)}</td>
                 <td className="p-2">
                   <span className={
@@ -306,6 +324,13 @@ export default function DriversPage() {
           </div>
         </div>
       )}
+
+      {/* Create Driver Account Modal */}
+      <CreateDriverAccountModal
+        isOpen={showCreateAccountModal}
+        onClose={() => setShowCreateAccountModal(false)}
+        onSuccess={handleCreateAccountSuccess}
+      />
     </div>
   );
 } 
