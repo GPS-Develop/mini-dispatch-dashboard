@@ -86,10 +86,10 @@ export default function LoginPage() {
 
         if (driverData) {
           console.log('Redirecting to /driver');
-          router.push('/driver');
+          window.location.href = '/driver';
         } else {
           console.log('Redirecting to admin dashboard');
-          router.push('/');
+          window.location.href = '/';
         }
       };
 
@@ -115,10 +115,10 @@ export default function LoginPage() {
 
         if (driverData) {
           console.log('Auth state change - Redirecting to /driver');
-          router.push('/driver');
+          window.location.href = '/driver';
         } else {
           console.log('Auth state change - Redirecting to admin dashboard');
-          router.push('/');
+          window.location.href = '/';
         }
       }
     });
@@ -174,10 +174,11 @@ export default function LoginPage() {
 
         if (driverData) {
           console.log('Driver found, redirecting to /driver');
-          router.push('/driver');
+          // Use window.location for immediate redirect without flash
+          window.location.href = '/driver';
         } else {
           console.log('No driver found, redirecting to admin dashboard');
-          router.push('/');
+          window.location.href = '/';
         }
       }
 

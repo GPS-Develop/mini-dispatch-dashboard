@@ -15,13 +15,17 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const router = useRouter();
   const { user } = useAuth();
   const [isDriver, setIsDriver] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
   const supabase = createClient();
+  
+  // Immediately determine if this is a driver route
+  const isDriverRoute = pathname === '/driver' || pathname?.startsWith('/driver/');
   
   useEffect(() => {
     const checkUserRole = async () => {
       if (!user) {
-        setIsLoading(false);
+        setIsDriver(false);
+        setIsChecking(false);
         return;
       }
 
@@ -37,44 +41,43 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
         const userIsDriver = !error && !!driverData;
         setIsDriver(userIsDriver);
 
-        // If user is a driver and trying to access admin routes, redirect to driver dashboard
-        if (userIsDriver && pathname !== '/driver' && !pathname?.startsWith('/driver/')) {
-          console.log('Driver attempting to access admin route, redirecting to /driver');
-          router.push('/driver');
+        // Immediate redirect for role mismatches
+        if (userIsDriver && !isDriverRoute) {
+          // Driver trying to access admin route - immediate redirect
+          console.log('Driver accessing admin route, redirecting...');
+          window.location.replace('/driver');
           return;
         }
 
-        // If user is NOT a driver and trying to access driver routes, redirect to admin dashboard
-        if (!userIsDriver && (pathname === '/driver' || pathname?.startsWith('/driver/'))) {
-          console.log('Non-driver attempting to access driver route, redirecting to admin dashboard');
-          router.push('/');
+        if (!userIsDriver && isDriverRoute) {
+          // Non-driver trying to access driver route - immediate redirect
+          console.log('Non-driver accessing driver route, redirecting...');
+          window.location.replace('/');
           return;
         }
 
       } catch (error) {
         console.error('Error checking user role:', error);
+        setIsDriver(false);
       } finally {
-        setIsLoading(false);
+        setIsChecking(false);
       }
     };
 
     checkUserRole();
-  }, [user, pathname, router, supabase]);
+  }, [user, pathname, isDriverRoute, supabase]);
 
-  // Show loading while checking user role
-  if (isLoading) {
+  // Show nothing while checking to prevent any flash
+  if (isChecking && user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-white">
+        {/* Completely blank while checking */}
       </div>
     );
   }
-  
-  // Check if we're on a driver mobile route
-  const isDriverRoute = pathname === '/driver' || pathname?.startsWith('/driver/');
-  
+
+  // For driver routes, render immediately without sidebar
   if (isDriverRoute) {
-    // Mobile driver layout - no sidebar, full width
     return (
       <div className="min-h-screen">
         {children}
@@ -82,11 +85,20 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
     );
   }
   
-  // Admin layout - with sidebar
+  // For admin routes, only show if user is confirmed to not be a driver
+  if (isDriver === false || !user) {
+    return (
+      <div className="min-h-screen flex">
+        <Sidebar />
+        <main className="flex-1 p-8">{children}</main>
+      </div>
+    );
+  }
+
+  // Fallback - show blank while determining role
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
-      <main className="flex-1 p-8">{children}</main>
+    <div className="min-h-screen bg-white">
+      {/* Blank fallback */}
     </div>
   );
 } 
