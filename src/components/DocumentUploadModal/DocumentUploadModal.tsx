@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { LoadDocument } from '../../types';
-import { uploadDocument, getLoadDocuments, deleteDocument } from '../../utils/documentUtils';
+import { uploadDocument, getLoadDocuments, deleteDocument, getSignedUrl } from '../../utils/documentUtils';
 import { createClient } from '../../utils/supabase/client';
 import Button from '../Button/Button';
 
@@ -86,8 +86,17 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
     }
   };
 
-  const openDocument = (url: string) => {
-    window.open(url, '_blank');
+  const openDocument = async (filePath: string) => {
+    try {
+      const result = await getSignedUrl(supabase, filePath);
+      if (result.success && result.url) {
+        window.open(result.url, '_blank');
+      } else {
+        setError(result.error || 'Failed to open document');
+      }
+    } catch (error) {
+      setError('Failed to open document');
+    }
   };
 
   return (

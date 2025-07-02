@@ -46,18 +46,13 @@ export const uploadDocument = async (
       return { success: false, error: uploadError.message };
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(STORAGE_BUCKET)
-      .getPublicUrl(filePath);
-
-    // Save metadata to database
+    // Save metadata to database with file path (not full URL)
     const { data: dbData, error: dbError } = await supabase
       .from('load_documents')
       .insert([{
         load_id: loadId,
         file_name: file.name,
-        file_url: urlData.publicUrl,
+        file_url: filePath, // Store just the file path
       }])
       .select()
       .single();
@@ -73,6 +68,30 @@ export const uploadDocument = async (
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Upload failed' 
+    };
+  }
+};
+
+// Generate signed URL for private bucket access
+export const getSignedUrl = async (
+  supabase: SupabaseClient,
+  filePath: string,
+  expiresIn: number = 3600 // 1 hour default
+): Promise<{ success: boolean; url?: string; error?: string }> => {
+  try {
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(filePath, expiresIn);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, url: data.signedUrl };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to generate signed URL' 
     };
   }
 };
@@ -119,9 +138,8 @@ export const deleteDocument = async (
       return { success: false, error: fetchError.message };
     }
 
-    // Extract file path from URL
-    const url = new URL(doc.file_url);
-    const filePath = url.pathname.split('/').slice(-2).join('/'); // Get last two parts
+    // file_url now contains the file path directly (not a full URL)
+    const filePath = doc.file_url;
 
     // Delete from storage
     const { error: storageError } = await supabase.storage
