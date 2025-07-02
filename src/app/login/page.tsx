@@ -79,15 +79,23 @@ export default function LoginPage() {
           .from('drivers')
           .select('*')
           .eq('auth_user_id', user.id)
-          .eq('driver_status', 'active')
           .single();
 
         console.log('Driver lookup for redirect:', { driverData, driverError });
 
-        if (driverData) {
+        // If driver exists but is inactive, show error and sign out
+        if (driverData && driverData.driver_status === 'inactive') {
+          console.log('Driver is inactive, showing error message');
+          await supabase.auth.signOut();
+          setError('Your driver account has been deactivated. Please contact dispatch for assistance.');
+          return;
+        }
+
+        // Check if user is an active driver
+        if (driverData && driverData.driver_status === 'active') {
           console.log('Redirecting to /driver');
           window.location.href = '/driver';
-        } else {
+        } else if (!driverData || driverError) {
           console.log('Redirecting to admin dashboard');
           window.location.href = '/';
         }
@@ -108,15 +116,23 @@ export default function LoginPage() {
           .from('drivers')
           .select('*')
           .eq('auth_user_id', session.user.id)
-          .eq('driver_status', 'active')
           .single();
 
         console.log('Auth state change - Driver lookup:', { driverData, driverError });
 
-        if (driverData) {
+        // If driver exists but is inactive, show error and sign out
+        if (driverData && driverData.driver_status === 'inactive') {
+          console.log('Auth state change - Driver is inactive, showing error message');
+          await supabase.auth.signOut();
+          setError('Your driver account has been deactivated. Please contact dispatch for assistance.');
+          return;
+        }
+
+        // Check if user is an active driver
+        if (driverData && driverData.driver_status === 'active') {
           console.log('Auth state change - Redirecting to /driver');
           window.location.href = '/driver';
-        } else {
+        } else if (!driverData || driverError) {
           console.log('Auth state change - Redirecting to admin dashboard');
           window.location.href = '/';
         }
@@ -167,16 +183,23 @@ export default function LoginPage() {
           .from('drivers')
           .select('*')
           .eq('auth_user_id', data.user.id)
-          .eq('driver_status', 'active')
           .single();
 
         console.log('Driver lookup after password setup:', { driverData, driverError });
 
-        if (driverData) {
+        // If driver exists but is inactive, show error and sign out
+        if (driverData && driverData.driver_status === 'inactive') {
+          console.log('Driver is inactive after password setup, showing error message');
+          await supabase.auth.signOut();
+          setError('Your driver account has been deactivated. Please contact dispatch for assistance.');
+          return;
+        }
+
+        // Check if user is an active driver
+        if (driverData && driverData.driver_status === 'active') {
           console.log('Driver found, redirecting to /driver');
-          // Use window.location for immediate redirect without flash
           window.location.href = '/driver';
-        } else {
+        } else if (!driverData || driverError) {
           console.log('No driver found, redirecting to admin dashboard');
           window.location.href = '/';
         }
@@ -323,6 +346,13 @@ export default function LoginPage() {
         </div>
         
         <div className="bg-white py-8 px-6 shadow rounded-lg">
+          {/* Show error message if inactive driver tries to login */}
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-3">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+          
           <Auth
             supabaseClient={supabase}
             appearance={{

@@ -21,13 +21,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-    };
-
-    getInitialSession();
+    });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -37,8 +34,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+    // Periodic check for inactive drivers (every 30 seconds)
+    const checkDriverStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Skip check if on login page to prevent redirect loop
+        if (window.location.pathname.startsWith('/login')) {
+          return;
+        }
+
+        try {
+          const { data: driverData } = await supabase
+            .from('drivers')
+            .select('driver_status')
+            .eq('auth_user_id', session.user.id)
+            .single();
+
+          // If driver exists but is inactive, log them out
+          if (driverData && driverData.driver_status === 'inactive') {
+            console.log('Driver status changed to inactive, logging out...');
+            await supabase.auth.signOut();
+          }
+        } catch (error) {
+          // Ignore errors in status check
+          console.log('Error checking driver status:', error);
+        }
+      }
+    };
+
+    // Check driver status every 30 seconds
+    const statusCheckInterval = setInterval(checkDriverStatus, 30000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(statusCheckInterval);
+    };
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

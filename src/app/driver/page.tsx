@@ -67,11 +67,24 @@ export default function DriverDashboard() {
         .from('drivers')
         .select('*')
         .eq('auth_user_id', user.id)
-        .eq('driver_status', 'active')
         .single();
 
       if (driverError || !driverData) {
         setError('Driver profile not found. Please contact your dispatcher to set up your account.');
+        return;
+      }
+
+      // Check if driver is inactive
+      if (driverData.driver_status === 'inactive') {
+        console.log('Driver account has been deactivated, logging out...');
+        await signOut();
+        router.push('/login');
+        return;
+      }
+
+      // Check if driver is active
+      if (driverData.driver_status !== 'active') {
+        setError('Your driver account is not active. Please contact your dispatcher.');
         return;
       }
 

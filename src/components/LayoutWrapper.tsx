@@ -13,7 +13,7 @@ interface LayoutWrapperProps {
 export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [isDriver, setIsDriver] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
   const supabase = createClient();
@@ -29,16 +29,31 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
         return;
       }
 
+      // Skip driver status check if on login page to prevent redirect loop
+      if (pathname.startsWith('/login')) {
+        setIsDriver(false);
+        setIsChecking(false);
+        return;
+      }
+
       try {
-        // Check if user is a driver
+        // Check if user is a driver and their status
         const { data: driverData, error } = await supabase
           .from('drivers')
           .select('id, driver_status')
           .eq('auth_user_id', user.id)
-          .eq('driver_status', 'active')
           .single();
 
-        const userIsDriver = !error && !!driverData;
+        // If driver exists but is inactive, log them out (only if not on login page)
+        if (driverData && driverData.driver_status === 'inactive') {
+          console.log('Driver is inactive, logging out...');
+          await signOut();
+          window.location.replace('/login');
+          return;
+        }
+
+        // Check if user is an active driver
+        const userIsDriver = !error && !!driverData && driverData.driver_status === 'active';
         setIsDriver(userIsDriver);
 
         // Immediate redirect for role mismatches
@@ -65,7 +80,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
     };
 
     checkUserRole();
-  }, [user, pathname, isDriverRoute, supabase]);
+  }, [user, pathname, isDriverRoute, supabase, signOut]);
 
   // Show nothing while checking to prevent any flash
   if (isChecking && user) {
