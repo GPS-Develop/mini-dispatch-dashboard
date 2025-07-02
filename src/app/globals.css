@@ -24,3 +24,86 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Custom styles for Supabase Auth UI */
+.auth-container {
+  width: 100%;
+}
+
+.auth-container .supabase-auth-ui_ui-button {
+  @apply w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200;
+}
+
+.auth-container .supabase-auth-ui_ui-button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Google OAuth button styling */
+.auth-container .supabase-auth-ui_ui-button[data-provider="google"] {
+  @apply bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900 focus:ring-gray-500;
+}
+
+.auth-container .supabase-auth-ui_ui-button[data-provider="google"]:hover {
+  @apply shadow-md;
+}
+
+.auth-container .supabase-auth-ui_ui-input {
+  @apply appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm;
+}
+
+.auth-container .supabase-auth-ui_ui-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.auth-container .supabase-auth-ui_ui-anchor {
+  @apply font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200;
+}
+
+.auth-container .supabase-auth-ui_ui-divider {
+  @apply my-6;
+}
+
+.auth-container .supabase-auth-ui_ui-message {
+  @apply text-sm text-center;
+}
+
+.auth-container .supabase-auth-ui_ui-message--error {
+  @apply text-red-600;
+}
+
+.auth-container .supabase-auth-ui_ui-message--success {
+  @apply text-green-600;
+}
+
+/* Form spacing */
+.auth-container form {
+  @apply space-y-4;
+}
+
+.auth-container .supabase-auth-ui_ui-container {
+  @apply space-y-4;
+}
+
+/* Social provider spacing */
+.auth-container .supabase-auth-ui_ui-socialAuth {
+  @apply mb-4;
+}
+
+/* Divider styling */
+.auth-container .supabase-auth-ui_ui-divider {
+  @apply relative my-6;
+}
+
+.auth-container .supabase-auth-ui_ui-divider::before {
+  @apply absolute inset-0 flex items-center;
+  content: '';
+}
+
+.auth-container .supabase-auth-ui_ui-divider::after {
+  @apply w-full border-t border-gray-300;
+  content: '';
+}
+
+.auth-container .supabase-auth-ui_ui-divider span {
+  @apply relative bg-white px-2 text-sm text-gray-500;
+}

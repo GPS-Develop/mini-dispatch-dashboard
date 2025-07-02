@@ -1,111 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import Button from '@/components/Button/Button';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { signIn, signUp } = useAuth();
+  const supabase = createClient();
   const router = useRouter();
+  const { user } = useAuth();
+  const [authView, setAuthView] = useState<'sign_in' | 'sign_up'>('sign_in');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  useEffect(() => {
+    // Redirect to dashboard if already authenticated
+    if (user) {
+      router.push('/');
+    }
+  }, [user, router]);
 
-    try {
-      const { error } = isSignUp 
-        ? await signUp(email, password)
-        : await signIn(email, password);
-
-      if (error) {
-        setError(error.message);
-      } else {
+  useEffect(() => {
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
         router.push('/');
       }
-    } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, supabase.auth]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
+            Welcome to Mini Dispatch
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            {authView === 'sign_in' ? 'Sign in to your account' : 'Create a new account'}
+          </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
-
-          <div>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : isSignUp ? 'Sign up' : 'Sign in'}
-            </Button>
-          </div>
-
-          <div className="text-center">
+        
+        <div className="bg-white py-8 px-6 shadow rounded-lg">
+          <Auth
+            supabaseClient={supabase}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: '#3b82f6',
+                    brandAccent: '#2563eb',
+                  },
+                },
+              },
+              className: {
+                container: 'auth-container',
+                button: 'auth-button',
+                input: 'auth-input',
+              },
+            }}
+            providers={['google']}
+            redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/` : '/'}
+            onlyThirdPartyProviders={false}
+            magicLink={false}
+            showLinks={true}
+            view={authView}
+            socialLayout="horizontal"
+          />
+          
+          {/* Custom toggle if the built-in one doesn't work */}
+          <div className="mt-4 text-center">
             <button
               type="button"
-              className="font-medium text-blue-600 hover:text-blue-500"
-              onClick={() => setIsSignUp(!isSignUp)}
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
+              onClick={() => setAuthView(authView === 'sign_in' ? 'sign_up' : 'sign_in')}
             >
-              {isSignUp 
-                ? 'Already have an account? Sign in' 
-                : "Don't have an account? Sign up"}
+              {authView === 'sign_in' 
+                ? "Don't have an account? Sign up" 
+                : 'Already have an account? Sign in'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
