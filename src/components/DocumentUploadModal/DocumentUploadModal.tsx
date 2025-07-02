@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { LoadDocument } from '../../types';
 import { uploadDocument, getLoadDocuments, deleteDocument } from '../../utils/documentUtils';
+import { createClient } from '../../utils/supabase/client';
 import Button from '../Button/Button';
 
 interface DocumentUploadModalProps {
@@ -16,6 +17,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const supabase = createClient();
 
   useEffect(() => {
     fetchDocuments();
@@ -23,7 +25,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
 
   const fetchDocuments = async () => {
     setLoading(true);
-    const result = await getLoadDocuments(loadId);
+    const result = await getLoadDocuments(supabase, loadId);
     if (result.success && result.data) {
       setDocuments(result.data);
     } else {
@@ -46,7 +48,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
       try {
         setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
         
-        const result = await uploadDocument(loadId, file);
+        const result = await uploadDocument(supabase, loadId, file);
         
         if (result.success && result.data) {
           setDocuments(prev => [result.data!, ...prev]);
@@ -76,7 +78,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   const handleDeleteDocument = async (documentId: string) => {
     if (!confirm('Are you sure you want to delete this document?')) return;
 
-    const result = await deleteDocument(documentId);
+    const result = await deleteDocument(supabase, documentId);
     if (result.success) {
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
     } else {

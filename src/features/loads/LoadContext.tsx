@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { supabase } from "../../utils/supabaseClient";
+import { createClient } from "../../utils/supabase/client";
 import { validateRate, validateTemperature } from "../../utils/validation";
 
 export type Load = {
@@ -38,6 +38,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
   const [loads, setLoads] = useState<Load[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
 
   async function fetchLoads() {
     setLoading(true);

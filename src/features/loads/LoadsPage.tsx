@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLoads, Load } from "./LoadContext";
 import { useDrivers } from "../../features/drivers/DriverContext";
-import { supabase } from "../../utils/supabaseClient";
+import { createClient } from "../../utils/supabase/client";
 import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
 import { formatPhoneForDisplay, sanitizePhone, formatRateForDisplay } from '../../utils/validation';
@@ -30,6 +30,7 @@ export default function LoadsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loadToDelete, setLoadToDelete] = useState<Load | null>(null);
   const router = useRouter();
+  const supabase = createClient();
 
   const filteredLoads = useMemo(() => {
     return loads.filter((l) => {

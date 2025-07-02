@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { supabase } from "../../utils/supabaseClient";
+import { createClient } from "../../utils/supabase/client";
 import { PayStatement, PayStatementDB, TripSummary } from "../../types";
 
 const PayStatementContext = createContext<{
@@ -17,6 +17,7 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
   const [payStatements, setPayStatements] = useState<PayStatement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
 
   async function fetchPayStatements() {
     setLoading(true);

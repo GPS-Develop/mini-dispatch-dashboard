@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLoads } from "../features/loads/LoadContext";
 import { useDrivers } from "../features/drivers/DriverContext";
-import { supabase } from "../utils/supabaseClient";
+import { createClient } from "../utils/supabase/client";
 
 export default function Home() {
   const { loads } = useLoads();
   const { drivers } = useDrivers();
   const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
+  const supabase = createClient();
 
   const upcomingLoads = loads
     .filter((load) => load.status === "Scheduled")

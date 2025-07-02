@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useLoads } from "../loads/LoadContext";
-import { supabase } from "../../utils/supabaseClient";
+import { createClient } from "../../utils/supabase/client";
 import { validateRate } from "../../utils/validation";
 
 export type Driver = {
@@ -42,6 +42,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { loads, loading: loadsLoading } = useLoads();
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  const supabase = createClient();
 
   // Helper function to sort drivers: active first, then inactive
   const sortDrivers = (drivers: Driver[]) => {

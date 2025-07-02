@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { LoadDocument } from '../types';
 
 // Configuration
@@ -21,6 +21,7 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
 
 // Upload file to Supabase Storage
 export const uploadDocument = async (
+  supabase: SupabaseClient,
   loadId: string, 
   file: File
 ): Promise<{ success: boolean; data?: LoadDocument; error?: string }> => {
@@ -78,6 +79,7 @@ export const uploadDocument = async (
 
 // Get all documents for a load
 export const getLoadDocuments = async (
+  supabase: SupabaseClient,
   loadId: string
 ): Promise<{ success: boolean; data?: LoadDocument[]; error?: string }> => {
   try {
@@ -102,6 +104,7 @@ export const getLoadDocuments = async (
 
 // Delete a document
 export const deleteDocument = async (
+  supabase: SupabaseClient,
   documentId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
