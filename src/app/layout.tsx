@@ -30,13 +30,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100`}>
         <AuthProvider>
-          <ClientRoot>
+        <ClientRoot>
             <AuthGuard>
               <LayoutWrapper>
                 {children}
               </LayoutWrapper>
             </AuthGuard>
-          </ClientRoot>
+        </ClientRoot>
         </AuthProvider>
       </body>
     </html>
