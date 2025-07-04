@@ -10,12 +10,6 @@ import { uploadDocument, getLoadDocuments, getSignedUrl } from '@/utils/document
 interface Load {
   id: string;
   reference_id: string;
-  pickup_address: string;
-  pickup_state: string;
-  pickup_datetime: string;
-  delivery_address: string;
-  delivery_state: string;
-  delivery_datetime: string;
   load_type: string;
   temperature?: number | null;
   rate: number;
@@ -25,6 +19,24 @@ interface Load {
   broker_contact: number;
   broker_email: string;
   status: "Scheduled" | "In-Transit" | "Delivered";
+}
+
+interface Pickup {
+  id: string;
+  load_id: string;
+  address: string;
+  city: string;
+  state: string;
+  datetime: string;
+}
+
+interface Delivery {
+  id: string;
+  load_id: string;
+  address: string;
+  city: string;
+  state: string;
+  datetime: string;
 }
 
 interface LoadDocument {
@@ -42,6 +54,8 @@ export default function DriverLoadDetails() {
   const supabase = createClient();
   
   const [load, setLoad] = useState<Load | null>(null);
+  const [pickups, setPickups] = useState<Pickup[]>([]);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [documents, setDocuments] = useState<LoadDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -75,6 +89,30 @@ export default function DriverLoadDetails() {
       }
 
       setLoad(loadData);
+
+      // Fetch pickups for this load
+      const { data: pickupsData, error: pickupsError } = await supabase
+        .from('pickups')
+        .select('*')
+        .eq('load_id', params.id);
+
+      if (pickupsError) {
+        console.error('Error fetching pickups:', pickupsError);
+      } else {
+        setPickups(pickupsData || []);
+      }
+
+      // Fetch deliveries for this load
+      const { data: deliveriesData, error: deliveriesError } = await supabase
+        .from('deliveries')
+        .select('*')
+        .eq('load_id', params.id);
+
+      if (deliveriesError) {
+        console.error('Error fetching deliveries:', deliveriesError);
+      } else {
+        setDeliveries(deliveriesData || []);
+      }
 
       // Fetch documents for this load using the existing utility
       const documentsResult = await getLoadDocuments(supabase, params.id as string);
@@ -244,26 +282,42 @@ export default function DriverLoadDetails() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Route Information</h2>
           
           <div className="space-y-4">
-            {/* Pickup */}
-            <div className="flex items-start space-x-3">
-              <div className="w-3 h-3 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">Pickup Location</div>
-                <div className="text-gray-600">{load.pickup_address}</div>
-                <div className="text-gray-600">{load.pickup_state}</div>
-                <div className="text-sm text-gray-500 mt-1">{formatDateTime(load.pickup_datetime)}</div>
-              </div>
+            {/* Pickups */}
+            <div>
+              <div className="font-medium text-gray-900 mb-2">Pickup Locations</div>
+              {pickups.length === 0 ? (
+                <div className="text-gray-500 text-sm">No pickup locations specified</div>
+              ) : (
+                pickups.map((pickup, index) => (
+                  <div key={pickup.id} className="flex items-start space-x-3 mb-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <div className="text-gray-600">{pickup.address}</div>
+                      <div className="text-gray-600">{pickup.city ? `${pickup.city}, ` : ''}{pickup.state}</div>
+                      <div className="text-sm text-gray-500 mt-1">{formatDateTime(pickup.datetime)}</div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
-            {/* Delivery */}
-            <div className="flex items-start space-x-3">
-              <div className="w-3 h-3 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">Delivery Location</div>
-                <div className="text-gray-600">{load.delivery_address}</div>
-                <div className="text-gray-600">{load.delivery_state}</div>
-                <div className="text-sm text-gray-500 mt-1">{formatDateTime(load.delivery_datetime)}</div>
-              </div>
+            {/* Deliveries */}
+            <div>
+              <div className="font-medium text-gray-900 mb-2">Delivery Locations</div>
+              {deliveries.length === 0 ? (
+                <div className="text-gray-500 text-sm">No delivery locations specified</div>
+              ) : (
+                deliveries.map((delivery, index) => (
+                  <div key={delivery.id} className="flex items-start space-x-3 mb-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <div className="text-gray-600">{delivery.address}</div>
+                      <div className="text-gray-600">{delivery.city ? `${delivery.city}, ` : ''}{delivery.state}</div>
+                      <div className="text-sm text-gray-500 mt-1">{formatDateTime(delivery.datetime)}</div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

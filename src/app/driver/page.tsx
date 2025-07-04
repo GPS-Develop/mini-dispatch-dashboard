@@ -18,6 +18,8 @@ interface Load {
   broker_contact: number;
   broker_email: string;
   status: "Scheduled" | "In-Transit" | "Delivered";
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface Driver {
@@ -42,6 +44,7 @@ export default function DriverDashboard() {
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Scheduled' | 'In-Transit' | 'Delivered'>('All');
 
   useEffect(() => {
     if (!user) {
@@ -95,12 +98,11 @@ export default function DriverDashboard() {
         auth_user_id: driverData.auth_user_id
       });
 
-      // Fetch loads assigned to this driver
+      // Fetch loads assigned to this driver (all statuses)
       const { data: loadsData, error: loadsError } = await supabase
         .from('loads')
         .select('*')
         .eq('driver_id', driverData.id)
-        .in('status', ['Scheduled', 'In-Transit'])
         .order('created_at', { ascending: false });
 
       if (loadsError) {
@@ -162,6 +164,17 @@ export default function DriverDashboard() {
     });
   };
 
+  const formatCompletionDate = (datetime: string) => {
+    return new Date(datetime).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Scheduled': return 'bg-blue-100 text-blue-800';
@@ -170,6 +183,11 @@ export default function DriverDashboard() {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Filter loads based on selected status
+  const filteredLoads = statusFilter === 'All' 
+    ? loads 
+    : loads.filter(load => load.status === statusFilter);
 
   if (loading) {
     return (
@@ -232,7 +250,7 @@ export default function DriverDashboard() {
       {/* Main Content */}
       <div className="px-4 py-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg p-4 shadow-sm">
             <div className="text-2xl font-bold text-blue-600">
               {loads.filter(l => l.status === 'Scheduled').length}
@@ -245,21 +263,50 @@ export default function DriverDashboard() {
             </div>
             <div className="text-sm text-gray-600">In Transit</div>
           </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="text-2xl font-bold text-green-600">
+              {loads.filter(l => l.status === 'Delivered').length}
+            </div>
+            <div className="text-sm text-gray-600">Delivered</div>
+          </div>
         </div>
 
         {/* Loads List */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Your Assigned Loads</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Your Assigned Loads</h2>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Filter:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as 'All' | 'Scheduled' | 'In-Transit' | 'Delivered')}
+                className="border rounded px-3 py-1 text-sm bg-white text-gray-900"
+              >
+                <option value="All">All Loads</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="In-Transit">In Transit</option>
+                <option value="Delivered">Delivered</option>
+              </select>
+            </div>
+          </div>
           
-          {loads.length === 0 ? (
+          {filteredLoads.length === 0 ? (
             <div className="bg-white rounded-lg p-6 text-center">
               <div className="text-gray-400 text-4xl mb-2">📦</div>
-              <p className="text-gray-600">No loads assigned yet</p>
-              <p className="text-sm text-gray-500 mt-1">Check back later for new assignments</p>
+              <p className="text-gray-600">
+                {loads.length === 0 
+                  ? 'No loads assigned yet' 
+                  : `No ${statusFilter.toLowerCase()} loads`}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {loads.length === 0 
+                  ? 'Check back later for new assignments' 
+                  : 'Try selecting a different filter'}
+              </p>
             </div>
           ) : (
-            loads.map((load) => (
-              <div key={load.id} className="bg-white rounded-lg shadow-sm border">
+            filteredLoads.map((load) => (
+              <div key={load.id} className={`bg-white rounded-lg shadow-sm border ${load.status === 'Delivered' ? 'opacity-75' : ''}`}>
                 <div className="p-4">
                   {/* Load Header */}
                   <div className="flex items-center justify-between mb-3">
@@ -268,6 +315,9 @@ export default function DriverDashboard() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(load.status)}`}>
                         {load.status}
                       </span>
+                      {load.status === 'Delivered' && (
+                        <span className="text-xs text-green-600">✓ Completed</span>
+                      )}
                     </div>
                     <button
                       onClick={() => router.push(`/driver/load/${load.id}`)}
@@ -322,6 +372,13 @@ export default function DriverDashboard() {
                     <div className="mt-2">
                       <div className="text-xs text-gray-500">Temperature</div>
                       <div className="text-sm font-medium text-gray-900">{load.temperature}°F</div>
+                    </div>
+                  )}
+
+                  {load.status === 'Delivered' && load.updated_at && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="text-xs text-gray-500">Completed On</div>
+                      <div className="text-sm font-medium text-green-600">{formatCompletionDate(load.updated_at)}</div>
                     </div>
                   )}
                 </div>
