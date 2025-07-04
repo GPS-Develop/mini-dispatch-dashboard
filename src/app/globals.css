@@ -491,6 +491,34 @@ body {
   padding: var(--spacing-2xl) 0;
 }
 
+/* Progress Bar Styles */
+.progress-container {
+  width: 100%;
+  background-color: var(--color-border);
+  border-radius: var(--radius-full);
+  height: 0.5rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.progress-bar-success {
+  background-color: var(--color-success);
+}
+
+.progress-bar-warning {
+  background-color: var(--color-warning);
+}
+
+.progress-bar-danger {
+  background-color: var(--color-danger);
+}
+
 /* Typography */
 .heading-xl {
   font-size: 1.875rem;
