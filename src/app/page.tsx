@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useLoads } from "../features/loads/LoadContext";
 import { useDrivers } from "../features/drivers/DriverContext";
 import { createClient } from "../utils/supabase/client";
@@ -136,6 +135,10 @@ export default function Home() {
     return driver.name;
   }
 
+  function clearAllActivities() {
+    setRecentActivities([]);
+  }
+
   return (
     <>
       <div className="max-w-3xl mx-auto py-8">
@@ -179,7 +182,17 @@ export default function Home() {
           </section>
           {/* Recent Activity */}
           <section>
-            <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Recent Activity</h2>
+              {recentActivities.length > 0 && (
+                <button
+                  onClick={clearAllActivities}
+                  className="text-xs text-gray-500 hover:text-red-600 px-2 py-1 rounded border border-gray-300 hover:border-red-300 transition-colors"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
             <div className="rounded border bg-white p-4 shadow-sm">
               {activitiesLoading ? (
                 <div className="text-center py-4">
@@ -223,12 +236,6 @@ export default function Home() {
                   ))}
                 </div>
               )}
-            </div>
-            <div className="mt-4 flex flex-col gap-2">
-              <button className="w-full rounded border px-4 py-2 bg-white hover:bg-gray-50 text-gray-800 text-sm font-medium">[ Create invoice ]</button>
-              <Link href="/pay-statements">
-              <button className="w-full rounded border px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 text-sm font-medium">Generate Pay Statement</button>
-              </Link>
             </div>
           </section>
         </div>

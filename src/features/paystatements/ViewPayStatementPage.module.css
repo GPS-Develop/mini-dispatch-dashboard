@@ -1,0 +1,248 @@
+/* Print-specific styles for pay statement */
+.payStatementContainer {
+  font-family: Arial, sans-serif;
+  line-height: 1.4;
+  color: #000000;
+  background-color: #ffffff;
+  padding: 32px;
+}
+
+/* Header styles */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.headerTitle {
+  font-size: 30px;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.headerSubtitle {
+  font-size: 18px;
+  color: #4b5563;
+}
+
+/* Section styles */
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #111827;
+}
+
+/* Driver information section */
+.driverInfoSection {
+  padding: 16px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+}
+
+.driverGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.driverLabel {
+  font-weight: 500;
+  color: #374151;
+}
+
+.driverValue {
+  font-size: 18px;
+  color: #111827;
+}
+
+/* Table styles */
+.tableContainer {
+  overflow-x: auto;
+}
+
+.tripsTable {
+  width: 100%;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-collapse: collapse;
+}
+
+.tableHeader {
+  background-color: #f3f4f6;
+}
+
+.tableHeaderCell {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #d1d5db;
+  color: #111827;
+  font-weight: 600;
+}
+
+.tableHeaderCellRight {
+  padding: 12px;
+  text-align: right;
+  border-bottom: 1px solid #d1d5db;
+  color: #111827;
+  font-weight: 600;
+}
+
+.tableRow {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tableCell {
+  padding: 12px;
+  color: #111827;
+}
+
+.tableCellRight {
+  padding: 12px;
+  text-align: right;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tableCellMaxWidth {
+  padding: 12px;
+  max-width: 200px;
+}
+
+.tableCellContent {
+  white-space: pre-line;
+  font-size: 14px;
+  color: #111827;
+}
+
+/* Pay summary styles */
+.paySummaryContainer {
+  background-color: #f9fafb;
+  padding: 24px;
+  border-radius: 8px;
+}
+
+.paySummaryGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paySummaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+}
+
+.paySummaryLabel {
+  font-weight: 500;
+  color: #374151;
+}
+
+.paySummaryValue {
+  font-weight: 600;
+  color: #059669;
+}
+
+.paySummaryValueDeduction {
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.paySummaryDivider {
+  border: none;
+  border-top: 1px solid #d1d5db;
+  margin: 16px 0;
+}
+
+.paySummaryTotal {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.paySummaryTotalLabel {
+  color: #111827;
+}
+
+.paySummaryTotalValue {
+  color: #2563eb;
+}
+
+/* Additions section */
+.additionsContainer {
+  background-color: #f0fdf4;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.additionsRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.additionsLabel {
+  text-transform: capitalize;
+  color: #374151;
+}
+
+.additionsValue {
+  font-weight: 600;
+  color: #059669;
+}
+
+/* Deductions section */
+.deductionsContainer {
+  background-color: #fef2f2;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.deductionsRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.deductionsLabel {
+  text-transform: capitalize;
+  color: #374151;
+}
+
+.deductionsValue {
+  font-weight: 600;
+  color: #dc2626;
+}
+
+/* Notes section */
+.notesContainer {
+  background-color: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.notesText {
+  white-space: pre-wrap;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* Footer styles */
+.footer {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid #d1d5db;
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.footerText {
+  margin-top: 8px;
+} 

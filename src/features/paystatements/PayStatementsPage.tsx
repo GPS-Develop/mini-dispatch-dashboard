@@ -53,80 +53,81 @@ export default function PayStatementsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-white text-gray-900 rounded-xl shadow-lg mt-8 mb-8 font-sans">
+    <div className="page-container-xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Pay Statements</h1>
+        <h1 className="heading-lg">Pay Statements</h1>
         <Button 
           variant="primary" 
           onClick={handleCreateNew}
-          className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 transition"
         >
           + Create Pay Statement
         </Button>
       </div>
 
       {(error || deleteError) && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="alert-error mb-4">
           {error || deleteError}
         </div>
       )}
       
       {loading && (
-        <div className="text-center py-8">
-          <div className="text-gray-600">Loading pay statements...</div>
+        <div className="loading-container">
+          <div className="text-muted">Loading pay statements...</div>
         </div>
       )}
       
       {!loading && payStatements.length === 0 && (
-        <div className="text-center py-8">
-          <div className="text-gray-600">No pay statements found. Click "Create Pay Statement" to get started.</div>
+        <div className="loading-container">
+          <div className="text-muted">No pay statements found. Click "Create Pay Statement" to get started.</div>
         </div>
       )}
       
       {!loading && payStatements.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full text-left border border-gray-200 bg-white">
+          <table className="table-container">
             <thead>
-              <tr className="bg-gray-100 text-gray-900 font-semibold">
-                <th className="p-3">Driver</th>
-                <th className="p-3">Period</th>
-                <th className="p-3">Gross Pay</th>
-                <th className="p-3">Net Pay</th>
-                <th className="p-3">Created</th>
-                <th className="p-3">Actions</th>
+              <tr className="table-header">
+                <th className="table-cell">Driver</th>
+                <th className="table-cell">Period</th>
+                <th className="table-cell">Gross Pay</th>
+                <th className="table-cell">Net Pay</th>
+                <th className="table-cell">Created</th>
+                <th className="table-cell">Actions</th>
               </tr>
             </thead>
             <tbody>
               {payStatements.map((ps) => (
-                <tr key={ps.id} className="border-t border-gray-200 bg-white text-gray-900 hover:bg-gray-50">
-                  <td className="p-3 font-medium">{getDriverName(ps.driver_id)}</td>
-                  <td className="p-3">
+                <tr key={ps.id} className="table-row-hover">
+                  <td className="table-cell font-medium">{getDriverName(ps.driver_id)}</td>
+                  <td className="table-cell">
                     {formatDate(ps.period_start)} - {formatDate(ps.period_end)}
                   </td>
-                  <td className="p-3 font-semibold text-green-600">
+                  <td className="table-cell font-semibold text-success">
                     {formatCurrency(ps.gross_pay)}
                   </td>
-                  <td className="p-3 font-semibold text-blue-600">
+                  <td className="table-cell font-semibold text-blue-600">
                     {formatCurrency(calculateNetPay(ps))}
                   </td>
-                  <td className="p-3 text-gray-600">
+                  <td className="table-cell text-muted">
                     {formatDate(ps.created_at)}
                   </td>
-                  <td className="p-3 flex gap-2">
-                    <Button 
-                      variant="secondary" 
-                      onClick={() => handleView(ps.id)}
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      View
-                    </Button>
-                    <Button 
-                      variant="danger" 
-                      onClick={() => handleDelete(ps.id)}
-                      className="text-red-600 hover:underline text-sm"
-                    >
-                      Delete
-                    </Button>
+                  <td className="table-cell">
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="secondary" 
+                        onClick={() => handleView(ps.id)}
+                        className="text-sm"
+                      >
+                        View
+                      </Button>
+                      <Button 
+                        variant="danger" 
+                        onClick={() => handleDelete(ps.id)}
+                        className="text-sm"
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

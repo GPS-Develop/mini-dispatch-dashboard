@@ -1,8 +1,71 @@
 @import "tailwindcss";
 
+/* ==============================================
+   CSS CUSTOM PROPERTIES (VARIABLES)
+   ============================================== */
+
 :root {
+  /* Base Colors */
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Component Colors */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-secondary: #e5e7eb;
+  --color-secondary-hover: #d1d5db;
+  --color-success: #16a34a;
+  --color-success-hover: #15803d;
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-warning: #ca8a04;
+  --color-warning-hover: #a16207;
+  
+  /* Text Colors */
+  --color-text: #111827;
+  --color-text-muted: #4b5563;
+  --color-text-light: #374151;
+  
+  /* Border Colors */
+  --color-border: #e5e7eb;
+  --color-border-light: #d1d5db;
+  --color-border-focus: #3b82f6;
+  
+  /* Background Colors */
+  --color-bg-card: #ffffff;
+  --color-bg-section: #f9fafb;
+  --color-bg-header: #f3f4f6;
+  --color-bg-hover: #f9fafb;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.5rem;
+  --spacing-2xl: 2rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  
+  /* Transitions */
+  --transition-fast: 150ms;
+  --transition-normal: 200ms;
+  
+  /* Container Sizes */
+  --container-sm: 28rem;
+  --container-md: 42rem;
+  --container-lg: 56rem;
+  --container-xl: 72rem;
 }
 
 @theme inline {
@@ -25,85 +88,580 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Custom styles for Supabase Auth UI */
+/* ==============================================
+   STANDARDIZED UTILITY CLASSES
+   ============================================== */
+
+/* Base Page Container */
+.page-container {
+  margin: var(--spacing-2xl) auto;
+  padding: var(--spacing-xl);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Page Container Sizes */
+.page-container-sm { 
+  margin: var(--spacing-2xl) auto;
+  padding: var(--spacing-xl);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: var(--container-sm); 
+}
+
+.page-container-md { 
+  margin: var(--spacing-2xl) auto;
+  padding: var(--spacing-xl);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: var(--container-md); 
+}
+
+.page-container-lg { 
+  margin: var(--spacing-2xl) auto;
+  padding: var(--spacing-xl);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: var(--container-lg); 
+}
+
+.page-container-xl { 
+  margin: var(--spacing-2xl) auto;
+  padding: var(--spacing-xl);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: var(--container-xl); 
+}
+
+/* Base Card */
+.card {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-lg);
+}
+
+.card-hover {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-normal);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-light);
+}
+
+/* Base Input Field */
+.input-field {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-field:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-border-focus);
+  border-color: var(--color-border-focus);
+}
+
+.input-field-error {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-field-error:focus {
+  box-shadow: 0 0 0 2px #ef4444;
+  border-color: #ef4444;
+}
+
+/* Form Elements */
+.label-text {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.form-section {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  background-color: var(--color-bg-section);
+}
+
+/* Base Button */
+.btn-base {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+}
+
+.btn-base:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Button Variants */
+.btn-primary {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.btn-secondary {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+  background-color: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-secondary-hover);
+}
+
+.btn-secondary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.btn-success {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+  background-color: var(--color-success);
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: var(--color-success-hover);
+}
+
+.btn-success:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.btn-danger {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--color-danger-hover);
+}
+
+.btn-danger:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.btn-warning {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+  background-color: var(--color-warning);
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: var(--color-warning-hover);
+}
+
+.btn-warning:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Base Status Badge */
+.status-badge {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Status Variants */
+.status-success {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-warning {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-error {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #fecaca;
+  color: #991b1b;
+}
+
+.status-info {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+/* Base Alert */
+.alert-base {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+}
+
+/* Alert Variants */
+.alert-error {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid #fecaca;
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.alert-success {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid #bbf7d0;
+  background-color: #f0fdf4;
+  color: #15803d;
+}
+
+.alert-warning {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid #fde68a;
+  background-color: #fffbeb;
+  color: #a16207;
+}
+
+.alert-info {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid #bfdbfe;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* Table Styles */
+.table-container {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.table-header {
+  background-color: var(--color-bg-header);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.table-cell {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.table-row-hover {
+  transition: background-color var(--transition-fast);
+}
+
+.table-row-hover:hover {
+  background-color: var(--color-bg-hover);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-content {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  padding: var(--spacing-xl);
+  width: 100%;
+  max-width: var(--container-sm);
+  margin: 0 var(--spacing-lg);
+}
+
+.modal-content-lg {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  padding: var(--spacing-xl);
+  width: 100%;
+  max-width: var(--container-md);
+  margin: 0 var(--spacing-lg);
+}
+
+/* Loading States */
+.spinner {
+  animation: spin 1s linear infinite;
+  border-radius: var(--radius-full);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl) 0;
+}
+
+/* Typography */
+.heading-xl {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.heading-lg {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.heading-md {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.heading-sm {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-error {
+  color: var(--color-danger);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+/* Supabase Auth UI Overrides */
 .auth-container {
   width: 100%;
 }
 
 .auth-container .supabase-auth-ui_ui-button {
-  @apply w-full py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  color: white;
+  background-color: var(--color-primary);
+  transition: background-color var(--transition-normal);
+}
+
+.auth-container .supabase-auth-ui_ui-button:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.auth-container .supabase-auth-ui_ui-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
 }
 
 .auth-container .supabase-auth-ui_ui-button:disabled {
-  @apply opacity-50 cursor-not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* Google OAuth button styling */
 .auth-container .supabase-auth-ui_ui-button[data-provider="google"] {
-  @apply bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900 focus:ring-gray-500;
+  background-color: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  box-shadow: var(--shadow-sm);
 }
 
 .auth-container .supabase-auth-ui_ui-button[data-provider="google"]:hover {
-  @apply shadow-md;
+  background-color: #f9fafb;
+  color: var(--color-text);
+}
+
+.auth-container .supabase-auth-ui_ui-button[data-provider="google"]:focus {
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.5);
 }
 
 .auth-container .supabase-auth-ui_ui-input {
-  @apply appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm;
+  appearance: none;
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius-md);
+  background-color: white;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  z-index: 10;
+}
+
+.auth-container .supabase-auth-ui_ui-input::placeholder {
+  color: #6b7280;
+}
+
+.auth-container .supabase-auth-ui_ui-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
 }
 
 .auth-container .supabase-auth-ui_ui-label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-xs);
 }
 
 .auth-container .supabase-auth-ui_ui-anchor {
-  @apply font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200;
+  font-weight: 500;
+  color: var(--color-primary);
+  transition: color var(--transition-normal);
 }
 
-.auth-container .supabase-auth-ui_ui-divider {
-  @apply my-6;
+.auth-container .supabase-auth-ui_ui-anchor:hover {
+  color: var(--color-primary-hover);
 }
 
 .auth-container .supabase-auth-ui_ui-message {
-  @apply text-sm text-center;
+  font-size: 0.875rem;
+  text-align: center;
 }
 
 .auth-container .supabase-auth-ui_ui-message--error {
-  @apply text-red-600;
+  color: var(--color-danger);
 }
 
 .auth-container .supabase-auth-ui_ui-message--success {
-  @apply text-green-600;
+  color: var(--color-success);
 }
 
-/* Form spacing */
-.auth-container form {
-  @apply space-y-4;
+.auth-container form > * + *,
+.auth-container .supabase-auth-ui_ui-container > * + * {
+  margin-top: var(--spacing-lg);
 }
 
-.auth-container .supabase-auth-ui_ui-container {
-  @apply space-y-4;
-}
-
-/* Social provider spacing */
 .auth-container .supabase-auth-ui_ui-socialAuth {
-  @apply mb-4;
+  margin-bottom: var(--spacing-lg);
 }
 
-/* Divider styling */
 .auth-container .supabase-auth-ui_ui-divider {
-  @apply relative my-6;
+  position: relative;
+  margin: var(--spacing-xl) 0;
 }
 
 .auth-container .supabase-auth-ui_ui-divider::before {
-  @apply absolute inset-0 flex items-center;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
   content: '';
 }
 
 .auth-container .supabase-auth-ui_ui-divider::after {
-  @apply w-full border-t border-gray-300;
+  width: 100%;
+  border-top: 1px solid #d1d5db;
   content: '';
 }
 
 .auth-container .supabase-auth-ui_ui-divider span {
-  @apply relative bg-white px-2 text-sm text-gray-500;
+  position: relative;
+  background-color: white;
+  padding: 0 var(--spacing-sm);
+  font-size: 0.875rem;
+  color: #6b7280;
 }
