@@ -55,11 +55,21 @@ export const formatPhoneForDisplay = (phone: string | number): string => {
   return cleaned;
 };
 
-// Format rate for display (integer with comma separators)
+// Format load rate for display (integer with comma separators)
 export const formatRateForDisplay = (rate: number | string): string => {
   const numRate = typeof rate === 'string' ? parseFloat(rate) : rate;
   const integerRate = Math.floor(numRate);
   return integerRate.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
+// Format driver pay rate for display (decimal with comma separators)
+export const formatDriverPayRateForDisplay = (rate: number | string): string => {
+  const numRate = typeof rate === 'string' ? parseFloat(rate) : rate;
+  // Format to 2 decimal places and add comma separators
+  return numRate.toLocaleString('en-US', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  });
 };
 
 // Validate positive number
@@ -79,7 +89,7 @@ export const validateRequired = (value: string): boolean => {
   return value.trim().length > 0;
 };
 
-// Validate and sanitize rate input (removes $ and validates - integers only)
+// Validate and sanitize load rate input (removes $ and validates - integers only)
 export const validateRate = (rate: string | number): { isValid: boolean; sanitizedValue: number; error?: string } => {
   const rateStr = rate.toString();
   
@@ -104,13 +114,50 @@ export const validateRate = (rate: string | number): { isValid: boolean; sanitiz
     return { isValid: false, sanitizedValue: 0, error: 'Rate must be a finite number' };
   }
   
-  // Check if it's a whole number (no decimals allowed)
+  // Check if it's a whole number (no decimals allowed for load rates)
   if (num !== Math.floor(num)) {
     return { isValid: false, sanitizedValue: 0, error: 'Rate must be a whole number (no decimals)' };
   }
   
   // Return as integer
   return { isValid: true, sanitizedValue: Math.floor(num) };
+};
+
+// Validate and sanitize driver pay rate input (removes $ and validates - supports decimals up to 2 places)
+export const validateDriverPayRate = (rate: string | number): { isValid: boolean; sanitizedValue: number; error?: string } => {
+  const rateStr = rate.toString();
+  
+  if (!rateStr || rateStr.trim() === '') {
+    return { isValid: false, sanitizedValue: 0, error: 'Pay rate is required' };
+  }
+  
+  // Remove $ sign and whitespace
+  const sanitized = rateStr.replace(/[$\s,]/g, '');
+  
+  // Check if it's a valid positive number
+  const num = parseFloat(sanitized);
+  if (isNaN(num)) {
+    return { isValid: false, sanitizedValue: 0, error: 'Pay rate must be a valid number' };
+  }
+  
+  if (num <= 0) {
+    return { isValid: false, sanitizedValue: 0, error: 'Pay rate must be greater than 0' };
+  }
+  
+  if (!isFinite(num)) {
+    return { isValid: false, sanitizedValue: 0, error: 'Pay rate must be a finite number' };
+  }
+  
+  // Check decimal places (max 2 decimal places)
+  const decimalPlaces = (sanitized.split('.')[1] || '').length;
+  if (decimalPlaces > 2) {
+    return { isValid: false, sanitizedValue: 0, error: 'Pay rate cannot have more than 2 decimal places' };
+  }
+  
+  // Round to 2 decimal places to handle floating point precision issues
+  const roundedNum = Math.round(num * 100) / 100;
+  
+  return { isValid: true, sanitizedValue: roundedNum };
 };
 
 // Validate temperature (allows positive and negative numbers)

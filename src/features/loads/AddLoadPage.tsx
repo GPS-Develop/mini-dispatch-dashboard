@@ -16,10 +16,10 @@ export default function AddLoadPage() {
   const [form, setForm] = useState({
     referenceId: "",
     pickups: [
-      { address: "", state: "", datetime: "" }
+      { address: "", city: "", state: "", datetime: "" }
     ],
     deliveries: [
-      { address: "", state: "", datetime: "" }
+      { address: "", city: "", state: "", datetime: "" }
     ],
     loadType: "Reefer",
     temperature: "",
@@ -44,7 +44,7 @@ export default function AddLoadPage() {
   }
 
   function handlePickupChange(idx: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target as { name: 'address' | 'state' | 'datetime'; value: string };
+    const { name, value } = e.target as { name: 'address' | 'city' | 'state' | 'datetime'; value: string };
     setForm((prev) => {
       const pickups = [...prev.pickups];
       pickups[idx][name] = value;
@@ -53,7 +53,7 @@ export default function AddLoadPage() {
   }
 
   function handleDeliveryChange(idx: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target as { name: 'address' | 'state' | 'datetime'; value: string };
+    const { name, value } = e.target as { name: 'address' | 'city' | 'state' | 'datetime'; value: string };
     setForm((prev) => {
       const deliveries = [...prev.deliveries];
       deliveries[idx][name] = value;
@@ -62,7 +62,7 @@ export default function AddLoadPage() {
   }
 
   function addPickup() {
-    setForm((prev) => ({ ...prev, pickups: [...prev.pickups, { address: "", state: "", datetime: "" }] }));
+    setForm((prev) => ({ ...prev, pickups: [...prev.pickups, { address: "", city: "", state: "", datetime: "" }] }));
   }
 
   function removePickup(idx: number) {
@@ -70,7 +70,7 @@ export default function AddLoadPage() {
   }
 
   function addDelivery() {
-    setForm((prev) => ({ ...prev, deliveries: [...prev.deliveries, { address: "", state: "", datetime: "" }] }));
+    setForm((prev) => ({ ...prev, deliveries: [...prev.deliveries, { address: "", city: "", state: "", datetime: "" }] }));
   }
 
   function removeDelivery(idx: number) {
@@ -161,6 +161,13 @@ export default function AddLoadPage() {
                   onChange={e => handlePickupChange(idx, e)}
                   className="flex-1 border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 />
+                <input
+                  name="city"
+                  placeholder="City"
+                  value={pickup.city}
+                  onChange={e => handlePickupChange(idx, e)}
+                  className="border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition w-32"
+                />
                 <select
                   name="state"
                   value={pickup.state}
@@ -214,6 +221,13 @@ export default function AddLoadPage() {
                   value={delivery.address}
                   onChange={e => handleDeliveryChange(idx, e)}
                   className="flex-1 border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                />
+                <input
+                  name="city"
+                  placeholder="City"
+                  value={delivery.city}
+                  onChange={e => handleDeliveryChange(idx, e)}
+                  className="border rounded-lg px-3 py-2 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition w-32"
                 />
                 <select
                   name="state"

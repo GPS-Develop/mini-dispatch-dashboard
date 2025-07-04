@@ -76,7 +76,7 @@ export default function Home() {
                       <span className="font-semibold">Pickups:</span>
                       <ol className="list-decimal ml-5">
                         {(pickupsMap[load.id] || []).map((p, i) => (
-                          <li key={p.id || i}>{p.address}, {p.state} ({p.datetime})</li>
+                          <li key={p.id || i}>{p.address}, {p.city ? `${p.city}, ` : ''}{p.state} ({p.datetime})</li>
                         ))}
                       </ol>
                     </div>
@@ -84,7 +84,7 @@ export default function Home() {
                       <span className="font-semibold">Deliveries:</span>
                       <ol className="list-decimal ml-5">
                         {(deliveriesMap[load.id] || []).map((d, i) => (
-                          <li key={d.id || i}>{d.address}, {d.state} ({d.datetime})</li>
+                          <li key={d.id || i}>{d.address}, {d.city ? `${d.city}, ` : ''}{d.state} ({d.datetime})</li>
                         ))}
                       </ol>
                     </div>

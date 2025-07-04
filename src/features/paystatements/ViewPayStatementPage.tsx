@@ -226,7 +226,7 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
             </div>
             <div>
               <div style={{ fontWeight: '500', color: '#374151' }}>Pay Rate:</div>
-              <div style={{ fontSize: '18px', color: '#111827' }}>{driver.payRate}</div>
+              <div style={{ fontSize: '18px', color: '#111827' }}>${driver.payRate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mile</div>
             </div>
             <div>
               <div style={{ fontWeight: '500', color: '#374151' }}>Statement Date:</div>

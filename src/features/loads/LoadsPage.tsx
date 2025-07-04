@@ -40,11 +40,13 @@ export default function LoadsPage() {
       const pickupSearch = (pickupsMap[l.id] || []).some(
         (p) =>
           (p.address || "").toLowerCase().includes(search.toLowerCase()) ||
+          (p.city || "").toLowerCase().includes(search.toLowerCase()) ||
           (p.state || "").toLowerCase().includes(search.toLowerCase())
       );
       const deliverySearch = (deliveriesMap[l.id] || []).some(
         (d) =>
           (d.address || "").toLowerCase().includes(search.toLowerCase()) ||
+          (d.city || "").toLowerCase().includes(search.toLowerCase()) ||
           (d.state || "").toLowerCase().includes(search.toLowerCase())
       );
       const matchesSearch =
@@ -184,9 +186,11 @@ export default function LoadsPage() {
     
     try {
     // Update main load
+    const convertedRate = parseInt(editForm.rate) || 0;
+    
     const updatedData = {
       driver_id: editForm.driver_id,
-      rate: editForm.rate,
+      rate: convertedRate, // Convert string to integer
       notes: editForm.notes,
       broker_name: editForm.broker_name,
       broker_contact: parseInt(sanitizedBrokerContact) || 0,
@@ -200,6 +204,7 @@ export default function LoadsPage() {
     for (const p of editForm.pickups) {
         const { error: pickupError } = await supabase.from("pickups").update({
         address: p.address,
+        city: p.city,
         state: p.state,
         datetime: p.datetime,
       }).eq("id", p.id);
@@ -213,6 +218,7 @@ export default function LoadsPage() {
     for (const d of editForm.deliveries) {
         const { error: deliveryError } = await supabase.from("deliveries").update({
         address: d.address,
+        city: d.city,
         state: d.state,
         datetime: d.datetime,
       }).eq("id", d.id);
@@ -289,7 +295,7 @@ export default function LoadsPage() {
                 <span className="font-semibold">Pickup:</span>
                 <ol className="list-decimal ml-5">
                   {(pickupsMap[load.id] || []).map((p, i) => (
-                    <li key={p.id || i}>{p.address}, {p.state} ({p.datetime})</li>
+                    <li key={p.id || i}>{p.address}, {p.city ? `${p.city}, ` : ''}{p.state} ({p.datetime})</li>
                   ))}
                 </ol>
               </div>
@@ -297,7 +303,7 @@ export default function LoadsPage() {
                 <span className="font-semibold">Delivery:</span>
                 <ol className="list-decimal ml-5">
                   {(deliveriesMap[load.id] || []).map((d, i) => (
-                    <li key={d.id || i}>{d.address}, {d.state} ({d.datetime})</li>
+                    <li key={d.id || i}>{d.address}, {d.city ? `${d.city}, ` : ''}{d.state} ({d.datetime})</li>
                   ))}
                 </ol>
               </div>
@@ -336,14 +342,14 @@ export default function LoadsPage() {
                   <div><span className="font-semibold">Pickup:</span>
                     <ol className="list-decimal ml-5">
                       {(pickupsMap[selected.id] || []).map((p, i) => (
-                        <li key={p.id || i}>{p.address}, {p.state} ({p.datetime})</li>
+                        <li key={p.id || i}>{p.address}, {p.city ? `${p.city}, ` : ''}{p.state} ({p.datetime})</li>
                       ))}
                     </ol>
                   </div>
                   <div><span className="font-semibold">Delivery:</span>
                     <ol className="list-decimal ml-5">
                       {(deliveriesMap[selected.id] || []).map((d, i) => (
-                        <li key={d.id || i}>{d.address}, {d.state} ({d.datetime})</li>
+                        <li key={d.id || i}>{d.address}, {d.city ? `${d.city}, ` : ''}{d.state} ({d.datetime})</li>
                       ))}
                     </ol>
                   </div>
@@ -424,6 +430,13 @@ export default function LoadsPage() {
                         className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
                         placeholder="Pickup Address"
                       />
+                      <input
+                        name="city"
+                        value={pickup.city || ''}
+                        onChange={e => handlePickupChange(idx, e)}
+                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
+                        placeholder="Pickup City"
+                      />
                       <select
                         name="state"
                         value={pickup.state}
@@ -457,6 +470,13 @@ export default function LoadsPage() {
                         onChange={e => handleDeliveryChange(idx, e)}
                         className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
                         placeholder="Delivery Address"
+                      />
+                      <input
+                        name="city"
+                        value={delivery.city || ''}
+                        onChange={e => handleDeliveryChange(idx, e)}
+                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
+                        placeholder="Delivery City"
                       />
                       <select
                         name="state"

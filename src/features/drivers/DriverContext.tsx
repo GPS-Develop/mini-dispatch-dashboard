@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useLoads } from "../loads/LoadContext";
 import { createClient } from "../../utils/supabase/client";
-import { validateRate } from "../../utils/validation";
+import { validateDriverPayRate } from "../../utils/validation";
 
 export type Driver = {
   id: string;
@@ -131,7 +131,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     
     // Validate pay rate before sending to database
     if (driver.pay_rate) {
-      const rateValidation = validateRate(driver.pay_rate);
+      const rateValidation = validateDriverPayRate(driver.pay_rate);
       if (!rateValidation.isValid) {
         setError(rateValidation.error || 'Invalid pay rate');
         return;
@@ -174,7 +174,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     
     // Validate pay rate before sending to database
     if (driver.pay_rate) {
-      const rateValidation = validateRate(driver.pay_rate);
+      const rateValidation = validateDriverPayRate(driver.pay_rate);
       if (!rateValidation.isValid) {
         setError(rateValidation.error || 'Invalid pay rate');
         return;

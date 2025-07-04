@@ -214,6 +214,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
         {
           load_id: loadId,
           address: p.address,
+          city: p.city,
           state: p.state,
           datetime: p.datetime,
         }
@@ -230,6 +231,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
         {
           load_id: loadId,
           address: d.address,
+          city: d.city,
           state: d.state,
           datetime: d.datetime,
         }

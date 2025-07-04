@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Button from './Button/Button';
-import { sanitizePhone } from '@/utils/validation';
+import { sanitizePhone, validateDriverPayRate } from '@/utils/validation';
 
 interface CreateDriverAccountModalProps {
   isOpen: boolean;
@@ -64,9 +64,9 @@ export default function CreateDriverAccountModal({
       }
 
       // Validate pay rate
-      const payRate = parseFloat(formData.payRate);
-      if (isNaN(payRate) || payRate <= 0) {
-        setError('Pay rate must be a positive number');
+      const payRateValidation = validateDriverPayRate(formData.payRate);
+      if (!payRateValidation.isValid) {
+        setError(payRateValidation.error || 'Invalid pay rate');
         return;
       }
 
@@ -80,7 +80,7 @@ export default function CreateDriverAccountModal({
           name: formData.name.trim(),
           email: formData.email.toLowerCase().trim(),
           phone: sanitizedPhone,
-          payRate: payRate
+          payRate: payRateValidation.sanitizedValue
         }),
       });
 

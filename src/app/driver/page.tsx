@@ -9,12 +9,6 @@ import { useRouter } from 'next/navigation';
 interface Load {
   id: string;
   reference_id: string;
-  pickup_address: string;
-  pickup_state: string;
-  pickup_datetime: string;
-  delivery_address: string;
-  delivery_state: string;
-  delivery_datetime: string;
   load_type: string;
   temperature?: number | null;
   rate: number;
@@ -44,6 +38,8 @@ export default function DriverDashboard() {
   
   const [loads, setLoads] = useState<Load[]>([]);
   const [driver, setDriver] = useState<Driver | null>(null);
+  const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
+  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -105,7 +101,7 @@ export default function DriverDashboard() {
         .select('*')
         .eq('driver_id', driverData.id)
         .in('status', ['Scheduled', 'In-Transit'])
-        .order('pickup_datetime', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (loadsError) {
         setError('Failed to fetch assigned loads');
@@ -113,6 +109,37 @@ export default function DriverDashboard() {
       }
 
       setLoads(loadsData || []);
+
+      // Fetch pickup and delivery data for the loads
+      if (loadsData && loadsData.length > 0) {
+        const loadIds = loadsData.map(l => l.id);
+        
+        const { data: pickups } = await supabase
+          .from("pickups")
+          .select("*")
+          .in("load_id", loadIds);
+          
+        const { data: deliveries } = await supabase
+          .from("deliveries")
+          .select("*")  
+          .in("load_id", loadIds);
+
+        const pickupsByLoad: Record<string, any[]> = {};
+        const deliveriesByLoad: Record<string, any[]> = {};
+        
+        pickups?.forEach(p => {
+          if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
+          pickupsByLoad[p.load_id].push(p);
+        });
+        
+        deliveries?.forEach(d => {
+          if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
+          deliveriesByLoad[d.load_id].push(d);
+        });
+        
+        setPickupsMap(pickupsByLoad);
+        setDeliveriesMap(deliveriesByLoad);
+      }
     } catch {
       setError('An unexpected error occurred');
     } finally {
@@ -256,8 +283,12 @@ export default function DriverDashboard() {
                       <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                       <div className="flex-1">
                         <div className="text-sm font-medium text-gray-900">Pickup</div>
-                        <div className="text-sm text-gray-600">{load.pickup_address}, {load.pickup_state}</div>
-                        <div className="text-xs text-gray-500">{formatDateTime(load.pickup_datetime)}</div>
+                        {(pickupsMap[load.id] || []).map((p, i) => (
+                          <div key={p.id || i}>
+                            <div className="text-sm text-gray-600">{p.address}, {p.city ? `${p.city}, ` : ''}{p.state}</div>
+                            <div className="text-xs text-gray-500">{formatDateTime(p.datetime)}</div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                     
@@ -265,8 +296,12 @@ export default function DriverDashboard() {
                       <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
                       <div className="flex-1">
                         <div className="text-sm font-medium text-gray-900">Delivery</div>
-                        <div className="text-sm text-gray-600">{load.delivery_address}, {load.delivery_state}</div>
-                        <div className="text-xs text-gray-500">{formatDateTime(load.delivery_datetime)}</div>
+                        {(deliveriesMap[load.id] || []).map((d, i) => (
+                          <div key={d.id || i}>
+                            <div className="text-sm text-gray-600">{d.address}, {d.city ? `${d.city}, ` : ''}{d.state}</div>
+                            <div className="text-xs text-gray-500">{formatDateTime(d.datetime)}</div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>

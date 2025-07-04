@@ -14,6 +14,7 @@ export interface Pickup {
   id?: string;
   load_id: string;
   address: string;
+  city: string;
   state: string;
   datetime: string;
 }
@@ -22,6 +23,7 @@ export interface Delivery {
   id?: string;
   load_id: string;
   address: string;
+  city: string;
   state: string;
   datetime: string;
 }
@@ -47,11 +49,13 @@ export interface AddLoadForm {
   referenceId: string;
   pickups: Array<{
     address: string;
+    city: string;
     state: string;
     datetime: string;
   }>;
   deliveries: Array<{
     address: string;
+    city: string;
     state: string;
     datetime: string;
   }>;

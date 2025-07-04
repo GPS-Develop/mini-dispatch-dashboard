@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createDriverAccount } from '@/utils/supabase/admin';
-import { sanitizePhone } from '@/utils/validation';
+import { sanitizePhone, validateDriverPayRate } from '@/utils/validation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate pay rate
-    const numericPayRate = parseFloat(payRate);
-    if (isNaN(numericPayRate) || numericPayRate <= 0) {
+    const payRateValidation = validateDriverPayRate(payRate);
+    if (!payRateValidation.isValid) {
       return NextResponse.json(
-        { error: 'Pay rate must be a positive number' },
+        { error: payRateValidation.error || 'Invalid pay rate' },
         { status: 400 }
       );
     }
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       email.toLowerCase().trim(),
       name.trim(),
       parseInt(sanitizedPhone),
-      numericPayRate
+      payRateValidation.sanitizedValue
     );
 
     if (!result.success) {

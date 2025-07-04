@@ -463,7 +463,7 @@ export default function LoginPage() {
                 input: 'auth-input',
               },
             }}
-            providers={['google']}
+            providers={[]}
             redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/login` : '/login'}
             onlyThirdPartyProviders={false}
             magicLink={false}
