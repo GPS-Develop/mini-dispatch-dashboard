@@ -146,9 +146,9 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-white text-gray-900 rounded-xl shadow-lg mt-8 mb-8 font-sans">
-        <div className="text-center py-8">
-          <div className="text-gray-600">Loading pay statement...</div>
+      <div className="page-container-lg">
+        <div className="loading-container">
+          <div className="text-muted">Loading pay statement...</div>
         </div>
       </div>
     );
@@ -156,13 +156,12 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
 
   if (error || !payStatement || !driver) {
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-white text-gray-900 rounded-xl shadow-lg mt-8 mb-8 font-sans">
-        <div className="text-center py-8">
-          <div className="text-red-600">Pay statement not found or failed to load.</div>
+      <div className="page-container-lg">
+        <div className="loading-container">
+          <div className="alert-error">Pay statement not found or failed to load.</div>
           <Button 
             variant="secondary" 
             onClick={() => router.push("/pay-statements")}
-            className="mt-4"
           >
             Back to Pay Statements
           </Button>
@@ -174,13 +173,12 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
   const { totalAdditions, totalDeductions, netPay } = calculateTotals();
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white text-gray-900 rounded-xl shadow-lg mt-8 mb-8 font-sans">
+    <div className="page-container-lg">
       {/* Action Buttons */}
-      <div className="flex justify-between items-center mb-6 print:hidden">
+      <div className="page-header print:hidden">
         <Button 
           variant="secondary" 
           onClick={() => router.push("/pay-statements")}
-          className="text-gray-600 hover:text-gray-800"
         >
           ← Back to Pay Statements
         </Button>
@@ -188,7 +186,6 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
           variant="primary" 
           onClick={generatePDF}
           disabled={isGeneratingPDF}
-          className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 disabled:bg-gray-400"
         >
           {isGeneratingPDF ? "Generating PDF..." : "Download PDF"}
         </Button>
@@ -197,7 +194,7 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
       {/* Printable Content */}
       <div 
         ref={printRef} 
-        className={styles.payStatementContainer}
+        className={`pay-statement-container pay-statement-print ${styles.payStatementContainer}`}
       >
         {/* Header */}
         <div className={styles.header}>
@@ -234,6 +231,8 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
         {trips.length > 0 && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Trip Details</h2>
+            
+            {/* Desktop Table View */}
             <div className={styles.tableContainer}>
               <table className={styles.tripsTable}>
                 <thead>
@@ -263,6 +262,40 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className={styles.tripCards}>
+              {trips.map((trip, index) => (
+                <div key={index} className={styles.tripCard}>
+                  <div className={styles.tripCardHeader}>
+                    <div className={styles.tripCardNumber}>Trip #{trip.trip_number}</div>
+                    <div className={styles.tripCardAmount}>{formatCurrency(trip.amount)}</div>
+                  </div>
+                  
+                  <div className={styles.tripCardDetails}>
+                    <div className={styles.tripCardDetail}>
+                      <div className={styles.tripCardDetailLabel}>Picked</div>
+                      <div className={styles.tripCardDetailValue}>{trip.picked_date}</div>
+                    </div>
+                    <div className={styles.tripCardDetail}>
+                      <div className={styles.tripCardDetailLabel}>Drop</div>
+                      <div className={styles.tripCardDetailValue}>{trip.drop_date}</div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.tripCardLocations}>
+                    <div className={styles.tripCardLocation}>
+                      <div className={styles.tripCardLocationLabel}>From Location(s)</div>
+                      <div className={styles.tripCardLocationValue}>{trip.from_city}</div>
+                    </div>
+                    <div className={styles.tripCardLocation}>
+                      <div className={styles.tripCardLocationLabel}>To Location(s)</div>
+                      <div className={styles.tripCardLocationValue}>{trip.to_city}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

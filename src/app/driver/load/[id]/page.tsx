@@ -199,35 +199,28 @@ export default function DriverLoadDetails() {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Scheduled': return 'bg-blue-100 text-blue-800';
-      case 'In-Transit': return 'bg-yellow-100 text-yellow-800';
-      case 'Delivered': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading load details...</p>
-        </div>
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <div className="text-muted">Loading load details...</div>
       </div>
     );
   }
 
   if (error && !load) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center p-6">
-          <div className="text-red-600 text-xl mb-4">⚠️</div>
-          <p className="text-red-600 mb-4">{error}</p>
+      <div className="loading-container">
+        <div className="driver-error-state">
+          <div className="driver-error-icon">⚠️</div>
+          <div className="alert-error">
+            <p>{error}</p>
+          </div>
           <button 
             onClick={() => router.push('/driver')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            className="btn-primary"
           >
             Back to Dashboard
           </button>
@@ -239,62 +232,60 @@ export default function DriverLoadDetails() {
   if (!load) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="driver-dashboard">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => router.push('/driver')}
-                className="text-blue-600 hover:text-blue-800"
-              >
-                ← Back
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Load #{load.reference_id}</h1>
-                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(load.status)}`}>
-                  {load.status}
-                </span>
-              </div>
-            </div>
+      <div className="driver-header">
+        <div className="driver-header-content">
+          <div className="driver-load-details-header">
             <button
-              onClick={() => signOut()}
-              className="text-sm text-red-600 hover:text-red-800"
+              onClick={() => router.push('/driver')}
+              className="driver-back-btn"
             >
-              Sign Out
+              ← Back
             </button>
+            <div className="driver-load-details-title">
+              <h1 className="heading-lg">Load #{load.reference_id}</h1>
+              <span className={`driver-load-status driver-load-status-${load.status.toLowerCase().replace('-', '')}`}>
+                {load.status}
+              </span>
+            </div>
           </div>
+          <button
+            onClick={() => signOut()}
+            className="driver-signout-btn"
+          >
+            Sign Out
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="px-4 py-6 space-y-6">
+      <div className="driver-content">
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className="alert-error">
+            <p>{error}</p>
           </div>
         )}
 
         {/* Route Information */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Route Information</h2>
+        <div className="driver-load-details-section">
+          <h2 className="heading-md">Route Information</h2>
           
-          <div className="space-y-4">
+          <div className="driver-route-sections">
             {/* Pickups */}
-            <div>
-              <div className="font-medium text-gray-900 mb-2">Pickup Locations</div>
+            <div className="driver-route-section">
+              <div className="driver-route-section-title">Pickup Locations</div>
               {pickups.length === 0 ? (
-                <div className="text-gray-500 text-sm">No pickup locations specified</div>
+                <div className="text-muted">No pickup locations specified</div>
               ) : (
                 pickups.map((pickup, index) => (
-                  <div key={pickup.id} className="flex items-start space-x-3 mb-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <div className="text-gray-600">{pickup.address}</div>
-                      <div className="text-gray-600">{pickup.city ? `${pickup.city}, ` : ''}{pickup.state}</div>
-                      <div className="text-sm text-gray-500 mt-1">{formatDateTime(pickup.datetime)}</div>
+                  <div key={pickup.id} className="driver-load-route-item">
+                    <div className="driver-load-route-indicator driver-load-pickup-indicator"></div>
+                    <div className="driver-load-route-details">
+                      <div className="driver-load-address">{pickup.address}</div>
+                      <div className="driver-load-address">{pickup.city ? `${pickup.city}, ` : ''}{pickup.state}</div>
+                      <div className="driver-load-datetime">{formatDateTime(pickup.datetime)}</div>
                     </div>
                   </div>
                 ))
@@ -302,18 +293,18 @@ export default function DriverLoadDetails() {
             </div>
 
             {/* Deliveries */}
-            <div>
-              <div className="font-medium text-gray-900 mb-2">Delivery Locations</div>
+            <div className="driver-route-section">
+              <div className="driver-route-section-title">Delivery Locations</div>
               {deliveries.length === 0 ? (
-                <div className="text-gray-500 text-sm">No delivery locations specified</div>
+                <div className="text-muted">No delivery locations specified</div>
               ) : (
                 deliveries.map((delivery, index) => (
-                  <div key={delivery.id} className="flex items-start space-x-3 mb-3">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <div className="text-gray-600">{delivery.address}</div>
-                      <div className="text-gray-600">{delivery.city ? `${delivery.city}, ` : ''}{delivery.state}</div>
-                      <div className="text-sm text-gray-500 mt-1">{formatDateTime(delivery.datetime)}</div>
+                  <div key={delivery.id} className="driver-load-route-item">
+                    <div className="driver-load-route-indicator driver-load-delivery-indicator"></div>
+                    <div className="driver-load-route-details">
+                      <div className="driver-load-address">{delivery.address}</div>
+                      <div className="driver-load-address">{delivery.city ? `${delivery.city}, ` : ''}{delivery.state}</div>
+                      <div className="driver-load-datetime">{formatDateTime(delivery.datetime)}</div>
                     </div>
                   </div>
                 ))
@@ -323,55 +314,55 @@ export default function DriverLoadDetails() {
         </div>
 
         {/* Load Details */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Load Details</h2>
+        <div className="driver-load-details-section">
+          <h2 className="heading-md">Load Details</h2>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-sm text-gray-500">Load Type</div>
-              <div className="font-medium text-gray-900">{load.load_type}</div>
+          <div className="driver-load-details">
+            <div className="driver-load-detail-item">
+              <div className="driver-load-detail-label">Load Type</div>
+              <div className="driver-load-detail-value">{load.load_type}</div>
             </div>
-            <div>
-              <div className="text-sm text-gray-500">Rate</div>
-              <div className="font-medium text-green-600">${load.rate.toLocaleString()}</div>
+            <div className="driver-load-detail-item">
+              <div className="driver-load-detail-label">Rate</div>
+              <div className="driver-load-detail-value driver-load-rate">${load.rate.toLocaleString()}</div>
             </div>
             {load.temperature && (
-              <div>
-                <div className="text-sm text-gray-500">Temperature</div>
-                <div className="font-medium text-gray-900">{load.temperature}°F</div>
+              <div className="driver-load-detail-item">
+                <div className="driver-load-detail-label">Temperature</div>
+                <div className="driver-load-detail-value">{load.temperature}°F</div>
               </div>
             )}
           </div>
 
           {load.notes && (
-            <div className="mt-4">
-              <div className="text-sm text-gray-500">Notes</div>
-              <div className="text-gray-900 mt-1">{load.notes}</div>
+            <div className="driver-load-notes">
+              <div className="driver-load-detail-label">Notes</div>
+              <div className="driver-load-detail-value">{load.notes}</div>
             </div>
           )}
         </div>
 
         {/* Broker Information */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Broker Contact</h2>
+        <div className="driver-load-details-section">
+          <h2 className="heading-md">Broker Contact</h2>
           
-          <div className="space-y-2">
-            <div>
-              <div className="text-sm text-gray-500">Broker Name</div>
-              <div className="font-medium text-gray-900">{load.broker_name}</div>
+          <div className="driver-broker-info">
+            <div className="driver-broker-info-item">
+              <div className="driver-load-detail-label">Broker Name</div>
+              <div className="driver-load-detail-value">{load.broker_name}</div>
             </div>
-            <div>
-              <div className="text-sm text-gray-500">Phone</div>
-              <div className="font-medium text-gray-900">
-                <a href={`tel:${load.broker_contact}`} className="text-blue-600 hover:text-blue-800">
+            <div className="driver-broker-info-item">
+              <div className="driver-load-detail-label">Phone</div>
+              <div className="driver-load-detail-value">
+                <a href={`tel:${load.broker_contact}`} className="text-primary">
                   {formatPhoneForDisplay(load.broker_contact)}
                 </a>
               </div>
             </div>
-            <div>
-              <div className="text-sm text-gray-500">Email</div>
-              <div className="font-medium text-gray-900">
-                <a href={`mailto:${load.broker_email}`} className="text-blue-600 hover:text-blue-800">
+            <div className="driver-broker-info-item">
+              <div className="driver-load-detail-label">Email</div>
+              <div className="driver-load-detail-value">
+                <a href={`mailto:${load.broker_email}`} className="text-primary">
                   {load.broker_email}
                 </a>
               </div>
@@ -380,14 +371,14 @@ export default function DriverLoadDetails() {
         </div>
 
         {/* Status Update */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Update Status</h2>
+        <div className="driver-load-details-section">
+          <h2 className="heading-md">Update Status</h2>
           
-          <div className="flex space-x-2">
+          <div className="driver-status-buttons">
             {load.status === 'Scheduled' && (
               <button
                 onClick={() => updateLoadStatus('In-Transit')}
-                className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 text-sm font-medium"
+                className="btn-warning"
               >
                 Mark In-Transit
               </button>
@@ -395,7 +386,7 @@ export default function DriverLoadDetails() {
             {load.status === 'In-Transit' && (
               <button
                 onClick={() => updateLoadStatus('Delivered')}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm font-medium"
+                className="btn-success"
               >
                 Mark Delivered
               </button>
@@ -404,12 +395,12 @@ export default function DriverLoadDetails() {
         </div>
 
         {/* Document Upload */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Upload Documents</h2>
+        <div className="driver-load-details-section">
+          <h2 className="heading-md">Upload Documents</h2>
           
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="driver-upload-section">
+            <div className="driver-upload-item">
+              <label className="label-text">
                 Upload PDF Documents
               </label>
               <input
@@ -417,18 +408,18 @@ export default function DriverLoadDetails() {
                 accept=".pdf,application/pdf"
                 onChange={handleFileUpload}
                 disabled={uploading}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                className="driver-file-input"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-hint">
                 Select PDF files (max 10MB each)
               </p>
             </div>
 
             {uploading && (
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  <span className="text-blue-700 text-sm">Uploading document...</span>
+              <div className="driver-upload-progress">
+                <div className="driver-upload-progress-content">
+                  <div className="spinner-sm"></div>
+                  <span className="text-primary">Uploading document...</span>
                 </div>
               </div>
             )}
@@ -436,33 +427,33 @@ export default function DriverLoadDetails() {
         </div>
 
         {/* Uploaded Documents */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="driver-load-details-section">
+          <h2 className="heading-md">
             Uploaded Documents ({documents.length})
           </h2>
           
           {documents.length === 0 ? (
-            <div className="text-center py-6">
-              <div className="text-gray-400 text-3xl mb-2">📄</div>
-              <p className="text-gray-600">No documents uploaded yet</p>
-              <p className="text-sm text-gray-500">Upload PDFs using the form above</p>
+            <div className="driver-documents-empty">
+              <div className="driver-documents-empty-icon">📄</div>
+              <div className="text-muted">No documents uploaded yet</div>
+              <div className="text-hint">Upload PDFs using the form above</div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="driver-documents-list">
               {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-md">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-red-600">📄</div>
-                    <div>
-                      <div className="font-medium text-gray-900">{doc.file_name}</div>
-                      <div className="text-xs text-gray-500">
+                <div key={doc.id} className="driver-document-item">
+                  <div className="driver-document-info">
+                    <div className="driver-document-icon">📄</div>
+                    <div className="driver-document-details">
+                      <div className="driver-document-name">{doc.file_name}</div>
+                      <div className="driver-document-date">
                         Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
                   <button
                     onClick={() => viewDocument(doc)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    className="driver-document-view-btn"
                   >
                     View
                   </button>

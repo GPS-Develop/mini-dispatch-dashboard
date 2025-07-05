@@ -47,27 +47,29 @@ const DefaultErrorFallback: React.FC<{ error: Error; resetError: () => void }> =
   error, 
   resetError 
 }) => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-100">
-    <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
-      <div className="text-center">
-        <h2 className="text-xl font-bold text-red-600 mb-4">Something went wrong</h2>
-        <p className="text-gray-600 mb-4">
-          An unexpected error occurred. Please try again.
-        </p>
-        <details className="mb-4 text-left">
-          <summary className="cursor-pointer text-sm text-gray-500">
-            Error details
-          </summary>
-          <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
-            {error.message}
-          </pre>
-        </details>
-        <button
-          onClick={resetError}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-        >
-          Try again
-        </button>
+  <div className="loading-container">
+    <div className="page-container-md">
+      <div className="card">
+        <div className="error-boundary-content">
+          <h2 className="heading-lg text-error">Something went wrong</h2>
+          <p className="text-muted error-boundary-description">
+            An unexpected error occurred. Please try again.
+          </p>
+          <details className="error-boundary-details">
+            <summary className="error-boundary-summary">
+              Error details
+            </summary>
+            <pre className="error-boundary-error-text">
+              {error.message}
+            </pre>
+          </details>
+          <button
+            onClick={resetError}
+            className="btn-primary"
+          >
+            Try again
+          </button>
+        </div>
       </div>
     </div>
   </div>

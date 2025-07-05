@@ -20,8 +20,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="loading-container">
+        <div className="text-muted">Loading...</div>
       </div>
     );
   }

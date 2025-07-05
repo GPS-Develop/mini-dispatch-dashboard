@@ -191,31 +191,31 @@ export default function DriverDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your loads...</p>
-        </div>
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <div className="text-muted">Loading your loads...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center p-6">
-          <div className="text-red-600 text-xl mb-4">⚠️</div>
-          <p className="text-red-600 mb-4">{error}</p>
-          <div className="space-x-2">
+      <div className="loading-container">
+        <div className="driver-error-state">
+          <div className="driver-error-icon">⚠️</div>
+          <div className="alert-error">
+            <p>{error}</p>
+          </div>
+          <div className="button-group-horizontal">
             <button 
               onClick={fetchDriverData}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="btn-primary"
             >
               Try Again
             </button>
             <button 
               onClick={handleSignOut}
-              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+              className="btn-secondary"
             >
               Sign Out
             </button>
@@ -226,61 +226,59 @@ export default function DriverDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="driver-dashboard">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Driver Dashboard</h1>
-              {driver && (
-                <p className="text-sm text-gray-600">Welcome, {driver.name}</p>
-              )}
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="text-sm text-red-600 hover:text-red-800 font-medium"
-            >
-              Sign Out
-            </button>
+      <div className="driver-header">
+        <div className="driver-header-content">
+          <div className="driver-header-info">
+            <h1 className="heading-lg">Driver Dashboard</h1>
+            {driver && (
+              <p className="text-muted">Welcome, {driver.name}</p>
+            )}
           </div>
+          <button
+            onClick={handleSignOut}
+            className="driver-signout-btn"
+          >
+            Sign Out
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="px-4 py-6">
+      <div className="driver-content">
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="text-2xl font-bold text-blue-600">
+        <div className="driver-stats-grid">
+          <div className="driver-stat-card">
+            <div className="driver-stat-number driver-stat-scheduled">
               {loads.filter(l => l.status === 'Scheduled').length}
             </div>
-            <div className="text-sm text-gray-600">Scheduled</div>
+            <div className="driver-stat-label">Scheduled</div>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="text-2xl font-bold text-yellow-600">
+          <div className="driver-stat-card">
+            <div className="driver-stat-number driver-stat-transit">
               {loads.filter(l => l.status === 'In-Transit').length}
             </div>
-            <div className="text-sm text-gray-600">In Transit</div>
+            <div className="driver-stat-label">In Transit</div>
           </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="text-2xl font-bold text-green-600">
+          <div className="driver-stat-card">
+            <div className="driver-stat-number driver-stat-delivered">
               {loads.filter(l => l.status === 'Delivered').length}
             </div>
-            <div className="text-sm text-gray-600">Delivered</div>
+            <div className="driver-stat-label">Delivered</div>
           </div>
         </div>
 
         {/* Loads List */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Your Assigned Loads</h2>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Filter:</span>
+        <div className="driver-loads-section">
+          <div className="driver-loads-header">
+            <h2 className="heading-md">Your Assigned Loads</h2>
+            <div className="driver-filter-container">
+              <span className="driver-filter-label">Filter:</span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as 'All' | 'Scheduled' | 'In-Transit' | 'Delivered')}
-                className="border rounded px-3 py-1 text-sm bg-white text-gray-900"
+                className="input-field-sm"
               >
                 <option value="All">All Loads</option>
                 <option value="Scheduled">Scheduled</option>
@@ -290,66 +288,66 @@ export default function DriverDashboard() {
             </div>
           </div>
           
-          {filteredLoads.length === 0 ? (
-            <div className="bg-white rounded-lg p-6 text-center">
-              <div className="text-gray-400 text-4xl mb-2">📦</div>
-              <p className="text-gray-600">
-                {loads.length === 0 
-                  ? 'No loads assigned yet' 
-                  : `No ${statusFilter.toLowerCase()} loads`}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                {loads.length === 0 
-                  ? 'Check back later for new assignments' 
-                  : 'Try selecting a different filter'}
-              </p>
-            </div>
-          ) : (
-            filteredLoads.map((load) => (
-              <div key={load.id} className={`bg-white rounded-lg shadow-sm border ${load.status === 'Delivered' ? 'opacity-75' : ''}`}>
-                <div className="p-4">
+          <div className="driver-loads-list">
+            {filteredLoads.length === 0 ? (
+              <div className="driver-empty-state">
+                <div className="driver-empty-icon">📦</div>
+                <div className="text-muted">
+                  {loads.length === 0 
+                    ? 'No loads assigned yet' 
+                    : `No ${statusFilter.toLowerCase()} loads`}
+                </div>
+                <div className="text-hint">
+                  {loads.length === 0 
+                    ? 'Check back later for new assignments' 
+                    : 'Try selecting a different filter'}
+                </div>
+              </div>
+            ) : (
+              filteredLoads.map((load) => (
+                <div key={load.id} className={`driver-load-card ${load.status === 'Delivered' ? 'driver-load-card-completed' : ''}`}>
                   {/* Load Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-gray-900">#{load.reference_id}</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(load.status)}`}>
+                  <div className="driver-load-header">
+                    <div className="driver-load-title-section">
+                      <span className="driver-load-reference">#{load.reference_id}</span>
+                      <span className={`driver-load-status driver-load-status-${load.status.toLowerCase().replace('-', '')}`}>
                         {load.status}
                       </span>
                       {load.status === 'Delivered' && (
-                        <span className="text-xs text-green-600">✓ Completed</span>
+                        <span className="driver-load-completed">✓ Completed</span>
                       )}
                     </div>
                     <button
                       onClick={() => router.push(`/driver/load/${load.id}`)}
-                      className="text-blue-600 text-sm font-medium hover:text-blue-800"
+                      className="driver-load-details-btn"
                     >
                       View Details →
                     </button>
                   </div>
 
                   {/* Route Info */}
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">Pickup</div>
+                  <div className="driver-load-route">
+                    <div className="driver-load-route-item">
+                      <div className="driver-load-route-indicator driver-load-pickup-indicator"></div>
+                      <div className="driver-load-route-details">
+                        <div className="driver-load-route-label">Pickup</div>
                         {(pickupsMap[load.id] || []).map((p, i) => (
-                          <div key={p.id || i}>
-                            <div className="text-sm text-gray-600">{p.address}, {p.city ? `${p.city}, ` : ''}{p.state}</div>
-                            <div className="text-xs text-gray-500">{formatDateTime(p.datetime)}</div>
+                          <div key={p.id || i} className="driver-load-route-location">
+                            <div className="driver-load-address">{p.address}, {p.city ? `${p.city}, ` : ''}{p.state}</div>
+                            <div className="driver-load-datetime">{formatDateTime(p.datetime)}</div>
                           </div>
                         ))}
                       </div>
                     </div>
                     
-                    <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">Delivery</div>
+                    <div className="driver-load-route-item">
+                      <div className="driver-load-route-indicator driver-load-delivery-indicator"></div>
+                      <div className="driver-load-route-details">
+                        <div className="driver-load-route-label">Delivery</div>
                         {(deliveriesMap[load.id] || []).map((d, i) => (
-                          <div key={d.id || i}>
-                            <div className="text-sm text-gray-600">{d.address}, {d.city ? `${d.city}, ` : ''}{d.state}</div>
-                            <div className="text-xs text-gray-500">{formatDateTime(d.datetime)}</div>
+                          <div key={d.id || i} className="driver-load-route-location">
+                            <div className="driver-load-address">{d.address}, {d.city ? `${d.city}, ` : ''}{d.state}</div>
+                            <div className="driver-load-datetime">{formatDateTime(d.datetime)}</div>
                           </div>
                         ))}
                       </div>
@@ -357,34 +355,34 @@ export default function DriverDashboard() {
                   </div>
 
                   {/* Load Details */}
-                  <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
-                    <div>
-                      <div className="text-xs text-gray-500">Load Type</div>
-                      <div className="text-sm font-medium text-gray-900">{load.load_type}</div>
+                  <div className="driver-load-details">
+                    <div className="driver-load-detail-item">
+                      <div className="driver-load-detail-label">Load Type</div>
+                      <div className="driver-load-detail-value">{load.load_type}</div>
                     </div>
-                    <div>
-                      <div className="text-xs text-gray-500">Rate</div>
-                      <div className="text-sm font-medium text-green-600">${load.rate.toLocaleString()}</div>
+                    <div className="driver-load-detail-item">
+                      <div className="driver-load-detail-label">Rate</div>
+                      <div className="driver-load-detail-value driver-load-rate">${load.rate.toLocaleString()}</div>
                     </div>
                   </div>
 
                   {load.temperature && (
-                    <div className="mt-2">
-                      <div className="text-xs text-gray-500">Temperature</div>
-                      <div className="text-sm font-medium text-gray-900">{load.temperature}°F</div>
+                    <div className="driver-load-temperature">
+                      <div className="driver-load-detail-label">Temperature</div>
+                      <div className="driver-load-detail-value">{load.temperature}°F</div>
                     </div>
                   )}
 
                   {load.status === 'Delivered' && load.updated_at && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <div className="text-xs text-gray-500">Completed On</div>
-                      <div className="text-sm font-medium text-green-600">{formatCompletionDate(load.updated_at)}</div>
+                    <div className="driver-load-completion">
+                      <div className="driver-load-detail-label">Completed On</div>
+                      <div className="driver-load-detail-value driver-load-completion-date">{formatCompletionDate(load.updated_at)}</div>
                     </div>
                   )}
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -141,89 +141,96 @@ export default function Home() {
 
   return (
     <>
-      <div className="max-w-3xl mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="page-container-xl">
+        <div className="page-header">
+          <h1 className="heading-xl">Dashboard</h1>
+        </div>
+        <div className="dashboard-grid">
           {/* Upcoming Loads */}
-          <section>
-            <h2 className="text-xl font-semibold mb-4">Upcoming Loads</h2>
-            <div className="flex flex-col gap-4">
+          <section className="dashboard-section">
+            <h2 className="heading-lg">Upcoming Loads</h2>
+            <div className="dashboard-card-list">
               {upcomingLoads.length === 0 ? (
-                <div className="text-gray-500">No upcoming loads.</div>
+                <div className="dashboard-empty-state">
+                  <div className="text-muted">No upcoming loads.</div>
+                </div>
               ) : (
                 upcomingLoads.map((load, idx) => (
                   <div
                     key={load.id}
-                    className="rounded border bg-white p-4 shadow-sm"
+                    className="dashboard-load-card"
                   >
-                    <div className="font-medium">Load #{load.reference_id}</div>
-                    <div className="text-sm text-gray-700">Driver: {getDriverName(load.driver_id)}</div>
-                    <div className="text-sm text-gray-700">
-                      <span className="font-semibold">Pickups:</span>
-                      <ol className="list-decimal ml-5">
+                    <div className="dashboard-load-header">Load #{load.reference_id}</div>
+                    <div className="dashboard-load-detail">
+                      <span className="dashboard-load-label">Driver:</span> 
+                      <span className="dashboard-load-value">{getDriverName(load.driver_id)}</span>
+                    </div>
+                    <div className="dashboard-load-detail">
+                      <span className="dashboard-load-label">Pickups:</span>
+                      <ol className="dashboard-load-list">
                         {(pickupsMap[load.id] || []).map((p, i) => (
                           <li key={p.id || i}>{p.address}, {p.city ? `${p.city}, ` : ''}{p.state} ({p.datetime})</li>
                         ))}
                       </ol>
                     </div>
-                    <div className="text-sm text-gray-700">
-                      <span className="font-semibold">Deliveries:</span>
-                      <ol className="list-decimal ml-5">
+                    <div className="dashboard-load-detail">
+                      <span className="dashboard-load-label">Deliveries:</span>
+                      <ol className="dashboard-load-list">
                         {(deliveriesMap[load.id] || []).map((d, i) => (
                           <li key={d.id || i}>{d.address}, {d.city ? `${d.city}, ` : ''}{d.state} ({d.datetime})</li>
                         ))}
                       </ol>
                     </div>
-                    <div className="text-sm text-gray-500">Status: {load.status}</div>
+                    <div className="dashboard-load-status">Status: {load.status}</div>
                   </div>
                 ))
               )}
             </div>
           </section>
           {/* Recent Activity */}
-          <section>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Recent Activity</h2>
+          <section className="dashboard-section">
+            <div className="dashboard-section-header">
+              <h2 className="heading-lg">Recent Activity</h2>
               {recentActivities.length > 0 && (
                 <button
                   onClick={clearAllActivities}
-                  className="text-xs text-gray-500 hover:text-red-600 px-2 py-1 rounded border border-gray-300 hover:border-red-300 transition-colors"
+                  className="dashboard-clear-btn"
                 >
                   Clear All
                 </button>
               )}
             </div>
-            <div className="rounded border bg-white p-4 shadow-sm">
+            <div className="dashboard-activity-card">
               {activitiesLoading ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <div className="text-sm text-gray-500">Loading activities...</div>
+                <div className="loading-container">
+                  <div className="spinner"></div>
+                  <div className="text-muted">Loading activities...</div>
                 </div>
               ) : recentActivities.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
-                  <div className="text-2xl mb-2">📋</div>
-                  <div className="text-sm">No recent activity</div>
-                  <div className="text-xs text-gray-400">Driver activities will appear here</div>
+                <div className="dashboard-empty-state">
+                  <div className="dashboard-empty-icon">📋</div>
+                  <div className="text-muted">No recent activity</div>
+                  <div className="text-hint">Driver activities will appear here</div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
+                <div className="dashboard-activity-list">
                   {recentActivities.map((activity) => (
-                    <div key={activity.id} className="border-l-4 border-blue-200 pl-3 py-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`w-2 h-2 rounded-full ${
-                          activity.type === 'status_update' ? 'bg-green-500' : 'bg-blue-500'
+                    <div key={activity.id} className="dashboard-activity-item">
+                      <div className="dashboard-activity-header">
+                        <span className={`dashboard-activity-indicator ${
+                          activity.type === 'status_update' ? 'dashboard-activity-status' : 'dashboard-activity-document'
                         }`}></span>
-                        <span className="font-medium text-sm text-gray-900">
+                        <span className="dashboard-activity-driver">
                           {activity.driver_name}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="dashboard-activity-load">
                           Load #{activity.load_reference_id}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-700 ml-4">
+                      <div className="dashboard-activity-description">
                         {activity.description}
                       </div>
-                      <div className="text-xs text-gray-500 ml-4 mt-1">
+                      <div className="dashboard-activity-timestamp">
                         {new Date(activity.timestamp).toLocaleString('en-US', {
                           month: 'short',
                           day: 'numeric',

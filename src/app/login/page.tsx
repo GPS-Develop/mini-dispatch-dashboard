@@ -289,14 +289,14 @@ export default function LoginPage() {
   // Show loading while checking driver status
   if (isCheckingDriverStatus) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">
+      <div className="page-container-full">
+        <div className="login-container">
+          <div className="loading-section">
+            <div className="loading-spinner"></div>
+            <h2 className="heading-lg loading-title">
               Checking account status...
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="text-muted loading-message">
               Please wait while we verify your account.
             </p>
           </div>
@@ -308,14 +308,14 @@ export default function LoginPage() {
   // Show loading while checking session for invite flow
   if (isInviteFlow && isCheckingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">
+      <div className="page-container-full">
+        <div className="login-container">
+          <div className="loading-section">
+            <div className="loading-spinner"></div>
+            <h2 className="heading-lg loading-title">
               Setting up your account...
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="text-muted loading-message">
               Please wait while we prepare your account.
             </p>
           </div>
@@ -327,21 +327,21 @@ export default function LoginPage() {
   // Show password setup form for invite flow
   if (isInviteFlow && user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <div className="page-container-full">
+        <div className="login-container">
+          <div className="login-header">
+            <h2 className="heading-xl">
               Set Your Password
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="text-muted">
               Welcome! Please set a password for your account.
             </p>
           </div>
           
-          <div className="bg-white py-8 px-6 shadow rounded-lg">
-            <form onSubmit={handlePasswordSetup} className="space-y-6">
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <div className="card">
+            <form onSubmit={handlePasswordSetup} className="form-container">
+              <div className="form-field">
+                <label htmlFor="password" className="label-text">
                   New Password
                 </label>
                 <input
@@ -349,15 +349,15 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input-field"
                   placeholder="Enter your new password"
                   required
                   minLength={6}
                 />
               </div>
 
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <div className="form-field">
+                <label htmlFor="confirmPassword" className="label-text">
                   Confirm Password
                 </label>
                 <input
@@ -365,7 +365,7 @@ export default function LoginPage() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input-field"
                   placeholder="Confirm your new password"
                   required
                   minLength={6}
@@ -373,22 +373,22 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <p className="text-red-600 text-sm">{error}</p>
+                <div className="alert-error">
+                  <p>{error}</p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary w-full"
               >
                 {loading ? 'Setting Password...' : 'Set Password'}
               </button>
             </form>
 
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-blue-700 text-xs">
+            <div className="alert-info">
+              <p>
                 <strong>Security Tip:</strong> Choose a strong password with at least 6 characters. 
                 You can change this password later in your account settings.
               </p>
@@ -402,22 +402,22 @@ export default function LoginPage() {
   // Show fallback message if invite flow but no user session yet
   if (isInviteFlow && !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+      <div className="page-container-full">
+        <div className="login-container">
+          <div className="loading-section">
+            <h2 className="heading-xl">
               Processing Invitation
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="text-muted">
               Please wait while we process your invitation link...
             </p>
             {error && (
-              <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-3">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="alert-error">
+                <p>{error}</p>
               </div>
             )}
-            <div className="mt-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="loading-spinner-container">
+              <div className="loading-spinner-sm"></div>
             </div>
           </div>
         </div>
@@ -426,22 +426,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+    <div className="page-container-full">
+      <div className="login-container">
+        <div className="login-header">
+          <h2 className="heading-xl">
             Welcome to Mini Dispatch
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="text-muted">
             Sign in to your account
           </p>
         </div>
         
-        <div className="bg-white py-8 px-6 shadow rounded-lg">
+        <div className="card">
           {/* Show error message if inactive driver tries to login */}
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="alert-error login-error">
+              <p>{error}</p>
             </div>
           )}
           
@@ -472,8 +472,8 @@ export default function LoginPage() {
             socialLayout="horizontal"
           />
           
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-blue-700 text-xs">
+          <div className="alert-info">
+            <p>
               <strong>Note:</strong> New accounts can only be created by invitation. 
               Contact your administrator if you need access.
             </p>

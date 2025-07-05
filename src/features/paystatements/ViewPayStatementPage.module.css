@@ -1,63 +1,59 @@
 /* Print-specific styles for pay statement */
 .payStatementContainer {
-  font-family: Arial, sans-serif;
-  line-height: 1.4;
-  color: #000000;
-  background-color: #ffffff;
-  padding: 32px;
+  /* Base styles handled by utility classes */
 }
 
 /* Header styles */
 .header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .headerTitle {
-  font-size: 30px;
-  font-weight: bold;
-  color: #111827;
-  margin-bottom: 8px;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
 }
 
 .headerSubtitle {
-  font-size: 18px;
-  color: #4b5563;
+  font-size: 1.125rem;
+  color: var(--color-text-muted);
 }
 
 /* Section styles */
 .section {
-  margin-bottom: 32px;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .sectionTitle {
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 600;
-  margin-bottom: 16px;
-  color: #111827;
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-text);
 }
 
 /* Driver information section */
 .driverInfoSection {
-  padding: 16px;
-  background-color: #f9fafb;
-  border-radius: 8px;
+  padding: var(--spacing-lg);
+  background-color: var(--color-bg-section);
+  border-radius: var(--radius-md);
 }
 
 .driverGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--spacing-lg);
 }
 
 .driverLabel {
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-muted);
 }
 
 .driverValue {
-  font-size: 18px;
-  color: #111827;
+  font-size: 1.125rem;
+  color: var(--color-text);
 }
 
 /* Table styles */
@@ -67,182 +63,304 @@
 
 .tripsTable {
   width: 100%;
-  font-size: 14px;
-  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  border: 1px solid var(--color-border);
   border-collapse: collapse;
 }
 
 .tableHeader {
-  background-color: #f3f4f6;
+  background-color: var(--color-bg-header);
 }
 
 .tableHeaderCell {
-  padding: 12px;
+  padding: var(--spacing-md);
   text-align: left;
-  border-bottom: 1px solid #d1d5db;
-  color: #111827;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
   font-weight: 600;
 }
 
 .tableHeaderCellRight {
-  padding: 12px;
+  padding: var(--spacing-md);
   text-align: right;
-  border-bottom: 1px solid #d1d5db;
-  color: #111827;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
   font-weight: 600;
 }
 
 .tableRow {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .tableCell {
-  padding: 12px;
-  color: #111827;
+  padding: var(--spacing-md);
+  color: var(--color-text);
 }
 
 .tableCellRight {
-  padding: 12px;
+  padding: var(--spacing-md);
   text-align: right;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text);
 }
 
 .tableCellMaxWidth {
-  padding: 12px;
+  padding: var(--spacing-md);
   max-width: 200px;
 }
 
 .tableCellContent {
   white-space: pre-line;
-  font-size: 14px;
-  color: #111827;
+  font-size: 0.875rem;
+  color: var(--color-text);
 }
 
 /* Pay summary styles */
 .paySummaryContainer {
-  background-color: #f9fafb;
-  padding: 24px;
-  border-radius: 8px;
+  background-color: var(--color-bg-section);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-md);
 }
 
 .paySummaryGrid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-md);
 }
 
 .paySummaryRow {
   display: flex;
   justify-content: space-between;
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 
 .paySummaryLabel {
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-muted);
 }
 
 .paySummaryValue {
   font-weight: 600;
-  color: #059669;
+  color: var(--color-success);
 }
 
 .paySummaryValueDeduction {
   font-weight: 600;
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .paySummaryDivider {
   border: none;
-  border-top: 1px solid #d1d5db;
-  margin: 16px 0;
+  border-top: 1px solid var(--color-border);
+  margin: var(--spacing-lg) 0;
 }
 
 .paySummaryTotal {
   display: flex;
   justify-content: space-between;
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .paySummaryTotalLabel {
-  color: #111827;
+  color: var(--color-text);
 }
 
 .paySummaryTotalValue {
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 /* Additions section */
 .additionsContainer {
   background-color: #f0fdf4;
-  padding: 16px;
-  border-radius: 8px;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
 }
 
 .additionsRow {
   display: flex;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: var(--spacing-xs) 0;
 }
 
 .additionsLabel {
   text-transform: capitalize;
-  color: #374151;
+  color: var(--color-text-muted);
 }
 
 .additionsValue {
   font-weight: 600;
-  color: #059669;
+  color: var(--color-success);
 }
 
 /* Deductions section */
 .deductionsContainer {
   background-color: #fef2f2;
-  padding: 16px;
-  border-radius: 8px;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
 }
 
 .deductionsRow {
   display: flex;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: var(--spacing-xs) 0;
 }
 
 .deductionsLabel {
   text-transform: capitalize;
-  color: #374151;
+  color: var(--color-text-muted);
 }
 
 .deductionsValue {
   font-weight: 600;
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 /* Notes section */
 .notesContainer {
-  background-color: #f9fafb;
-  padding: 16px;
-  border-radius: 8px;
+  background-color: var(--color-bg-section);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
 }
 
 .notesText {
   white-space: pre-wrap;
-  color: #374151;
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
 /* Footer styles */
 .footer {
-  margin-top: 48px;
-  padding-top: 32px;
-  border-top: 1px solid #d1d5db;
+  margin-top: var(--spacing-3xl);
+  padding-top: var(--spacing-2xl);
+  border-top: 1px solid var(--color-border);
   text-align: center;
-  font-size: 14px;
-  color: #6b7280;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
 }
 
 .footerText {
-  margin-top: 8px;
+  margin-top: var(--spacing-sm);
+}
+
+/* Mobile Trip Cards */
+.tripCards {
+  display: none;
+}
+
+.tripCard {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.tripCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tripCardNumber {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.tripCardAmount {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.tripCardDetails {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.tripCardDetail {
+  display: flex;
+  flex-direction: column;
+}
+
+.tripCardDetailLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.tripCardDetailValue {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.tripCardLocations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.tripCardLocation {
+  display: flex;
+  flex-direction: column;
+}
+
+.tripCardLocationLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.tripCardLocationValue {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 640px) {
+  .driverGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .headerTitle {
+    font-size: 1.5rem;
+  }
+  
+  .headerSubtitle {
+    font-size: 1rem;
+  }
+  
+  .sectionTitle {
+    font-size: 1.125rem;
+  }
+  
+  .paySummaryRow {
+    font-size: 1rem;
+  }
+  
+  .paySummaryTotal {
+    font-size: 1.25rem;
+  }
+  
+  .tableContainer {
+    display: none;
+  }
+  
+  .tripCards {
+    display: block;
+  }
 } 

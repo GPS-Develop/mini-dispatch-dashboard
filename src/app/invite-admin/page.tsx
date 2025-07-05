@@ -111,8 +111,8 @@ export default function InviteAdminPage() {
   // Show loading while checking admin status
   if (isAdmin === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="loading-container">
+        <div className="spinner"></div>
       </div>
     );
   }
@@ -120,27 +120,27 @@ export default function InviteAdminPage() {
   // Show error state if not admin or migration not run
   if (isAdmin === false && error) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Invite New Admin</h1>
+      <div className="page-container-md">
+        <div className="card">
+          <h1 className="heading-lg">Invite New Admin</h1>
           
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <h3 className="text-red-800 font-medium mb-2">Configuration Required</h3>
-            <p className="text-red-700 text-sm mb-4">{error}</p>
+          <div className="alert-error">
+            <h3 className="invite-admin-error-title">Configuration Required</h3>
+            <p className="invite-admin-error-message">{error}</p>
             
-            <div className="text-sm text-red-600">
-              <p className="font-medium mb-2">To use this feature, you need to:</p>
-              <ol className="list-decimal list-inside space-y-1 ml-4">
+            <div className="invite-admin-instructions">
+              <p className="invite-admin-instructions-title">To use this feature, you need to:</p>
+              <ol className="invite-admin-instructions-list">
                 <li>Run the database migration from <code>user-roles-migration.sql</code></li>
                 <li>Update your admin email in the migration file</li>
                 <li>Disable public signup in Supabase settings</li>
               </ol>
             </div>
             
-            <div className="mt-4">
+            <div className="invite-admin-error-actions">
               <button
                 onClick={() => router.push('/')}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="btn-danger"
               >
                 Return to Dashboard
               </button>
@@ -152,19 +152,19 @@ export default function InviteAdminPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Invite New Admin</h1>
+    <div className="page-container-md">
+      <div className="card">
+        <h1 className="heading-lg">Invite New Admin</h1>
         
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-blue-800 text-sm">
+        <div className="alert-info">
+          <p>
             <strong>Note:</strong> Only existing admins can invite new admins. The invited user will receive an email with instructions to set up their account.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+        <form onSubmit={handleSubmit} className="form-container">
+          <div className="edit-form-section">
+            <label htmlFor="name" className="label-text">
               Full Name
             </label>
             <input
@@ -172,14 +172,14 @@ export default function InviteAdminPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="input-field"
               placeholder="Enter admin's full name"
               required
             />
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="edit-form-section">
+            <label htmlFor="email" className="label-text">
               Email Address
             </label>
             <input
@@ -187,29 +187,29 @@ export default function InviteAdminPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="input-field"
               placeholder="Enter admin's email address"
               required
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="alert-error">
+              <p>{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3">
-              <p className="text-green-600 text-sm">{success}</p>
+            <div className="alert-success">
+              <p>{success}</p>
             </div>
           )}
 
-          <div className="flex gap-4">
+          <div className="button-group-horizontal">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary"
             >
               {loading ? 'Sending Invitation...' : 'Send Admin Invitation'}
             </button>
@@ -217,16 +217,16 @@ export default function InviteAdminPage() {
             <button
               type="button"
               onClick={() => router.push('/')}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="btn-secondary"
             >
               Cancel
             </button>
           </div>
         </form>
 
-        <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-md">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">What happens next?</h3>
-          <ul className="text-sm text-gray-600 space-y-1">
+        <div className="invite-admin-info">
+          <h3 className="invite-admin-info-title">What happens next?</h3>
+          <ul className="invite-admin-info-list">
             <li>• The invited user will receive an email with an invitation link</li>
             <li>• They'll be able to set up their password and access the admin dashboard</li>
             <li>• Their account will have full admin privileges</li>

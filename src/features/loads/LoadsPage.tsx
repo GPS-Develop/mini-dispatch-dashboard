@@ -242,27 +242,29 @@ export default function LoadsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white text-gray-900 rounded-xl shadow-lg mt-8 mb-8 font-sans">
-      <h1 className="text-2xl font-bold mb-6">Loads</h1>
+    <div className="page-container-xl">
+      <div className="page-header">
+        <h1 className="heading-xl">Loads</h1>
+      </div>
       
       {(error || loadError) && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="alert-error">
           {error || loadError}
         </div>
       )}
       
-      <div className="flex flex-wrap gap-4 mb-4 items-center">
+      <div className="filters-section">
         <input
           type="text"
           placeholder="Search by Load ID or location"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border rounded px-3 py-2 bg-white text-gray-900"
+          className="input-field filter-input"
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="border rounded px-3 py-2 bg-white text-gray-900"
+          className="input-field filter-input"
         >
           {statusOptions.map((s) => (
             <option key={s} value={s}>{s}</option>
@@ -271,7 +273,7 @@ export default function LoadsPage() {
         <select
           value={driverFilter}
           onChange={(e) => setDriverFilter(e.target.value)}
-          className="border rounded px-3 py-2 bg-white text-gray-900"
+          className="input-field filter-input"
         >
           <option value="">All Drivers</option>
           {drivers.map((d) => (
@@ -280,44 +282,41 @@ export default function LoadsPage() {
         </select>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="loads-grid">
         {filteredLoads.length === 0 ? (
-          <div className="text-gray-500 col-span-2">No loads found.</div>
+          <div className="text-muted">No loads found.</div>
         ) : (
           filteredLoads.map((load) => (
             <div
               key={load.id}
-              className="rounded border bg-white p-4 shadow-sm cursor-pointer hover:border-blue-500"
+              className="load-card"
               onClick={() => setSelected(load)}
             >
-              <div className="font-medium text-lg">Load #{load.reference_id}</div>
-              <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Pickup:</span>
-                <ol className="list-decimal ml-5">
+              <div className="load-card-title">Load #{load.reference_id}</div>
+              <div className="load-card-detail">
+                <span className="load-card-detail-label">Pickup:</span>
+                <ol className="load-card-list">
                   {(pickupsMap[load.id] || []).map((p, i) => (
                     <li key={p.id || i}>{p.address}, {p.city ? `${p.city}, ` : ''}{p.state} ({p.datetime})</li>
                   ))}
                 </ol>
               </div>
-              <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Delivery:</span>
-                <ol className="list-decimal ml-5">
+              <div className="load-card-detail">
+                <span className="load-card-detail-label">Delivery:</span>
+                <ol className="load-card-list">
                   {(deliveriesMap[load.id] || []).map((d, i) => (
                     <li key={d.id || i}>{d.address}, {d.city ? `${d.city}, ` : ''}{d.state} ({d.datetime})</li>
                   ))}
                 </ol>
               </div>
-              <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Driver:</span> {getDriverName(load.driver_id)}
+              <div className="load-card-detail">
+                <span className="load-card-detail-label">Driver:</span> {getDriverName(load.driver_id)}
               </div>
-              <div className="text-sm text-gray-700 mb-1">
-                <span className="font-semibold">Rate:</span> ${formatRateForDisplay(load.rate)}
+              <div className="load-card-detail">
+                <span className="load-card-detail-label">Rate:</span> ${formatRateForDisplay(load.rate)}
               </div>
-              <div className="text-sm text-gray-500 mb-1">
-                <span className="font-semibold">Status:</span> {load.status}
-              </div>
-              <div className="flex gap-2 mt-2">
-                {/* Removed bolUrl and podUrl icons */}
+              <div className="load-card-detail">
+                <span className="load-card-detail-label">Status:</span> {load.status}
               </div>
             </div>
           ))
@@ -326,55 +325,64 @@ export default function LoadsPage() {
       
       {/* Modal for load details */}
       {selected && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-md relative max-h-[80vh] overflow-y-auto">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl"
-              onClick={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
-              aria-label="Close"
-            >
-              ×
-            </button>
-            {!editMode ? (
-              <>
-                <h2 className="text-xl font-bold mb-2">Load #{selected.reference_id}</h2>
-                <div className="mb-2 text-sm text-gray-700">
-                  <div><span className="font-semibold">Pickup:</span>
-                    <ol className="list-decimal ml-5">
+        <div className="modal-overlay">
+          {!editMode ? (
+            <div className="modal-content">
+              <button
+                className="modal-close-btn"
+                onClick={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+              <div className="modal-header">
+                <h2 className="heading-lg">Load #{selected.reference_id}</h2>
+              </div>
+              <div className="modal-body">
+                <div className="space-y-4">
+                  <div>
+                    <span className="load-card-detail-label">Pickup:</span>
+                    <ol className="load-card-list">
                       {(pickupsMap[selected.id] || []).map((p, i) => (
                         <li key={p.id || i}>{p.address}, {p.city ? `${p.city}, ` : ''}{p.state} ({p.datetime})</li>
                       ))}
                     </ol>
                   </div>
-                  <div><span className="font-semibold">Delivery:</span>
-                    <ol className="list-decimal ml-5">
+                  <div>
+                    <span className="load-card-detail-label">Delivery:</span>
+                    <ol className="load-card-list">
                       {(deliveriesMap[selected.id] || []).map((d, i) => (
                         <li key={d.id || i}>{d.address}, {d.city ? `${d.city}, ` : ''}{d.state} ({d.datetime})</li>
                       ))}
                     </ol>
                   </div>
-                  <div><span className="font-semibold">Driver:</span> {getDriverName(selected.driver_id)}</div>
-                  <div><span className="font-semibold">Rate:</span> ${formatRateForDisplay(selected.rate)}</div>
-                  <div><span className="font-semibold">Status:</span> {selected.status}</div>
+                  <div>
+                    <span className="load-card-detail-label">Driver:</span> {getDriverName(selected.driver_id)}
+                  </div>
+                  <div>
+                    <span className="load-card-detail-label">Rate:</span> ${formatRateForDisplay(selected.rate)}
+                  </div>
+                  <div>
+                    <span className="load-card-detail-label">Status:</span> {selected.status}
+                  </div>
+                  <div>
+                    <span className="load-card-detail-label">Broker:</span> {selected.broker_name}, {formatPhoneForDisplay(selected.broker_contact)}, {selected.broker_email}
+                  </div>
+                  <div>
+                    <span className="load-card-detail-label">Notes:</span> {selected.notes || <span className="text-muted">None</span>}
+                  </div>
                 </div>
-                <div className="mb-2 text-sm text-gray-700">
-                  <div><span className="font-semibold">Broker:</span> {selected.broker_name}, {formatPhoneForDisplay(selected.broker_contact)}, {selected.broker_email}</div>
-                  <div><span className="font-semibold">Notes:</span> {selected.notes || <span className="text-gray-400">None</span>}</div>
-                </div>
-                <div className="mb-2 text-sm text-gray-700 flex gap-4">
-                  {/* Removed BOL and POD links */}
-                </div>
-                <div className="flex flex-col gap-2 mt-4">
+              </div>
+              <div className="modal-footer">
+                <div className="button-group" style={{ width: '100%' }}>
                   <Button
                     variant="secondary"
-                    className="w-full rounded px-4 py-2 font-semibold transition"
                     onClick={() => setEditMode(true)}
                   >
                     Edit
                   </Button>
                   <Button
                     variant="teal"
-                    className="w-full rounded px-4 py-2 font-semibold transition"
                     onClick={() => setShowUploadModal(true)}
                   >
                     📄 Upload Documents
@@ -382,7 +390,6 @@ export default function LoadsPage() {
                   {selected.status !== "Delivered" && (
                     <Button
                       variant="success"
-                      className="w-full rounded px-4 py-2 font-semibold transition"
                       onClick={() => setStatus(selected, "Delivered")}
                     >
                       Mark as Delivered
@@ -391,7 +398,6 @@ export default function LoadsPage() {
                   {selected.status !== "In-Transit" && (
                     <Button
                       variant="warning"
-                      className="w-full rounded px-4 py-2 font-semibold transition"
                       onClick={() => setStatus(selected, "In-Transit")}
                     >
                       Set as In-Transit
@@ -400,7 +406,6 @@ export default function LoadsPage() {
                   {selected.status !== "Scheduled" && (
                     <Button
                       variant="indigo"
-                      className="w-full rounded px-4 py-2 font-semibold transition"
                       onClick={() => setStatus(selected, "Scheduled")}
                     >
                       Set as Scheduled
@@ -408,174 +413,238 @@ export default function LoadsPage() {
                   )}
                   <Button
                     variant="danger"
-                    className="w-full rounded px-4 py-2 font-semibold transition mt-4 border-t pt-4"
                     onClick={() => handleDeleteClick(selected)}
+                    style={{ marginTop: 'var(--spacing-lg)', paddingTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border)' }}
                   >
                     🗑️ Delete Load
                   </Button>
                 </div>
-              </>
-            ) : editForm ? (
-              <form className="space-y-3" onSubmit={handleEditSubmit}>
-                <h2 className="text-xl font-bold mb-2">Edit Load #{selected.reference_id}</h2>
-                {/* Pickups */}
-                <div>
-                  <label className="block font-medium mb-1">Pickups</label>
-                  {editForm.pickups && editForm.pickups.length > 0 && editForm.pickups.map((pickup: any, idx: number) => (
-                    <div key={pickup.id || idx} className="mb-2 border p-2 rounded">
-                      <input
-                        name="address"
-                        value={pickup.address}
-                        onChange={e => handlePickupChange(idx, e)}
-                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
-                        placeholder="Pickup Address"
-                      />
-                      <input
-                        name="city"
-                        value={pickup.city || ''}
-                        onChange={e => handlePickupChange(idx, e)}
-                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
-                        placeholder="Pickup City"
-                      />
-                      <select
-                        name="state"
-                        value={pickup.state}
-                        onChange={e => handlePickupChange(idx, e)}
-                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
-                      >
-                        <option value="">Select State</option>
-                        {US_STATES.map((st) => (
-                          <option key={st} value={st}>{st}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="datetime-local"
-                        name="datetime"
-                        value={pickup.datetime ? pickup.datetime.slice(0, 16) : ''}
-                        onChange={e => handlePickupChange(idx, e)}
-                        className="w-full border rounded px-3 py-2 bg-white text-gray-900"
-                        placeholder="Pickup Date & Time"
-                      />
-                    </div>
-                  ))}
+              </div>
+            </div>
+          ) : editForm ? (
+            <div className="modal-content-lg">
+              <button
+                className="modal-close-btn"
+                onClick={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+              <form className="form-container" onSubmit={handleEditSubmit}>
+                <div className="modal-header">
+                  <h2 className="heading-lg">Edit Load #{selected.reference_id}</h2>
                 </div>
-                {/* Deliveries */}
-                <div>
-                  <label className="block font-medium mb-1">Deliveries</label>
-                  {editForm.deliveries && editForm.deliveries.length > 0 && editForm.deliveries.map((delivery: any, idx: number) => (
-                    <div key={delivery.id || idx} className="mb-2 border p-2 rounded">
-                      <input
-                        name="address"
-                        value={delivery.address}
-                        onChange={e => handleDeliveryChange(idx, e)}
-                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
-                        placeholder="Delivery Address"
-                      />
-                      <input
-                        name="city"
-                        value={delivery.city || ''}
-                        onChange={e => handleDeliveryChange(idx, e)}
-                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
-                        placeholder="Delivery City"
-                      />
-                      <select
-                        name="state"
-                        value={delivery.state}
-                        onChange={e => handleDeliveryChange(idx, e)}
-                        className="w-full border rounded px-3 py-2 mb-1 bg-white text-gray-900"
-                      >
-                        <option value="">Select State</option>
-                        {US_STATES.map((st) => (
-                          <option key={st} value={st}>{st}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="datetime-local"
-                        name="datetime"
-                        value={delivery.datetime ? delivery.datetime.slice(0, 16) : ''}
-                        onChange={e => handleDeliveryChange(idx, e)}
-                        className="w-full border rounded px-3 py-2 bg-white text-gray-900"
-                        placeholder="Delivery Date & Time"
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">Driver</label>
-                  <select name="driver_id" value={editForm.driver_id} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900">
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
+                <div className="modal-body">
+                  {/* Pickups */}
+                  <div className="edit-form-section">
+                    <div className="edit-form-section-title">Pickup Locations</div>
+                    {editForm.pickups && editForm.pickups.length > 0 && editForm.pickups.map((pickup: any, idx: number) => (
+                      <div key={pickup.id || idx} className="edit-form-item">
+                        <div className="form-grid-2">
+                          <div className="form-group">
+                            <label className="label-text">Address</label>
+                            <input
+                              name="address"
+                              value={pickup.address}
+                              onChange={e => handlePickupChange(idx, e)}
+                              className="input-field"
+                              placeholder="Pickup Address"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label className="label-text">City</label>
+                            <input
+                              name="city"
+                              value={pickup.city || ''}
+                              onChange={e => handlePickupChange(idx, e)}
+                              className="input-field"
+                              placeholder="Pickup City"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label className="label-text">State</label>
+                            <select
+                              name="state"
+                              value={pickup.state}
+                              onChange={e => handlePickupChange(idx, e)}
+                              className="input-field"
+                            >
+                              <option value="">Select State</option>
+                              {US_STATES.map((st) => (
+                                <option key={st} value={st}>{st}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label className="label-text">Date & Time</label>
+                            <input
+                              type="datetime-local"
+                              name="datetime"
+                              value={pickup.datetime ? pickup.datetime.slice(0, 16) : ''}
+                              onChange={e => handlePickupChange(idx, e)}
+                              className="input-field"
+                              placeholder="Pickup Date & Time"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">Rate ($)</label>
-                  <input 
-                    name="rate" 
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={editForm.rate || ""} 
-                    onChange={handleEditChange} 
-                    className="w-full border rounded px-3 py-2 bg-white text-gray-900"
-                    placeholder="2500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">Load Type</label>
-                  <select name="load_type" value={editForm.load_type} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900">
-                    <option value="Reefer">Reefer</option>
-                    <option value="Dry Van">Dry Van</option>
-                    <option value="Flatbed">Flatbed</option>
-                  </select>
-                </div>
-                {editForm.load_type === "Reefer" && (
-                  <div>
-                                  <label className="block font-medium mb-1">Temperature (°F)</label>
-              <input 
-                name="temperature" 
-                type="number"
-                step="0.1"
-                min="-100"
-                max="200"
-                value={editForm.temperature || ""} 
-                onChange={handleEditChange} 
-                className="w-full border rounded px-3 py-2 bg-white text-gray-900"
-                placeholder="e.g., -10, 35, 72"
-              />
                   </div>
-                )}
-                <div>
-                  <label className="block font-medium mb-1">Broker Name</label>
-                  <input name="broker_name" value={editForm.broker_name} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
+                  
+                  {/* Deliveries */}
+                  <div className="edit-form-section">
+                    <div className="edit-form-section-title">Delivery Locations</div>
+                    {editForm.deliveries && editForm.deliveries.length > 0 && editForm.deliveries.map((delivery: any, idx: number) => (
+                      <div key={delivery.id || idx} className="edit-form-item">
+                        <div className="form-grid-2">
+                          <div className="form-group">
+                            <label className="label-text">Address</label>
+                            <input
+                              name="address"
+                              value={delivery.address}
+                              onChange={e => handleDeliveryChange(idx, e)}
+                              className="input-field"
+                              placeholder="Delivery Address"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label className="label-text">City</label>
+                            <input
+                              name="city"
+                              value={delivery.city || ''}
+                              onChange={e => handleDeliveryChange(idx, e)}
+                              className="input-field"
+                              placeholder="Delivery City"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label className="label-text">State</label>
+                            <select
+                              name="state"
+                              value={delivery.state}
+                              onChange={e => handleDeliveryChange(idx, e)}
+                              className="input-field"
+                            >
+                              <option value="">Select State</option>
+                              {US_STATES.map((st) => (
+                                <option key={st} value={st}>{st}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label className="label-text">Date & Time</label>
+                            <input
+                              type="datetime-local"
+                              name="datetime"
+                              value={delivery.datetime ? delivery.datetime.slice(0, 16) : ''}
+                              onChange={e => handleDeliveryChange(idx, e)}
+                              className="input-field"
+                              placeholder="Delivery Date & Time"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Load Details */}
+                  <div className="edit-form-section">
+                    <div className="edit-form-section-title">Load Details</div>
+                    <div className="form-grid-2">
+                      <div className="form-group">
+                        <label className="label-text">Driver</label>
+                        <select name="driver_id" value={editForm.driver_id} onChange={handleEditChange} className="input-field">
+                          {drivers.map((d) => (
+                            <option key={d.id} value={d.id}>{d.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label className="label-text">Rate ($)</label>
+                        <input 
+                          name="rate" 
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={editForm.rate || ""} 
+                          onChange={handleEditChange} 
+                          className="input-field"
+                          placeholder="2500"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="label-text">Load Type</label>
+                        <select name="load_type" value={editForm.load_type} onChange={handleEditChange} className="input-field">
+                          <option value="Reefer">Reefer</option>
+                          <option value="Dry Van">Dry Van</option>
+                          <option value="Flatbed">Flatbed</option>
+                        </select>
+                      </div>
+                      {editForm.load_type === "Reefer" && (
+                        <div className="form-group">
+                          <label className="label-text">Temperature (°F)</label>
+                          <input 
+                            name="temperature" 
+                            type="number"
+                            step="0.1"
+                            min="-100"
+                            max="200"
+                            value={editForm.temperature || ""} 
+                            onChange={handleEditChange} 
+                            className="input-field"
+                            placeholder="e.g., -10, 35, 72"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Broker Information */}
+                  <div className="edit-form-section">
+                    <div className="edit-form-section-title">Broker Information</div>
+                    <div className="form-grid-2">
+                      <div className="form-group">
+                        <label className="label-text">Broker Name</label>
+                        <input name="broker_name" value={editForm.broker_name} onChange={handleEditChange} className="input-field" />
+                      </div>
+                      <div className="form-group">
+                        <label className="label-text">Broker Contact</label>
+                        <input 
+                          name="broker_contact" 
+                          type="tel"
+                          value={editForm.broker_contact?.toString() || ""} 
+                          onChange={handleEditChange} 
+                          className="input-field"
+                          placeholder="(555) 123-4567"
+                        />
+                        <div className="text-hint">Enter phone number (formatting will be removed)</div>
+                      </div>
+                      <div className="form-group">
+                        <label className="label-text">Broker Email</label>
+                        <input name="broker_email" value={editForm.broker_email} onChange={handleEditChange} className="input-field" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Notes */}
+                  <div className="edit-form-section">
+                    <div className="form-group">
+                      <label className="label-text">Notes</label>
+                      <textarea name="notes" value={editForm.notes || ""} onChange={handleEditChange} className="input-field" rows={3} />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block font-medium mb-1">Broker Contact</label>
-                  <input 
-                    name="broker_contact" 
-                    type="tel"
-                    value={editForm.broker_contact?.toString() || ""} 
-                    onChange={handleEditChange} 
-                    className="w-full border rounded px-3 py-2 bg-white text-gray-900"
-                    placeholder="(555) 123-4567"
-                  />
-                  <div className="text-xs text-gray-500 mt-1">Enter phone number (formatting will be removed)</div>
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">Broker Email</label>
-                  <input name="broker_email" value={editForm.broker_email} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" />
-                </div>
-                <div>
-                  <label className="block font-medium mb-1">Notes</label>
-                  <textarea name="notes" value={editForm.notes || ""} onChange={handleEditChange} className="w-full border rounded px-3 py-2 bg-white text-gray-900" rows={2} />
-                </div>
-                <div className="flex gap-2 justify-end mt-4">
-                  <Button type="button" variant="secondary" onClick={() => setEditMode(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancel</Button>
-                  <Button type="submit" variant="primary" className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700" disabled={isSubmitting || loadLoading}>Save</Button>
+                <div className="modal-footer">
+                  <div className="button-group-horizontal">
+                    <Button type="button" variant="secondary" onClick={() => setEditMode(false)}>Cancel</Button>
+                    <Button type="submit" variant="primary" disabled={isSubmitting || loadLoading}>
+                      {isSubmitting ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
                 </div>
               </form>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       )}
 
@@ -590,30 +659,34 @@ export default function LoadsPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && loadToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-red-600 mb-4">⚠️ Confirm Delete</h2>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete <strong>Load #{loadToDelete.reference_id}</strong>?
-            </p>
-            <p className="text-sm text-gray-600 mb-6">
-              This action cannot be undone. All associated pickups, deliveries, and documents will also be deleted.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <Button
-                variant="secondary"
-                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-700"
-                onClick={cancelDelete}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-semibold"
-                onClick={confirmDelete}
-              >
-                Delete Load
-              </Button>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2 className="heading-lg text-danger">⚠️ Confirm Delete</h2>
+            </div>
+            <div className="modal-body">
+              <p className="text-primary mb-4">
+                Are you sure you want to delete <strong>Load #{loadToDelete.reference_id}</strong>?
+              </p>
+              <p className="text-muted">
+                This action cannot be undone. All associated pickups, deliveries, and documents will also be deleted.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <div className="button-group-horizontal">
+                <Button
+                  variant="secondary"
+                  onClick={cancelDelete}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={confirmDelete}
+                >
+                  Delete Load
+                </Button>
+              </div>
             </div>
           </div>
         </div>

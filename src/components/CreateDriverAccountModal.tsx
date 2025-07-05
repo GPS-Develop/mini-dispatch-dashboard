@@ -132,15 +132,15 @@ export default function CreateDriverAccountModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+    <div className="modal-overlay">
+      <div className="modal-content">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Create Driver Account</h2>
+        <div className="modal-header">
+          <h2 className="heading-lg">Create Driver Account</h2>
           <button
             onClick={handleClose}
             disabled={loading}
-            className="text-gray-500 hover:text-gray-700 text-2xl disabled:opacity-50"
+            className="modal-close-btn"
             aria-label="Close"
           >
             ×
@@ -148,101 +148,104 @@ export default function CreateDriverAccountModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-              placeholder="John Doe"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address *
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-              placeholder="john@example.com"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Driver will receive an invitation email to set up their account
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number *
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-              placeholder="(555) 123-4567"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="payRate" className="block text-sm font-medium text-gray-700 mb-1">
-              Pay Rate ($) *
-            </label>
-            <input
-              type="number"
-              id="payRate"
-              name="payRate"
-              value={formData.payRate}
-              onChange={handleChange}
-              disabled={loading}
-              min="0"
-              step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-              placeholder="0.55"
-              required
-            />
-          </div>
-
-          {/* Error/Success Messages */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-red-600 text-sm">{error}</p>
+        <div className="modal-body">
+          <form onSubmit={handleSubmit} className="form-container">
+            <div className="edit-form-section">
+              <label htmlFor="name" className="label-text">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                disabled={loading}
+                className="input-field"
+                placeholder="John Doe"
+                required
+              />
             </div>
-          )}
 
-          {success && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3">
-              <p className="text-green-600 text-sm">{success}</p>
+            <div className="edit-form-section">
+              <label htmlFor="email" className="label-text">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+                className="input-field"
+                placeholder="john@example.com"
+                required
+              />
+              <p className="text-hint">
+                Driver will receive an invitation email to set up their account
+              </p>
             </div>
-          )}
 
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+            <div className="edit-form-section">
+              <label htmlFor="phone" className="label-text">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                disabled={loading}
+                className="input-field"
+                placeholder="(555) 123-4567"
+                required
+              />
+            </div>
+
+            <div className="edit-form-section">
+              <label htmlFor="payRate" className="label-text">
+                Pay Rate ($) *
+              </label>
+              <input
+                type="number"
+                id="payRate"
+                name="payRate"
+                value={formData.payRate}
+                onChange={handleChange}
+                disabled={loading}
+                min="0"
+                step="0.01"
+                className="input-field"
+                placeholder="0.55"
+                required
+              />
+            </div>
+
+            {/* Error/Success Messages */}
+            {error && (
+              <div className="alert-error">
+                <p>{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="alert-success">
+                <p>{success}</p>
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer">
+          <div className="button-group-horizontal">
             <Button
               type="button"
               variant="secondary"
               onClick={handleClose}
               disabled={loading}
-              className="flex-1"
             >
               Cancel
             </Button>
@@ -250,18 +253,18 @@ export default function CreateDriverAccountModal({
               type="submit"
               variant="primary"
               disabled={loading}
-              className="flex-1"
+              onClick={handleSubmit}
             >
               {loading ? 'Creating...' : 'Create Account'}
             </Button>
           </div>
-        </form>
 
-        {/* Info */}
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-blue-700 text-xs">
-            <strong>How it works:</strong> The driver will receive an email invitation with a secure link to access their account. They can then log in and view their assigned loads on the mobile driver dashboard.
-          </p>
+          {/* Info */}
+          <div className="modal-info">
+            <p className="text-hint">
+              <strong>How it works:</strong> The driver will receive an email invitation with a secure link to access their account. They can then log in and view their assigned loads on the mobile driver dashboard.
+            </p>
+          </div>
         </div>
       </div>
     </div>

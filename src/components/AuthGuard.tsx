@@ -22,8 +22,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   // Show loading while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="loading-container">
+        <div className="text-muted">Loading...</div>
       </div>
     );
   }
@@ -36,8 +36,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   // If not authenticated and not on login page, don't render children
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Redirecting to login...</div>
+      <div className="loading-container">
+        <div className="text-muted">Redirecting to login...</div>
       </div>
     );
   }

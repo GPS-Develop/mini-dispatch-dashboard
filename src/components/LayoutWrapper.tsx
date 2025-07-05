@@ -16,6 +16,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const { user, signOut } = useAuth();
   const [isDriver, setIsDriver] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const supabase = createClient();
   
   // Immediately determine if this is a driver route
@@ -100,6 +101,19 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
     checkUserRole();
   }, [user, pathname, isDriverRoute, isLoginRoute, supabase, signOut]);
 
+  // Close mobile sidebar when route changes
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [pathname]);
+
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  const closeMobileSidebar = () => {
+    setIsMobileSidebarOpen(false);
+  };
+
   // Show nothing while checking to prevent any flash
   if (isChecking && user) {
     return (
@@ -121,9 +135,29 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   // For admin routes, only show if user is confirmed to not be a driver
   if (isDriver === false || !user) {
     return (
-      <div className="min-h-screen flex">
-        <Sidebar />
-        <main className="flex-1 p-8">{children}</main>
+      <div className="layout-with-sidebar">
+        {/* Mobile Header */}
+        <header className="mobile-header">
+          <div className="mobile-header-title">Mini Dispatch</div>
+          <button
+            onClick={toggleMobileSidebar}
+            className="hamburger-btn"
+            aria-label="Toggle menu"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </header>
+
+        {/* Sidebar Component */}
+        <Sidebar 
+          isMobileOpen={isMobileSidebarOpen} 
+          onMobileClose={closeMobileSidebar} 
+        />
+
+        {/* Main Content */}
+        <main className="main-content">{children}</main>
       </div>
     );
   }
