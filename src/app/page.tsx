@@ -5,6 +5,7 @@ import { useDrivers } from "../features/drivers/DriverContext";
 import { createClient } from "../utils/supabase/client";
 import { useAuth } from "../contexts/AuthContext";
 import { Pickup, Delivery } from "../types";
+import { SkeletonCard, SkeletonTable } from "../components/Skeleton/Skeleton";
 
 interface Activity {
   id: string;
@@ -180,10 +181,7 @@ export default function Home() {
             </div>
             <div className="dashboard-activity-card">
               {activitiesLoading ? (
-                <div className="loading-container">
-                  <div className="spinner"></div>
-                  <div className="text-muted">Loading activities...</div>
-                </div>
+                <SkeletonCard lines={4} hasAvatar={true} />
               ) : recentActivities.length === 0 ? (
                 <div className="dashboard-empty-state">
                   <div className="dashboard-empty-icon">📋</div>

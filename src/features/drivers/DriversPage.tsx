@@ -4,6 +4,7 @@ import { useDrivers, Driver } from "./DriverContext";
 import Button from '../../components/Button/Button';
 import { formatPhoneForDisplay, formatDriverPayRateForDisplay } from '../../utils/validation';
 import CreateDriverAccountModal from "../../components/CreateDriverAccountModal";
+import { SkeletonTable } from '../../components/Skeleton/Skeleton';
 
 export default function DriversPage() {
   const { drivers, deleteDriver, reactivateDriver, updateDriver, loading, error: contextError } = useDrivers();
@@ -123,9 +124,7 @@ export default function DriversPage() {
       )}
       
       {loading && (
-        <div className="loading-container">
-          <div className="text-muted">Loading drivers...</div>
-        </div>
+        <SkeletonTable rows={5} columns={8} />
       )}
       
       {!loading && drivers.length === 0 && (

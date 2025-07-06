@@ -4,6 +4,7 @@ import { usePayStatements } from "./PayStatementContext";
 import { useDrivers } from "../drivers/DriverContext";
 import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
+import { SkeletonTable } from '../../components/Skeleton/Skeleton';
 
 export default function PayStatementsPage() {
   const { payStatements, deletePayStatement, loading, error } = usePayStatements();
@@ -112,9 +113,7 @@ export default function PayStatementsPage() {
       )}
       
       {loading && (
-        <div className="loading-container">
-          <div className="text-muted">Loading pay statements...</div>
-        </div>
+        <SkeletonTable rows={5} columns={6} />
       )}
       
       {!loading && payStatements.length === 0 && (
