@@ -10,6 +10,8 @@ export default function PayStatementsPage() {
   const { drivers } = useDrivers();
   const router = useRouter();
   const [deleteError, setDeleteError] = useState("");
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   function getDriverName(driverId: string) {
     const driver = drivers.find((d) => d.id === driverId);
@@ -33,15 +35,32 @@ export default function PayStatementsPage() {
     return payStatement.gross_pay + totalAdditions - totalDeductions;
   }
 
-  async function handleDelete(id: string) {
-    if (window.confirm("Delete this pay statement?")) {
-      try {
-        await deletePayStatement(id);
-        setDeleteError("");
-      } catch (err) {
-        setDeleteError(err instanceof Error ? err.message : 'Failed to delete pay statement');
-      }
+  function handleDeleteRequest(id: string) {
+    setConfirmingDelete(id);
+    setDeleteError("");
+    setSuccessMessage("");
+  }
+
+  async function confirmDelete() {
+    if (!confirmingDelete) return;
+    
+    try {
+      await deletePayStatement(confirmingDelete);
+      setDeleteError("");
+      setSuccessMessage("Pay statement deleted successfully");
+      setConfirmingDelete(null);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete pay statement');
+      setConfirmingDelete(null);
     }
+  }
+
+  function cancelDelete() {
+    setConfirmingDelete(null);
+    setDeleteError("");
   }
 
   function handleCreateNew() {
@@ -64,9 +83,31 @@ export default function PayStatementsPage() {
         </Button>
       </div>
 
+      {successMessage && (
+        <div className="alert-success">
+          {successMessage}
+        </div>
+      )}
+
       {(error || deleteError) && (
         <div className="alert-error">
           {error || deleteError}
+        </div>
+      )}
+
+      {confirmingDelete && (
+        <div className="alert-warning">
+          <div style={{ marginBottom: '1rem' }}>
+            Are you sure you want to delete this pay statement? This action cannot be undone.
+          </div>
+          <div className="button-group-horizontal">
+            <Button variant="danger" onClick={confirmDelete}>
+              Yes, Delete
+            </Button>
+            <Button variant="secondary" onClick={cancelDelete}>
+              Cancel
+            </Button>
+          </div>
         </div>
       )}
       
@@ -78,7 +119,7 @@ export default function PayStatementsPage() {
       
       {!loading && payStatements.length === 0 && (
         <div className="loading-container">
-          <div className="text-muted">No pay statements found. Click "Create Pay Statement" to get started.</div>
+          <div className="text-muted">No pay statements found. Click &quot;Create Pay Statement&quot; to get started.</div>
         </div>
       )}
       
@@ -123,7 +164,7 @@ export default function PayStatementsPage() {
                         </Button>
                         <Button 
                           variant="danger" 
-                          onClick={() => handleDelete(ps.id)}
+                          onClick={() => handleDeleteRequest(ps.id)}
                         >
                           Delete
                         </Button>
@@ -176,7 +217,7 @@ export default function PayStatementsPage() {
                   </Button>
                   <Button 
                     variant="danger" 
-                    onClick={() => handleDelete(ps.id)}
+                    onClick={() => handleDeleteRequest(ps.id)}
                   >
                     Delete
                   </Button>
