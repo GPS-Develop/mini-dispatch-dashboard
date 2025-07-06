@@ -63,6 +63,29 @@ export const uploadDocument = async (
       return { success: false, error: dbError.message };
     }
 
+    // Log document upload activity
+    try {
+      // Get load and driver information for the activity
+      const { data: loadData } = await supabase
+        .from('loads')
+        .select('reference_id, driver_id, drivers!inner(name)')
+        .eq('id', loadId)
+        .single();
+
+      if (loadData) {
+        const driverName = (loadData.drivers as any)?.name || 'Unknown Driver';
+        
+        // Add document upload activity
+        await supabase.rpc('add_document_upload_activity', {
+          p_driver_name: driverName,
+          p_load_reference_id: loadData.reference_id,
+          p_file_name: file.name
+        });
+      }
+    } catch (activityError) {
+      console.error('Failed to log document upload activity:', activityError);
+    }
+
     return { success: true, data: dbData as LoadDocument };
   } catch (error) {
     return { 

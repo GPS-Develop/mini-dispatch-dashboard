@@ -129,6 +129,10 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
     }
     
     try {
+      // Get the current load to check if status is changing
+      const currentLoad = loads.find(l => l.id === id);
+      const isStatusChange = load.status && currentLoad && load.status !== currentLoad.status;
+      
       const { data, error } = await supabase
         .from("loads")
         .update(load)
@@ -152,6 +156,29 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
         setLoads(prev => prev.map(l => 
           l.id === id ? mappedLoad as Load : l
         ));
+
+        // Log status change activity if status was updated
+        if (isStatusChange && data.status !== 'Scheduled') {
+          try {
+            // Get driver name for the activity
+            const { data: driverData } = await supabase
+              .from('drivers')
+              .select('name')
+              .eq('id', data.driver_id)
+              .single();
+
+            const driverName = driverData?.name || 'Unknown Driver';
+
+            // Add status update activity
+            await supabase.rpc('add_status_update_activity', {
+              p_driver_name: driverName,
+              p_load_reference_id: data.reference_id,
+              p_new_status: data.status
+            });
+          } catch (activityError) {
+            console.error('Failed to log status update activity:', activityError);
+          }
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update load');

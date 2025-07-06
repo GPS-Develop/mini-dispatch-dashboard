@@ -3,30 +3,23 @@ import { useEffect, useState, useCallback } from "react";
 import { useLoads } from "../features/loads/LoadContext";
 import { useDrivers } from "../features/drivers/DriverContext";
 import { createClient } from "../utils/supabase/client";
+import { useAuth } from "../contexts/AuthContext";
 import { Pickup, Delivery } from "../types";
 
 interface Activity {
   id: string;
-  type: 'status_update' | 'document_upload';
+  activity_type: 'status_update' | 'document_upload';
   driver_name: string;
   load_reference_id: string;
   description: string;
   timestamp: string;
 }
 
-interface DocumentUpload {
-  id: string;
-  file_name: string;
-  uploaded_at: string;
-  loads: {
-    reference_id: string;
-    driver_id: string;
-  };
-}
 
 export default function Home() {
   const { loads } = useLoads();
   const { drivers } = useDrivers();
+  const { user } = useAuth();
   const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
@@ -60,82 +53,38 @@ export default function Home() {
     fetchAllPickupsDeliveries();
   }, [fetchAllPickupsDeliveries]);
 
-  // Fetch recent activities from drivers
+  // Fetch recent activities from database
   const fetchRecentActivities = useCallback(async () => {
-      if (drivers.length === 0 || loads.length === 0) return;
-      
       try {
         setActivitiesLoading(true);
-        const activities: Activity[] = [];
-
-        // Get recent status updates (last 7 days)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
-        const { data: statusUpdates } = await supabase
-          .from('loads')
-          .select('id, reference_id, driver_id, status, created_at')
-          .gte('created_at', sevenDaysAgo.toISOString())
-          .order('created_at', { ascending: false })
+        // Simply get all recent activities from the database
+        const { data: activities, error } = await supabase
+          .from('recent_activities')
+          .select('*')
+          .order('timestamp', { ascending: false })
           .limit(10);
 
-        // Get recent document uploads (last 7 days)
-        const { data: documentUploads } = await supabase
-          .from('load_documents')
-          .select(`
-            id,
-            load_id,
-            file_name,
-            uploaded_at,
-            loads!inner(reference_id, driver_id)
-          `)
-          .gte('uploaded_at', sevenDaysAgo.toISOString())
-          .order('uploaded_at', { ascending: false })
-          .limit(10);
+        if (error) {
+          console.error('Error fetching recent activities:', error);
+          return;
+        }
 
-        // Process status updates
-        statusUpdates?.forEach((update) => {
-          const driver = drivers.find(d => d.id === update.driver_id);
-          const driverName = driver?.name || 'Unknown Driver';
-          
-          activities.push({
-            id: `status_${update.id}`,
-            type: 'status_update',
-            driver_name: driverName,
-            load_reference_id: update.reference_id,
-            description: `Current status: ${update.status}`,
-            timestamp: update.created_at
-          });
-        });
-
-        // Process document uploads
-        documentUploads?.forEach((upload: DocumentUpload) => {
-          const driver = drivers.find(d => d.id === upload.loads.driver_id);
-          const driverName = driver?.name || 'Unknown Driver';
-          
-          activities.push({
-            id: `doc_${upload.id}`,
-            type: 'document_upload',
-            driver_name: driverName,
-            load_reference_id: upload.loads.reference_id,
-            description: `Uploaded document: ${upload.file_name}`,
-            timestamp: upload.uploaded_at
-          });
-        });
-
-        // Sort all activities by timestamp (most recent first)
-        activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        
-        setRecentActivities(activities.slice(0, 8)); // Keep only 8 most recent
+        setRecentActivities(activities || []);
       } catch (error) {
         console.error('Error fetching recent activities:', error);
       } finally {
         setActivitiesLoading(false);
       }
-  }, [drivers, loads, supabase]);
+  }, [supabase]);
 
   useEffect(() => {
     fetchRecentActivities();
+    
+    // Set up periodic refresh every 30 seconds to catch new activities
+    const interval = setInterval(fetchRecentActivities, 30000);
+    
+    return () => clearInterval(interval);
   }, [fetchRecentActivities]);
 
   function getDriverName(driver_id: string) {
@@ -147,9 +96,26 @@ export default function Home() {
     return driver.name;
   }
 
-  function clearAllActivities() {
-    setRecentActivities([]);
-  }
+  const clearAllActivities = useCallback(async () => {
+    try {
+      // Delete all activities from the database
+      const { error } = await supabase
+        .from('recent_activities')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+      if (error) {
+        console.error('Error clearing activities:', error);
+        return;
+      }
+
+      // Clear the local state
+      setRecentActivities([]);
+      
+    } catch (error) {
+      console.error('Error clearing activities:', error);
+    }
+  }, [supabase]);
 
   return (
     <>
@@ -230,7 +196,7 @@ export default function Home() {
                     <div key={activity.id} className="dashboard-activity-item">
                       <div className="dashboard-activity-header">
                         <span className={`dashboard-activity-indicator ${
-                          activity.type === 'status_update' ? 'dashboard-activity-status' : 'dashboard-activity-document'
+                          activity.activity_type === 'status_update' ? 'dashboard-activity-status' : 'dashboard-activity-document'
                         }`}></span>
                         <span className="dashboard-activity-driver">
                           {activity.driver_name}
