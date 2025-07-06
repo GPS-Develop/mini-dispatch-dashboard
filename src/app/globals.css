@@ -1930,6 +1930,7 @@ body {
     min-height: 3rem;
   }
   
+  /* Improved button touch targets for mobile */
   .btn-primary,
   .btn-add {
     padding: var(--spacing-md) var(--spacing-xl);
@@ -3014,5 +3015,393 @@ body {
 
   .driver-document-view-btn {
     align-self: flex-end;
+  }
+}
+
+/* ==============================================
+   ENHANCED MOBILE RESPONSIVENESS
+   ============================================== */
+
+/* Mobile-First Typography Improvements */
+@media (max-width: 768px) {
+  .heading-xl {
+    font-size: 1.75rem;
+    line-height: 1.2;
+  }
+  
+  .heading-lg {
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+  
+  .heading-md {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+}
+
+/* Improved Mobile Page Containers */
+@media (max-width: 768px) {
+  .page-container,
+  .page-container-xl {
+    padding: var(--spacing-md);
+    margin: 0;
+  }
+  
+  .page-header {
+    margin-bottom: var(--spacing-lg);
+    gap: var(--spacing-md);
+  }
+  
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+}
+
+/* Enhanced Mobile Dashboard */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+  }
+  
+  .dashboard-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .dashboard-clear-btn {
+    align-self: flex-end;
+    font-size: 0.875rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  
+  .dashboard-activity-card {
+    padding: var(--spacing-md);
+  }
+  
+  .dashboard-activity-item {
+    padding: var(--spacing-md);
+    margin: var(--spacing-sm) 0;
+  }
+  
+  .dashboard-activity-header {
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+  }
+  
+  .dashboard-activity-driver {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .dashboard-activity-load {
+    font-size: 0.875rem;
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
+/* Mobile-Optimized Tables */
+@media (max-width: 768px) {
+  .table-container {
+    display: none !important;
+  }
+  
+  .pay-statement-cards,
+  .driver-cards {
+    display: block !important;
+  }
+  
+  /* Card spacing for mobile */
+  .pay-statement-card,
+  .driver-card {
+    margin-bottom: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .pay-statement-card-header,
+  .driver-card-header {
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
+    margin-bottom: var(--spacing-md);
+  }
+}
+
+/* Mobile Form Improvements */
+@media (max-width: 768px) {
+  .form-container {
+    padding: var(--spacing-lg);
+  }
+  
+  .form-section {
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .form-section-title {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+  
+  .form-field-container,
+  .form-field-container-lg,
+  .form-field-container-sm {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  /* Stack buttons vertically on mobile */
+  .button-group-horizontal {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .button-group-horizontal .btn-primary,
+  .button-group-horizontal .btn-secondary,
+  .button-group-horizontal .btn-danger {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Mobile Modal Improvements */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: var(--spacing-lg);
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+    border-radius: var(--radius-lg);
+  }
+  
+  .modal-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .modal-body {
+    padding: var(--spacing-lg);
+    max-height: calc(100vh - 12rem);
+    overflow-y: auto;
+  }
+  
+  .modal-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+/* Mobile Load Cards Enhancement */
+@media (max-width: 768px) {
+  .loads-grid {
+    gap: var(--spacing-md);
+  }
+  
+  .load-card {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+  
+  .load-card-header {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  
+  .load-card-title {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .load-card-status {
+    font-size: 1rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Mobile Filter Improvements */
+@media (max-width: 768px) {
+  .filters-section {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background-color: var(--color-bg-section);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .filter-input,
+  .filter-select {
+    width: 100%;
+    font-size: 1rem;
+    padding: var(--spacing-md);
+    min-height: 3rem;
+  }
+}
+
+/* Mobile Empty States */
+@media (max-width: 768px) {
+  .empty-state {
+    padding: var(--spacing-2xl) var(--spacing-lg);
+  }
+  
+  .empty-state .illustration {
+    font-size: 3rem;
+  }
+  
+  .empty-state .title {
+    font-size: 1.5rem;
+  }
+  
+  .empty-state .description {
+    font-size: 1rem;
+  }
+}
+
+/* Mobile Status and Badge Improvements */
+@media (max-width: 768px) {
+  .status-success,
+  .status-warning,
+  .status-error,
+  .status-info {
+    font-size: 0.875rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Mobile Touch Target Improvements */
+@media (max-width: 768px) {
+  /* Increase clickable areas */
+  .dashboard-activity-item,
+  .load-card,
+  .driver-card,
+  .pay-statement-card {
+    cursor: pointer;
+    transition: all var(--transition-normal);
+  }
+  
+  .dashboard-activity-item:active,
+  .load-card:active,
+  .driver-card:active,
+  .pay-statement-card:active {
+    transform: scale(0.98);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  /* Larger tap targets for buttons */
+  .btn-icon,
+  .btn-icon-danger {
+    min-width: 3rem;
+    min-height: 3rem;
+    padding: var(--spacing-md);
+  }
+  
+  /* Larger checkbox and radio targets */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+/* Mobile-Specific Utilities */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .mobile-block {
+    display: block !important;
+  }
+  
+  .mobile-flex {
+    display: flex !important;
+  }
+  
+  .mobile-grid {
+    display: grid !important;
+  }
+  
+  .mobile-text-center {
+    text-align: center !important;
+  }
+  
+  .mobile-text-left {
+    text-align: left !important;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  .mobile-no-margin {
+    margin: 0 !important;
+  }
+  
+  .mobile-no-padding {
+    padding: 0 !important;
+  }
+}
+
+/* Mobile Landscape Optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .page-container,
+  .page-container-xl {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  
+  .dashboard-grid {
+    gap: var(--spacing-lg);
+  }
+  
+  .modal-content {
+    max-height: calc(100vh - 1rem);
+    margin: var(--spacing-sm);
+  }
+}
+
+/* Extra Small Mobile Devices */
+@media (max-width: 480px) {
+  .page-container,
+  .page-container-xl {
+    padding: var(--spacing-sm);
+  }
+  
+  .page-header {
+    gap: var(--spacing-sm);
+  }
+  
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-grid {
+    gap: var(--spacing-lg);
+  }
+  
+  .form-container {
+    padding: var(--spacing-md);
+  }
+  
+  .modal-content {
+    margin: var(--spacing-sm);
+    border-radius: var(--radius-md);
+  }
+  
+  .empty-state {
+    padding: var(--spacing-xl) var(--spacing-sm);
+  }
+  
+  .button-group-horizontal {
+    gap: var(--spacing-sm);
   }
 }

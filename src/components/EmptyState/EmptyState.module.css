@@ -82,6 +82,43 @@
   }
 }
 
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .emptyState {
+    padding: 2rem 1rem;
+    min-height: 250px;
+  }
+  
+  .illustration {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  
+  .content {
+    margin-bottom: 1.5rem;
+  }
+  
+  .actions {
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .actions button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .title {
