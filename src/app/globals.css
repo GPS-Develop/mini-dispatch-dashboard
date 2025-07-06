@@ -195,6 +195,18 @@ body {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+/* Remove default select dropdown arrow globally */
+select.input-field {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
 .input-field:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--color-border-focus);
@@ -1025,8 +1037,10 @@ body {
     position: absolute;
     top: var(--spacing-sm);
     right: var(--spacing-sm);
-    width: 2rem;
-    height: 2rem;
+    width: 2.5rem; /* Larger touch target */
+    height: 2.5rem; /* Larger touch target */
+    min-width: 44px; /* iOS recommended minimum touch target */
+    min-height: 44px; /* iOS recommended minimum touch target */
   }
 }
 
@@ -1054,6 +1068,18 @@ body {
 .btn-add:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Mobile Add Button Improvements */
+@media (max-width: 639px) {
+  .btn-add {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    min-height: 48px; /* Better touch target */
+    width: 100%; /* Full width on mobile */
+    justify-content: center;
+    font-size: 1rem;
+    margin-top: var(--spacing-sm);
+  }
 }
 
 /* Dynamic Form Items */
@@ -1966,6 +1992,49 @@ body {
   .form-item-card {
     padding: var(--spacing-lg);
     padding-top: calc(var(--spacing-2xl) + var(--spacing-sm)); /* Space for remove button */
+    margin: 0 var(--spacing-sm); /* Add side margins on mobile */
+  }
+  
+  /* Better mobile input spacing */
+  .form-item-inputs {
+    gap: var(--spacing-lg); /* Increase gap on mobile for better touch targets */
+  }
+  
+  /* Improve mobile input field sizing */
+  .input-field,
+  .input-field-error {
+    min-height: 48px; /* Better touch target size */
+    font-size: 1rem; /* Prevent zoom on iOS */
+  }
+  
+  /* Better mobile select styling */
+  select.input-field {
+    min-height: 48px;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  
+  /* Better mobile datetime input styling */
+  input[type="datetime-local"].input-field {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 200px; /* Prevent squishing */
+  }
+  
+  /* Ensure datetime inputs don't get too compressed in flex layouts */
+  .form-item-inputs input[type="datetime-local"] {
+    flex-shrink: 0;
+    min-width: 200px;
   }
 }
 
