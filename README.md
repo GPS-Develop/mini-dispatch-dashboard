@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mini Dispatch Dashboard
+
+A modern dispatch management system built with Next.js and Supabase for trucking companies to manage loads, drivers, and pay statements.
+
+## Features
+
+- **Load Management**: Create, track, and manage loads with pickup/delivery locations
+- **Driver Management**: Manage driver accounts, status, and assignments
+- **Pay Statements**: Create and manage driver pay statements with PDF generation
+- **Real-time Dashboard**: Live activity feed and upcoming loads overview
+- **Document Upload**: Handle driver document uploads and management
+- **Authentication**: Secure login system with Supabase Auth
+- **Mobile Responsive**: Optimized for mobile and desktop use
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **Styling**: Tailwind CSS 4, CSS Modules
+- **PDF Generation**: jsPDF with html2canvas
+- **Authentication**: Supabase Auth UI
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/mini-dispatch-dashboard.git
+cd mini-dispatch-dashboard
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.local.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Add your Supabase credentials to `.env.local`:
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## Learn More
+4. Run the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── add-load/          # Add new load page
+│   ├── api/               # API routes
+│   ├── driver/            # Driver-specific pages
+│   ├── drivers/           # Driver management
+│   ├── loads/             # Load management
+│   ├── login/             # Authentication
+│   └── pay-statements/    # Pay statement management
+├── components/            # Reusable UI components
+├── contexts/              # React contexts
+├── features/              # Feature-specific components
+├── types/                 # TypeScript type definitions
+└── utils/                 # Utility functions and Supabase clients
+```
 
-## Deploy on Vercel
+## Database Setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project uses Supabase as the backend. You'll need to set up the following tables:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `loads` - Load information
+- `drivers` - Driver profiles
+- `pickups` - Pickup locations
+- `deliveries` - Delivery locations
+- `pay_statements` - Pay statement records
+- `recent_activities` - Activity tracking
+
+Refer to `supabase-config-guide.md` for detailed database schema setup.
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## Key Features
+
+### Dashboard
+- Overview of upcoming loads
+- Real-time activity feed
+- Driver status monitoring
+
+### Load Management
+- Create loads with multiple pickup/delivery locations
+- Assign drivers to loads
+- Track load status and progress
+
+### Driver Management
+- Create driver accounts
+- Manage driver status and information
+- Track driver assignments
+
+### Pay Statements
+- Generate pay statements for drivers
+- PDF export functionality
+- Track payment history
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is private and proprietary.
