@@ -7,6 +7,7 @@ import Button from '../../components/Button/Button';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import styles from './ViewPayStatementPage.module.css';
+import { PayStatement, TripSummary } from '../../types';
 
 interface ViewPayStatementPageProps {
   payStatementId: string;
@@ -18,11 +19,9 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
   const router = useRouter();
   const printRef = useRef<HTMLDivElement>(null);
   
-  const [payStatement, setPayStatement] = useState<any>(null);
-  const [trips, setTrips] = useState<any[]>([]);
+  const [payStatement, setPayStatement] = useState<PayStatement | null>(null);
+  const [trips, setTrips] = useState<TripSummary[]>([]);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-
-  
 
   const payStatementData = payStatements.find(ps => ps.id === payStatementId);
   const driver = drivers.find(d => d.id === payStatementData?.driver_id);
@@ -63,15 +62,15 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
   function calculateTotals() {
     if (!payStatement) return { totalAdditions: 0, totalDeductions: 0, netPay: 0 };
     
-    const totalAdditions = Object.values(payStatement.additions).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
-    const totalDeductions = Object.values(payStatement.deductions).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+    const totalAdditions = Object.values(payStatement.additions).reduce((sum: number, val: number) => sum + val, 0);
+    const totalDeductions = Object.values(payStatement.deductions).reduce((sum: number, val: number) => sum + val, 0);
     const netPay = payStatement.gross_pay + totalAdditions - totalDeductions;
 
     return { totalAdditions, totalDeductions, netPay };
   }
 
   const generatePDF = async () => {
-    if (!printRef.current) {
+    if (!printRef.current || !payStatement || !driver) {
       alert('Print content not ready. Please try again.');
       return;
     }

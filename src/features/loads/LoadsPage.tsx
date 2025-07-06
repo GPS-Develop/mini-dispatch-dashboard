@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLoads, Load } from "./LoadContext";
 import { useDrivers } from "../../features/drivers/DriverContext";
 import { createClient } from "../../utils/supabase/client";
@@ -8,6 +8,7 @@ import Button from '../../components/Button/Button';
 import { formatPhoneForDisplay, sanitizePhone, formatRateForDisplay } from '../../utils/validation';
 import DocumentUploadModal from '../../components/DocumentUploadModal/DocumentUploadModal';
 import { EmptyLoads } from '../../components/EmptyState/EmptyState';
+import { Pickup, Delivery, InputChangeEvent, SelectChangeEvent, TextareaChangeEvent, FormSubmitEvent } from '../../types';
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
 const US_STATES = [
@@ -15,21 +16,44 @@ const US_STATES = [
 ];
 
 export default function LoadsPage() {
-  const { loads, updateLoad, deleteLoad, error: loadError, loading: loadLoading, fetchLoads } = useLoads();
-  const { drivers, updateDriver } = useDrivers();
+  const { loads, updateLoad, deleteLoad, error: loadError, loading: loadLoading } = useLoads();
+  const { drivers } = useDrivers();
   const [statusFilter, setStatusFilter] = useState("All");
   const [driverFilter, setDriverFilter] = useState("");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Load | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [editForm, setEditForm] = useState<any>(null);
-  const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
-  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
+  const [editForm, setEditForm] = useState<LoadEditForm | null>(null);
+  const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
+  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loadToDelete, setLoadToDelete] = useState<Load | null>(null);
+
+  // Define the edit form type
+  interface LoadEditForm {
+    id: string;
+    reference_id: string;
+    driver_id: string;
+    rate: number;
+    notes?: string;
+    broker_name: string;
+    broker_contact: number;
+    broker_email: string;
+    load_type: string;
+    temperature?: number | null;
+    pickups: Pickup[];
+    deliveries: Delivery[];
+    pickup_address: string;
+    pickup_state: string;
+    pickup_datetime: string;
+    delivery_address: string;
+    delivery_state: string;
+    delivery_datetime: string;
+    status: "Scheduled" | "In-Transit" | "Delivered";
+  }
   const router = useRouter();
   const supabase = createClient();
 
@@ -68,7 +92,7 @@ export default function LoadsPage() {
     }
   }, [selected, editMode, pickupsMap, deliveriesMap]);
 
-  const fetchAllPickupsDeliveries = async () => {
+  const fetchAllPickupsDeliveries = useCallback(async () => {
     if (loads.length === 0) return;
     try {
     const loadIds = loads.map(l => l.id);
@@ -80,8 +104,8 @@ export default function LoadsPage() {
         return;
       }
       
-    const pickupsByLoad: Record<string, any[]> = {};
-    const deliveriesByLoad: Record<string, any[]> = {};
+    const pickupsByLoad: Record<string, Pickup[]> = {};
+    const deliveriesByLoad: Record<string, Delivery[]> = {};
     pickups?.forEach(p => {
       if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
       pickupsByLoad[p.load_id].push(p);
@@ -95,11 +119,11 @@ export default function LoadsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch pickup/delivery data');
     }
-  };
+  }, [loads, supabase]);
 
   useEffect(() => {
     fetchAllPickupsDeliveries();
-  }, [loads]);
+  }, [loads, fetchAllPickupsDeliveries]);
 
   function getDriverName(driverId: string) {
     const driver = drivers.find((d) => d.id === driverId);
@@ -144,32 +168,37 @@ export default function LoadsPage() {
     setLoadToDelete(null);
   }
 
-  function handlePickupChange(idx: number, e: any) {
+  function handlePickupChange(idx: number, e: InputChangeEvent | SelectChangeEvent) {
     const { name, value } = e.target;
-    setEditForm((prev: any) => {
+    setEditForm((prev: LoadEditForm | null) => {
+      if (!prev) return null;
       const pickups = [...prev.pickups];
       pickups[idx] = { ...pickups[idx], [name]: value };
       return { ...prev, pickups };
     });
   }
 
-  function handleDeliveryChange(idx: number, e: any) {
+  function handleDeliveryChange(idx: number, e: InputChangeEvent | SelectChangeEvent) {
     const { name, value } = e.target;
-    setEditForm((prev: any) => {
+    setEditForm((prev: LoadEditForm | null) => {
+      if (!prev) return null;
       const deliveries = [...prev.deliveries];
       deliveries[idx] = { ...deliveries[idx], [name]: value };
       return { ...prev, deliveries };
     });
   }
 
-  function handleEditChange(e: any) {
+  function handleEditChange(e: InputChangeEvent | SelectChangeEvent | TextareaChangeEvent) {
     const { name, value } = e.target;
-    setEditForm((prev: any) => ({ ...prev, [name]: value }));
+    setEditForm((prev: LoadEditForm | null) => {
+      if (!prev) return null;
+      return { ...prev, [name]: value };
+    });
   }
 
-  async function handleEditSubmit(e: any) {
+  async function handleEditSubmit(e: FormSubmitEvent) {
     e.preventDefault();
-    if (!selected) return;
+    if (!selected || !editForm) return;
     
     setIsSubmitting(true);
     setError("");
@@ -187,17 +216,17 @@ export default function LoadsPage() {
     
     try {
     // Update main load
-    const convertedRate = parseInt(editForm.rate) || 0;
+    const convertedRate = editForm.rate || 0;
     
     const updatedData = {
       driver_id: editForm.driver_id,
-      rate: convertedRate, // Convert string to integer
+      rate: convertedRate,
       notes: editForm.notes,
       broker_name: editForm.broker_name,
       broker_contact: parseInt(sanitizedBrokerContact) || 0,
       broker_email: editForm.broker_email,
       load_type: editForm.load_type,
-      temperature: editForm.temperature === "" || editForm.temperature == null ? null : parseFloat(editForm.temperature.toString()),
+      temperature: editForm.temperature == null ? null : editForm.temperature,
     };
     await updateLoad(selected.id, updatedData);
       
@@ -439,7 +468,7 @@ export default function LoadsPage() {
                   {/* Pickups */}
                   <div className="edit-form-section">
                     <div className="edit-form-section-title">Pickup Locations</div>
-                    {editForm.pickups && editForm.pickups.length > 0 && editForm.pickups.map((pickup: any, idx: number) => (
+                    {editForm.pickups && editForm.pickups.length > 0 && editForm.pickups.map((pickup: Pickup, idx: number) => (
                       <div key={pickup.id || idx} className="edit-form-item">
                         <div className="form-grid-2">
                           <div className="form-group">
@@ -495,7 +524,7 @@ export default function LoadsPage() {
                   {/* Deliveries */}
                   <div className="edit-form-section">
                     <div className="edit-form-section-title">Delivery Locations</div>
-                    {editForm.deliveries && editForm.deliveries.length > 0 && editForm.deliveries.map((delivery: any, idx: number) => (
+                    {editForm.deliveries && editForm.deliveries.length > 0 && editForm.deliveries.map((delivery: Delivery, idx: number) => (
                       <div key={delivery.id || idx} className="edit-form-item">
                         <div className="form-grid-2">
                           <div className="form-group">

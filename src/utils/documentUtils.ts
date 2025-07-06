@@ -73,7 +73,12 @@ export const uploadDocument = async (
         .single();
 
       if (loadData) {
-        const driverName = (loadData.drivers as any)?.name || 'Unknown Driver';
+        const driverName = (loadData as Record<string, unknown>).drivers && 
+          typeof (loadData as Record<string, unknown>).drivers === 'object' &&
+          (loadData as Record<string, unknown>).drivers !== null && 
+          'name' in ((loadData as Record<string, unknown>).drivers as object) ? 
+          (((loadData as Record<string, unknown>).drivers as Record<string, unknown>).name as string) : 
+          'Unknown Driver';
         
         // Add document upload activity
         await supabase.rpc('add_document_upload_activity', {

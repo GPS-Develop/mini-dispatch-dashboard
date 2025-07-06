@@ -5,7 +5,7 @@ import { useDrivers } from "../features/drivers/DriverContext";
 import { createClient } from "../utils/supabase/client";
 import { useAuth } from "../contexts/AuthContext";
 import { Pickup, Delivery } from "../types";
-import { SkeletonCard, SkeletonTable } from "../components/Skeleton/Skeleton";
+import { SkeletonCard } from "../components/Skeleton/Skeleton";
 import { EmptyActivity } from "../components/EmptyState/EmptyState";
 import { useRouter } from "next/navigation";
 
@@ -22,7 +22,7 @@ interface Activity {
 export default function Home() {
   const { loads } = useLoads();
   const { drivers } = useDrivers();
-  const { user } = useAuth();
+  const { } = useAuth();
   const router = useRouter();
   const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});

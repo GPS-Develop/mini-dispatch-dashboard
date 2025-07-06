@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
 import { SkeletonTable } from '../../components/Skeleton/Skeleton';
 import { EmptyPayStatements } from '../../components/EmptyState/EmptyState';
+import { PayStatement } from '../../types';
 
 export default function PayStatementsPage() {
   const { payStatements, deletePayStatement, loading, error } = usePayStatements();
@@ -31,9 +32,9 @@ export default function PayStatementsPage() {
     return new Date(dateString).toLocaleDateString();
   }
 
-  function calculateNetPay(payStatement: any) {
-    const totalAdditions = Object.values(payStatement.additions).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
-    const totalDeductions = Object.values(payStatement.deductions).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0);
+  function calculateNetPay(payStatement: PayStatement) {
+    const totalAdditions = Object.values(payStatement.additions).reduce((sum: number, val: number) => sum + val, 0);
+    const totalDeductions = Object.values(payStatement.deductions).reduce((sum: number, val: number) => sum + val, 0);
     return payStatement.gross_pay + totalAdditions - totalDeductions;
   }
 

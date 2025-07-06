@@ -17,7 +17,7 @@ export async function createDriverAccount(
   name: string,
   phone: number,
   payRate: number
-): Promise<{ success: boolean; data?: any; error?: string }> {
+): Promise<{ success: boolean; data?: { driver: unknown; authUser: unknown }; error?: string }> {
   try {
     // Create user in Supabase Auth using magic link invitation
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(

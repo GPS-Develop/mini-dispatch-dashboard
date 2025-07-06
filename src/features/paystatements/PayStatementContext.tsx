@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { createClient } from "../../utils/supabase/client";
 import { PayStatement, PayStatementDB, TripSummary } from "../../types";
 
@@ -19,7 +19,7 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  async function fetchPayStatements() {
+  const fetchPayStatements = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -51,11 +51,11 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
 
   useEffect(() => {
     fetchPayStatements();
-  }, []);
+  }, [fetchPayStatements]);
 
   async function calculateGrossPay(driverId: string, periodStart: string, periodEnd: string): Promise<{ grossPay: number; trips: TripSummary[] }> {
     try {
@@ -77,8 +77,18 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
         throw new Error(`Failed to fetch loads: ${loadsError.message}`);
       }
 
+      // Define the load interface for the query result
+      interface LoadWithPickupsDeliveries {
+        id: string;
+        reference_id: string;
+        rate: number | string;
+        status: string;
+        pickups: Array<{ datetime: string; address: string; state: string; city: string }>;
+        deliveries: Array<{ datetime: string; address: string; state: string; city: string }>;
+      }
+
       // Filter loads by period based on pickup date
-      const filteredLoads = loads?.filter((load: any) => {
+      const filteredLoads = loads?.filter((load: LoadWithPickupsDeliveries) => {
         const pickupDate = new Date(load.pickups[0]?.datetime);
         const startDate = new Date(periodStart);
         const endDate = new Date(periodEnd);
@@ -89,30 +99,30 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
       let grossPay = 0;
       const trips: TripSummary[] = [];
 
-      filteredLoads.forEach((load: any) => {
-        const rate = parseFloat(load.rate) || 0;
+      filteredLoads.forEach((load: LoadWithPickupsDeliveries) => {
+        const rate = typeof load.rate === 'string' ? parseFloat(load.rate) : load.rate || 0;
         grossPay += rate;
 
         // Get all pickup locations with numbering
-        const pickupLocations = load.pickups.map((pickup: any, index: number) => {
+        const pickupLocations = load.pickups.map((pickup, index: number) => {
           const address = pickup.address || '';
           const state = pickup.state || '';
           return `${index + 1}. ${address}, ${state}`;
         }).join('\n');
 
         // Get all delivery locations with numbering
-        const deliveryLocations = load.deliveries.map((delivery: any, index: number) => {
+        const deliveryLocations = load.deliveries.map((delivery, index: number) => {
           const address = delivery.address || '';
           const state = delivery.state || '';
           return `${index + 1}. ${address}, ${state}`;
         }).join('\n');
 
         // Use earliest pickup date and latest delivery date
-        const earliestPickup = load.pickups.reduce((earliest: any, pickup: any) => {
+        const earliestPickup = load.pickups.reduce((earliest, pickup) => {
           return new Date(pickup.datetime) < new Date(earliest.datetime) ? pickup : earliest;
         });
 
-        const latestDelivery = load.deliveries.reduce((latest: any, delivery: any) => {
+        const latestDelivery = load.deliveries.reduce((latest, delivery) => {
           return new Date(delivery.datetime) > new Date(latest.datetime) ? delivery : latest;
         });
 

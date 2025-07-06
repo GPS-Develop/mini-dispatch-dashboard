@@ -1,7 +1,7 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { createClient } from "../../utils/supabase/client";
-import { validateRate, validateTemperature } from "../../utils/validation";
+import { validateRate } from "../../utils/validation";
 
 export type Load = {
   id: string;
@@ -25,13 +25,13 @@ export type Load = {
 
 const LoadContext = createContext<{
   loads: Load[];
-  addLoad: (load: Record<string, any>) => Promise<void>;
-  updateLoad: (id: string, load: Record<string, any>) => Promise<void>;
+  addLoad: (load: Record<string, unknown>) => Promise<void>;
+  updateLoad: (id: string, load: Record<string, unknown>) => Promise<void>;
   deleteLoad: (id: string) => Promise<void>;
   loading: boolean;
   error: string | null;
   fetchLoads: () => Promise<void>;
-  addFullLoad: (load: Record<string, any>, pickups: any[], deliveries: any[]) => Promise<void>;
+  addFullLoad: (load: Record<string, unknown>, pickups: Array<{ address: string; city: string; state: string; datetime: string }>, deliveries: Array<{ address: string; city: string; state: string; datetime: string }>) => Promise<void>;
 } | null>(null);
 
 export function LoadProvider({ children }: { children: React.ReactNode }) {
@@ -40,7 +40,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  async function fetchLoads() {
+  const fetchLoads = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -55,7 +55,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Convert broker_contact to number if it comes as string from database
-      const mappedLoads = (data || []).map((load: any) => ({
+      const mappedLoads = (data || []).map((load: Record<string, unknown>) => ({
         ...load,
         broker_contact: typeof load.broker_contact === 'string' ? 
           parseInt(load.broker_contact) || 0 : 
@@ -67,18 +67,18 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
     } finally {
     setLoading(false);
     }
-  }
+  }, [supabase]);
 
   useEffect(() => {
     fetchLoads();
-  }, []);
+  }, [fetchLoads]);
 
-  async function addLoad(load: Record<string, any>) {
+  async function addLoad(load: Record<string, unknown>) {
     setError(null);
     
     // Validate rate before sending to database
-    if (load.rate) {
-      const rateValidation = validateRate(load.rate);
+    if (load.rate !== undefined && load.rate !== null) {
+      const rateValidation = validateRate(load.rate as string | number);
       if (!rateValidation.isValid) {
         setError(rateValidation.error || 'Invalid rate');
         return;
@@ -114,12 +114,12 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function updateLoad(id: string, load: Record<string, any>) {
+  async function updateLoad(id: string, load: Record<string, unknown>) {
     setError(null);
     
     // Validate rate before sending to database
-    if (load.rate) {
-      const rateValidation = validateRate(load.rate);
+    if (load.rate !== undefined && load.rate !== null) {
+      const rateValidation = validateRate(load.rate as string | number);
       if (!rateValidation.isValid) {
         setError(rateValidation.error || 'Invalid rate');
         return;
@@ -206,12 +206,12 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function addFullLoad(load: Record<string, any>, pickups: any[], deliveries: any[]) {
+  async function addFullLoad(load: Record<string, unknown>, pickups: Array<{ address: string; city: string; state: string; datetime: string }>, deliveries: Array<{ address: string; city: string; state: string; datetime: string }>) {
     setError(null);
     
     // Validate rate before sending to database
-    if (load.rate) {
-      const rateValidation = validateRate(load.rate);
+    if (load.rate !== undefined && load.rate !== null) {
+      const rateValidation = validateRate(load.rate as string | number);
       if (!rateValidation.isValid) {
         setError(rateValidation.error || 'Invalid rate');
         return;

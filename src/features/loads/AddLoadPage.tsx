@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useDrivers } from "../../features/drivers/DriverContext";
 import { useLoads } from "../../features/loads/LoadContext";
 import { useRouter } from "next/navigation";
-import Button from '../../components/Button/Button';
 import { sanitizePhone, validateRate } from '../../utils/validation';
 
 export default function AddLoadPage() {
@@ -31,14 +30,13 @@ export default function AddLoadPage() {
     brokerEmail: "",
   });
   const [showTemp, setShowTemp] = useState(true);
-  const [errors, setErrors] = useState<any>({});
-  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setShowTemp(form.loadType === "Reefer");
   }, [form.loadType]);
 
-  function handleChange(e: any) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
@@ -78,7 +76,7 @@ export default function AddLoadPage() {
   }
 
   function validate() {
-    const newErrors: any = {};
+    const newErrors: Record<string, string> = {};
     if (!form.referenceId) newErrors.referenceId = "Required";
     if (form.pickups.length === 0) newErrors.pickups = "At least one pickup required";
     if (form.deliveries.length === 0) newErrors.deliveries = "At least one delivery required";
@@ -108,7 +106,7 @@ export default function AddLoadPage() {
     return newErrors;
   }
 
-  async function handleSubmit(e: any) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const validation = validate();
     setErrors(validation);
@@ -438,11 +436,6 @@ export default function AddLoadPage() {
           {loadError && (
             <div className="alert-error">
               <strong>Error:</strong> {loadError}
-            </div>
-          )}
-          {success && (
-            <div className="alert-success">
-              <strong>Success:</strong> Load added successfully!
             </div>
           )}
         </div>

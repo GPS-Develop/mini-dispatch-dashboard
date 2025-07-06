@@ -125,10 +125,10 @@ export default function CreatePayStatementPage() {
     try {
       // Filter out zero values
       const filteredAdditions = Object.fromEntries(
-        Object.entries(additions).filter(([_, value]) => value > 0)
+        Object.entries(additions).filter(([, value]) => value > 0)
       );
       const filteredDeductions = Object.fromEntries(
-        Object.entries(deductions).filter(([_, value]) => value > 0)
+        Object.entries(deductions).filter(([, value]) => value > 0)
       );
 
       await addPayStatement({
