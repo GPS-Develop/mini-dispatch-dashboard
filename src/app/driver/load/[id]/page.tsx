@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
@@ -61,16 +61,7 @@ export default function DriverLoadDetails() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string>('');
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    
-    fetchLoadDetails();
-  }, [user, router, params.id]);
-
-  const fetchLoadDetails = async () => {
+  const fetchLoadDetails = useCallback(async () => {
     if (!params.id) return;
     
     try {
@@ -122,11 +113,21 @@ export default function DriverLoadDetails() {
         console.error('Error fetching documents:', documentsResult.error);
       }
     } catch (err) {
+      console.error('Error fetching load details:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, supabase]);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    
+    fetchLoadDetails();
+  }, [user, router, fetchLoadDetails]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -150,8 +151,9 @@ export default function DriverLoadDetails() {
       // Clear file input
       event.target.value = '';
       
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload document');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upload document';
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -165,7 +167,8 @@ export default function DriverLoadDetails() {
       } else {
         setError(result.error || 'Failed to open document');
       }
-    } catch (err: any) {
+    } catch (err) {
+      console.error('Error opening document:', err);
       setError('Failed to open document');
     }
   };
@@ -182,8 +185,9 @@ export default function DriverLoadDetails() {
       if (error) throw error;
 
       setLoad(prev => prev ? { ...prev, status: newStatus } : null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update load status');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update load status';
+      setError(errorMessage);
     }
   };
 
@@ -279,7 +283,7 @@ export default function DriverLoadDetails() {
               {pickups.length === 0 ? (
                 <div className="text-muted">No pickup locations specified</div>
               ) : (
-                pickups.map((pickup, index) => (
+                pickups.map((pickup) => (
                   <div key={pickup.id} className="driver-load-route-item">
                     <div className="driver-load-route-indicator driver-load-pickup-indicator"></div>
                     <div className="driver-load-route-details">
@@ -298,7 +302,7 @@ export default function DriverLoadDetails() {
               {deliveries.length === 0 ? (
                 <div className="text-muted">No delivery locations specified</div>
               ) : (
-                deliveries.map((delivery, index) => (
+                deliveries.map((delivery) => (
                   <div key={delivery.id} className="driver-load-route-item">
                     <div className="driver-load-route-indicator driver-load-delivery-indicator"></div>
                     <div className="driver-load-route-details">

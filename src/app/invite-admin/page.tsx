@@ -228,7 +228,7 @@ export default function InviteAdminPage() {
           <h3 className="invite-admin-info-title">What happens next?</h3>
           <ul className="invite-admin-info-list">
             <li>• The invited user will receive an email with an invitation link</li>
-            <li>• They'll be able to set up their password and access the admin dashboard</li>
+            <li>• They&apos;ll be able to set up their password and access the admin dashboard</li>
             <li>• Their account will have full admin privileges</li>
             <li>• You can manage admin accounts from the user management section</li>
           </ul>

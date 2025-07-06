@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLoads } from "../features/loads/LoadContext";
 import { useDrivers } from "../features/drivers/DriverContext";
 import { createClient } from "../utils/supabase/client";
+import { Pickup, Delivery } from "../types";
 
 interface Activity {
   id: string;
@@ -13,11 +14,21 @@ interface Activity {
   timestamp: string;
 }
 
+interface DocumentUpload {
+  id: string;
+  file_name: string;
+  uploaded_at: string;
+  loads: {
+    reference_id: string;
+    driver_id: string;
+  };
+}
+
 export default function Home() {
   const { loads } = useLoads();
   const { drivers } = useDrivers();
-  const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
-  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
+  const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
+  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const supabase = createClient();
@@ -26,14 +37,13 @@ export default function Home() {
     .filter((load) => load.status === "Scheduled")
     .sort((a, b) => new Date(a.pickup_datetime).getTime() - new Date(b.pickup_datetime).getTime());
 
-  useEffect(() => {
-    async function fetchAllPickupsDeliveries() {
+  const fetchAllPickupsDeliveries = useCallback(async () => {
       if (upcomingLoads.length === 0) return;
       const loadIds = upcomingLoads.map(l => l.id);
       const { data: pickups } = await supabase.from("pickups").select("*").in("load_id", loadIds);
       const { data: deliveries } = await supabase.from("deliveries").select("*").in("load_id", loadIds);
-      const pickupsByLoad: Record<string, any[]> = {};
-      const deliveriesByLoad: Record<string, any[]> = {};
+      const pickupsByLoad: Record<string, Pickup[]> = {};
+      const deliveriesByLoad: Record<string, Delivery[]> = {};
       pickups?.forEach(p => {
         if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
         pickupsByLoad[p.load_id].push(p);
@@ -44,13 +54,14 @@ export default function Home() {
       });
       setPickupsMap(pickupsByLoad);
       setDeliveriesMap(deliveriesByLoad);
-    }
+  }, [upcomingLoads, supabase]);
+
+  useEffect(() => {
     fetchAllPickupsDeliveries();
-  }, [upcomingLoads]);
+  }, [fetchAllPickupsDeliveries]);
 
   // Fetch recent activities from drivers
-  useEffect(() => {
-    async function fetchRecentActivities() {
+  const fetchRecentActivities = useCallback(async () => {
       if (drivers.length === 0 || loads.length === 0) return;
       
       try {
@@ -98,7 +109,7 @@ export default function Home() {
         });
 
         // Process document uploads
-        documentUploads?.forEach((upload: any) => {
+        documentUploads?.forEach((upload: DocumentUpload) => {
           const driver = drivers.find(d => d.id === upload.loads.driver_id);
           const driverName = driver?.name || 'Unknown Driver';
           
@@ -121,10 +132,11 @@ export default function Home() {
       } finally {
         setActivitiesLoading(false);
       }
-    }
-
-    fetchRecentActivities();
   }, [drivers, loads, supabase]);
+
+  useEffect(() => {
+    fetchRecentActivities();
+  }, [fetchRecentActivities]);
 
   function getDriverName(driver_id: string) {
     const driver = drivers.find((d) => d.id === driver_id);
@@ -155,7 +167,7 @@ export default function Home() {
                   <div className="text-muted">No upcoming loads.</div>
                 </div>
               ) : (
-                upcomingLoads.map((load, idx) => (
+                upcomingLoads.map((load) => (
                   <div
                     key={load.id}
                     className="dashboard-load-card"

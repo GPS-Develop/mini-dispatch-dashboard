@@ -130,7 +130,7 @@ export default function DriversPage() {
       
       {!loading && drivers.length === 0 && (
         <div className="loading-container">
-          <div className="text-muted">No drivers found. Click "Create Driver Account" to get started.</div>
+          <div className="text-muted">No drivers found. Click &quot;Create Driver Account&quot; to get started.</div>
         </div>
       )}
       

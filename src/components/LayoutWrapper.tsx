@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
@@ -12,7 +12,6 @@ interface LayoutWrapperProps {
 
 export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, signOut } = useAuth();
   const [isDriver, setIsDriver] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-// Removed unused import
+import { Pickup, Delivery } from '@/types';
 
 interface Load {
   id: string;
@@ -40,22 +40,13 @@ export default function DriverDashboard() {
   
   const [loads, setLoads] = useState<Load[]>([]);
   const [driver, setDriver] = useState<Driver | null>(null);
-  const [pickupsMap, setPickupsMap] = useState<Record<string, any[]>>({});
-  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, any[]>>({});
+  const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
+  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Scheduled' | 'In-Transit' | 'Delivered'>('All');
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    
-    fetchDriverData();
-  }, [user, router]);
-
-  const fetchDriverData = async () => {
+  const fetchDriverData = useCallback(async () => {
     if (!user?.id) return;
     
     try {
@@ -126,8 +117,8 @@ export default function DriverDashboard() {
           .select("*")  
           .in("load_id", loadIds);
 
-        const pickupsByLoad: Record<string, any[]> = {};
-        const deliveriesByLoad: Record<string, any[]> = {};
+        const pickupsByLoad: Record<string, Pickup[]> = {};
+        const deliveriesByLoad: Record<string, Delivery[]> = {};
         
         pickups?.forEach(p => {
           if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
@@ -147,7 +138,16 @@ export default function DriverDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, supabase, router, signOut]);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    
+    fetchDriverData();
+  }, [user, router, fetchDriverData]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -175,14 +175,6 @@ export default function DriverDashboard() {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Scheduled': return 'bg-blue-100 text-blue-800';
-      case 'In-Transit': return 'bg-yellow-100 text-yellow-800';
-      case 'Delivered': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   // Filter loads based on selected status
   const filteredLoads = statusFilter === 'All' 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LoadDocument } from '../../types';
 import { uploadDocument, getLoadDocuments, deleteDocument, getSignedUrl } from '../../utils/documentUtils';
 import { createClient } from '../../utils/supabase/client';
@@ -19,11 +19,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchDocuments();
-  }, [loadId]);
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     const result = await getLoadDocuments(supabase, loadId);
     if (result.success && result.data) {
@@ -32,7 +28,11 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
       setError(result.error || 'Failed to fetch documents');
     }
     setLoading(false);
-  };
+  }, [supabase, loadId]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -94,7 +94,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
       } else {
         setError(result.error || 'Failed to open document');
       }
-    } catch (error) {
+    } catch {
       setError('Failed to open document');
     }
   };

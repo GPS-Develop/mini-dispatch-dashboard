@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useLoads } from "../loads/LoadContext";
 import { createClient } from "../../utils/supabase/client";
 import { validateDriverPayRate } from "../../utils/validation";
@@ -57,11 +57,11 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  async function fetchDrivers() {
+  const fetchDrivers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      let query = supabase
+      const query = supabase
       .from("drivers")
       .select("*")
       .order("created_at", { ascending: false });
@@ -96,11 +96,11 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     } finally {
     setLoading(false);
     }
-  }
+  }, [supabase]);
 
   useEffect(() => {
     fetchDrivers();
-  }, []);
+  }, [fetchDrivers]);
 
   // Automatically update driver status and load lists based on assigned loads
   useEffect(() => {
@@ -124,7 +124,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
         }))
     );
     }
-  }, [loads, loadsLoading, hasInitiallyLoaded]);
+  }, [loads, loadsLoading, hasInitiallyLoaded, drivers.length]);
 
   async function addDriver(driver: DriverDB) {
     setError(null);

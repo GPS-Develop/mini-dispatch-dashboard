@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { NAV_ITEMS } from "../utils/constants";
 import Button from "./Button/Button";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 interface SidebarProps {
