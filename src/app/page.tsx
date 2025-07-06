@@ -6,6 +6,8 @@ import { createClient } from "../utils/supabase/client";
 import { useAuth } from "../contexts/AuthContext";
 import { Pickup, Delivery } from "../types";
 import { SkeletonCard, SkeletonTable } from "../components/Skeleton/Skeleton";
+import { EmptyActivity } from "../components/EmptyState/EmptyState";
+import { useRouter } from "next/navigation";
 
 interface Activity {
   id: string;
@@ -21,6 +23,7 @@ export default function Home() {
   const { loads } = useLoads();
   const { drivers } = useDrivers();
   const { user } = useAuth();
+  const router = useRouter();
   const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
@@ -183,11 +186,7 @@ export default function Home() {
               {activitiesLoading ? (
                 <SkeletonCard lines={4} hasAvatar={true} />
               ) : recentActivities.length === 0 ? (
-                <div className="dashboard-empty-state">
-                  <div className="dashboard-empty-icon">📋</div>
-                  <div className="text-muted">No recent activity</div>
-                  <div className="text-hint">Driver activities will appear here</div>
-                </div>
+                <EmptyActivity onViewLoads={() => router.push('/loads')} />
               ) : (
                 <div className="dashboard-activity-list">
                   {recentActivities.map((activity) => (

@@ -5,6 +5,7 @@ import { useDrivers } from "../drivers/DriverContext";
 import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
 import { SkeletonTable } from '../../components/Skeleton/Skeleton';
+import { EmptyPayStatements } from '../../components/EmptyState/EmptyState';
 
 export default function PayStatementsPage() {
   const { payStatements, deletePayStatement, loading, error } = usePayStatements();
@@ -117,9 +118,7 @@ export default function PayStatementsPage() {
       )}
       
       {!loading && payStatements.length === 0 && (
-        <div className="loading-container">
-          <div className="text-muted">No pay statements found. Click &quot;Create Pay Statement&quot; to get started.</div>
-        </div>
+        <EmptyPayStatements onCreatePayStatement={() => router.push('/pay-statements/create')} />
       )}
       
       {!loading && payStatements.length > 0 && (

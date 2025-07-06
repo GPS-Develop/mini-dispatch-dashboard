@@ -5,6 +5,7 @@ import Button from '../../components/Button/Button';
 import { formatPhoneForDisplay, formatDriverPayRateForDisplay } from '../../utils/validation';
 import CreateDriverAccountModal from "../../components/CreateDriverAccountModal";
 import { SkeletonTable } from '../../components/Skeleton/Skeleton';
+import { EmptyDrivers } from '../../components/EmptyState/EmptyState';
 
 export default function DriversPage() {
   const { drivers, deleteDriver, reactivateDriver, updateDriver, loading, error: contextError } = useDrivers();
@@ -128,9 +129,7 @@ export default function DriversPage() {
       )}
       
       {!loading && drivers.length === 0 && (
-        <div className="loading-container">
-          <div className="text-muted">No drivers found. Click &quot;Create Driver Account&quot; to get started.</div>
-        </div>
+        <EmptyDrivers onCreateDriver={() => setShowCreateAccountModal(true)} />
       )}
       
       {!loading && drivers.length > 0 && (

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Button from '../../components/Button/Button';
 import { formatPhoneForDisplay, sanitizePhone, formatRateForDisplay } from '../../utils/validation';
 import DocumentUploadModal from '../../components/DocumentUploadModal/DocumentUploadModal';
+import { EmptyLoads } from '../../components/EmptyState/EmptyState';
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
 const US_STATES = [
@@ -284,7 +285,7 @@ export default function LoadsPage() {
       
       <div className="loads-grid">
         {filteredLoads.length === 0 ? (
-          <div className="text-muted">No loads found.</div>
+          <EmptyLoads onCreateLoad={() => router.push('/add-load')} />
         ) : (
           filteredLoads.map((load) => (
             <div
