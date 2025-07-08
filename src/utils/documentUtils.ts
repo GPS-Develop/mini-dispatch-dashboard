@@ -1,35 +1,181 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { LoadDocument } from '../types';
 
+// Types for compression
+export type CompressionLevel = 'low' | 'recommended' | 'extreme';
+
+export interface CompressionOptions {
+  enabled: boolean;
+  level?: CompressionLevel;
+}
+
+export interface CompressionResult {
+  success: boolean;
+  compressedFile?: File;
+  originalSize: number;
+  compressedSize: number;
+  compressionRatio: number;
+  error?: string;
+}
+
 // Configuration
 const STORAGE_BUCKET = 'load-pdfs';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE_WITH_COMPRESSION = 25 * 1024 * 1024; // 25MB - allow larger files if compression is enabled
 const ALLOWED_TYPES = ['application/pdf'];
+const COMPRESSION_THRESHOLD = 1024 * 1024; // 1MB - recommend compression for files larger than this
 
 // Validate file before upload
-export const validateFile = (file: File): { isValid: boolean; error?: string } => {
+export const validateFile = (file: File, compressionOptions?: CompressionOptions): { isValid: boolean; error?: string } => {
   if (!ALLOWED_TYPES.includes(file.type)) {
     return { isValid: false, error: 'Only PDF files are allowed' };
   }
   
-  if (file.size > MAX_FILE_SIZE) {
-    return { isValid: false, error: 'File size must be less than 10MB' };
+  // If compression is enabled, allow larger files
+  const maxSize = compressionOptions?.enabled ? MAX_FILE_SIZE_WITH_COMPRESSION : MAX_FILE_SIZE;
+  const maxSizeText = compressionOptions?.enabled ? '25MB' : '10MB';
+  
+  if (file.size > maxSize) {
+    return { 
+      isValid: false, 
+      error: `File size must be less than ${maxSizeText}${compressionOptions?.enabled ? ' (compression enabled)' : ''}` 
+    };
   }
   
   return { isValid: true };
+};
+
+// Check if file should be compressed
+export const shouldCompressFile = (file: File): boolean => {
+  return file.size > COMPRESSION_THRESHOLD;
+};
+
+// Compress PDF file using the API endpoint
+export const compressPDFFile = async (
+  file: File,
+  options: CompressionOptions = { enabled: true, level: 'recommended' }
+): Promise<CompressionResult> => {
+  try {
+    if (!options.enabled) {
+      return {
+        success: false,
+        originalSize: file.size,
+        compressedSize: file.size,
+        compressionRatio: 0,
+        error: 'Compression disabled'
+      };
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('compressionLevel', options.level || 'recommended');
+
+    const response = await fetch('/api/compress-pdf', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        success: false,
+        originalSize: file.size,
+        compressedSize: file.size,
+        compressionRatio: 0,
+        error: errorData.error || 'Compression failed'
+      };
+    }
+
+    // Get compression statistics from headers
+    const originalSize = parseInt(response.headers.get('X-Original-Size') || '0');
+    const compressedSize = parseInt(response.headers.get('X-Compressed-Size') || '0');
+    const compressionRatio = parseFloat(response.headers.get('X-Compression-Ratio') || '0');
+
+    // Get the compressed file blob
+    const compressedBlob = await response.blob();
+    
+    // Create a new File object from the compressed blob
+    const compressedFile = new File([compressedBlob], file.name, {
+      type: 'application/pdf',
+      lastModified: Date.now()
+    });
+
+    return {
+      success: true,
+      compressedFile,
+      originalSize,
+      compressedSize,
+      compressionRatio
+    };
+
+  } catch (error) {
+    return {
+      success: false,
+      originalSize: file.size,
+      compressedSize: file.size,
+      compressionRatio: 0,
+      error: error instanceof Error ? error.message : 'Compression failed'
+    };
+  }
+};
+
+// Format compression statistics for display
+export const formatCompressionStats = (result: CompressionResult): string => {
+  if (!result.success) {
+    return 'Compression failed';
+  }
+  
+  const originalMB = (result.originalSize / (1024 * 1024)).toFixed(2);
+  const compressedMB = (result.compressedSize / (1024 * 1024)).toFixed(2);
+  const savings = result.compressionRatio;
+  
+  return `Compressed from ${originalMB}MB to ${compressedMB}MB (${savings}% reduction)`;
 };
 
 // Upload file to Supabase Storage
 export const uploadDocument = async (
   supabase: SupabaseClient,
   loadId: string, 
-  file: File
-): Promise<{ success: boolean; data?: LoadDocument; error?: string }> => {
+  file: File,
+  compressionOptions: CompressionOptions = { enabled: true, level: 'recommended' }
+): Promise<{ success: boolean; data?: LoadDocument; error?: string; compressionStats?: string }> => {
   try {
-    // Validate file
-    const validation = validateFile(file);
+    // Validate file with compression options
+    const validation = validateFile(file, compressionOptions);
     if (!validation.isValid) {
       return { success: false, error: validation.error };
+    }
+
+    let fileToUpload = file;
+    let compressionStats = '';
+
+    // Try to compress if enabled and file is large enough
+    if (compressionOptions.enabled && shouldCompressFile(file)) {
+      const compressionResult = await compressPDFFile(file, compressionOptions);
+      
+      if (compressionResult.success && compressionResult.compressedFile) {
+        fileToUpload = compressionResult.compressedFile;
+        compressionStats = formatCompressionStats(compressionResult);
+        
+        // Validate compressed file size
+        if (fileToUpload.size > MAX_FILE_SIZE) {
+          return { 
+            success: false, 
+            error: `Compressed file size (${(fileToUpload.size / (1024 * 1024)).toFixed(2)}MB) still exceeds 10MB limit. Try using 'extreme' compression level.` 
+          };
+        }
+      } else {
+        // If compression fails and original file is too large, return error
+        if (file.size > MAX_FILE_SIZE) {
+          return { 
+            success: false, 
+            error: `Cannot upload file: ${compressionResult.error}. File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds 10MB limit and compression is required.` 
+          };
+        }
+        // If compression fails but original file is small enough, continue with original
+        console.warn('PDF compression failed, using original file:', compressionResult.error);
+        compressionStats = `Compression failed: ${compressionResult.error}`;
+      }
     }
 
     // Generate unique filename
@@ -40,7 +186,7 @@ export const uploadDocument = async (
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(filePath, file);
+      .upload(filePath, fileToUpload);
 
     if (uploadError) {
       return { success: false, error: uploadError.message };
@@ -91,7 +237,11 @@ export const uploadDocument = async (
       console.error('Failed to log document upload activity:', activityError);
     }
 
-    return { success: true, data: dbData as LoadDocument };
+    return { 
+      success: true, 
+      data: dbData as LoadDocument, 
+      compressionStats: compressionStats || undefined 
+    };
   } catch (error) {
     return { 
       success: false, 

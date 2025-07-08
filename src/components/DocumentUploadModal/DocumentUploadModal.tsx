@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { LoadDocument } from '../../types';
-import { uploadDocument, getLoadDocuments, deleteDocument, getSignedUrl } from '../../utils/documentUtils';
+import { uploadDocument, getLoadDocuments, deleteDocument, getSignedUrl, CompressionOptions, CompressionLevel } from '../../utils/documentUtils';
 import { createClient } from '../../utils/supabase/client';
 import Button from '../Button/Button';
 
@@ -17,6 +17,9 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const [compressionEnabled, setCompressionEnabled] = useState(true);
+  const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>('recommended');
+  const [compressionStats, setCompressionStats] = useState<{ [key: string]: string }>({});
   const supabase = createClient();
 
   const fetchDocuments = useCallback(async () => {
@@ -48,11 +51,33 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
       try {
         setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
         
-        const result = await uploadDocument(supabase, loadId, file);
+        // Quick client-side PDF validation
+        if (file.type === 'application/pdf') {
+          const buffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(buffer);
+          const header = String.fromCharCode(...uint8Array.slice(0, 4));
+          
+          if (header !== '%PDF') {
+            setError(prev => prev + (prev ? '\n' : '') + `${file.name}: Not a valid PDF file`);
+            continue;
+          }
+        }
+        
+        const compressionOptions: CompressionOptions = {
+          enabled: compressionEnabled,
+          level: compressionLevel
+        };
+        
+        const result = await uploadDocument(supabase, loadId, file, compressionOptions);
         
         if (result.success && result.data) {
           setDocuments(prev => [result.data!, ...prev]);
           setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
+          
+          // Store compression stats if available
+          if (result.compressionStats) {
+            setCompressionStats(prev => ({ ...prev, [fileKey]: result.compressionStats! }));
+          }
         } else {
           setError(prev => prev + (prev ? '\n' : '') + `${file.name}: ${result.error}`);
         }
@@ -60,14 +85,19 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
          setError(prev => prev + (prev ? '\n' : '') + `${file.name}: Upload failed`);
        }
       
-      // Remove progress after a delay
+      // Remove progress and compression stats after a delay
       setTimeout(() => {
         setUploadProgress(prev => {
           const newProgress = { ...prev };
           delete newProgress[fileKey];
           return newProgress;
         });
-      }, 2000);
+        setCompressionStats(prev => {
+          const newStats = { ...prev };
+          delete newStats[fileKey];
+          return newStats;
+        });
+      }, 5000); // Show compression stats for 5 seconds
     }
 
     setUploading(false);
@@ -131,7 +161,51 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
               className="input-field"
             />
             <p className="text-hint">
-              Select one or more PDF files (max 10MB each)
+              Select one or more PDF files (max {compressionEnabled ? '25MB' : '10MB'} each)
+            </p>
+          </div>
+
+          {/* Compression Settings */}
+          <div className="edit-form-section">
+            <label className="label-text">
+              PDF Compression Settings
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={compressionEnabled}
+                  onChange={(e) => setCompressionEnabled(e.target.checked)}
+                  disabled={uploading}
+                />
+                <span>Enable PDF compression</span>
+              </label>
+            </div>
+            
+            {compressionEnabled && (
+              <div style={{ marginLeft: '24px' }}>
+                <select
+                  value={compressionLevel}
+                  onChange={(e) => setCompressionLevel(e.target.value as CompressionLevel)}
+                  disabled={uploading}
+                  className="input-field"
+                  style={{ width: '200px' }}
+                >
+                  <option value="low">Low (minimal compression)</option>
+                  <option value="recommended">Recommended (balanced)</option>
+                  <option value="extreme">Extreme (maximum compression)</option>
+                </select>
+              </div>
+            )}
+            
+            <p className="text-hint">
+              {compressionEnabled 
+                ? `Compression helps reduce file size. Files larger than 1MB will be compressed using ${compressionLevel} level.`
+                : 'Compression is disabled. Files will be uploaded as-is (max 10MB).'
+              }
+            </p>
+            <p className="text-hint" style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
+              💡 If you get compression errors, try disabling compression for problematic files or use a different compression level.
             </p>
           </div>
 
@@ -150,6 +224,11 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                       style={{ width: `${progress}%` }}
                     ></div>
                   </div>
+                  {compressionStats[fileKey] && (
+                    <div className="compression-stats" style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+                      {compressionStats[fileKey]}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -159,6 +238,17 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           {error && (
             <div className="alert-error">
               <p style={{ whiteSpace: 'pre-line' }}>{error}</p>
+              {error.includes('compression service cannot process') && (
+                <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '4px', fontSize: '12px' }}>
+                  <strong>💡 Suggested solutions:</strong>
+                  <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>
+                    <li>Disable compression below and try again</li>
+                    <li>Try a different compression level (extreme → recommended → low)</li>
+                    <li>Open the PDF in a viewer and re-save it</li>
+                    <li>Use a different PDF file</li>
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
