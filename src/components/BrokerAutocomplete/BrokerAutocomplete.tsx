@@ -40,37 +40,39 @@ export default function BrokerAutocomplete({
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (searchTerm: string) => {
-      if (searchTerm.length < 2) {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        setShowSaveButton(false);
-        return;
-      }
+  // Search function
+  const searchFunction = useCallback(async (searchTerm: string) => {
+    if (searchTerm.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setShowSaveButton(false);
+      return;
+    }
 
-      setLoading(true);
-      const result = await searchBrokers(supabase, searchTerm);
+    setLoading(true);
+    const result = await searchBrokers(supabase, searchTerm);
+    
+    if (result.success && result.data) {
+      setSuggestions(result.data);
+      setShowSuggestions(result.data.length > 0);
       
-      if (result.success && result.data) {
-        setSuggestions(result.data);
-        setShowSuggestions(result.data.length > 0);
-        
-        // Show save button if no exact match found
-        const exactMatch = result.data.find(broker => 
-          broker.name.toLowerCase() === searchTerm.toLowerCase()
-        );
-        setShowSaveButton(!exactMatch && searchTerm.length > 0);
-      }
-      setLoading(false);
-    }, 300),
-    [supabase]
-  );
+      // Show save button if no exact match found
+      const exactMatch = result.data.find(broker => 
+        broker.name.toLowerCase() === searchTerm.toLowerCase()
+      );
+      setShowSaveButton(!exactMatch && searchTerm.length > 0);
+    }
+    setLoading(false);
+  }, [supabase]);
 
+  // Debounced search effect
   useEffect(() => {
-    debouncedSearch(value);
-  }, [value, debouncedSearch]);
+    const timeoutId = setTimeout(() => {
+      searchFunction(value);
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [value, searchFunction]);
 
   // Handle clicking outside
   useEffect(() => {
@@ -122,7 +124,7 @@ export default function BrokerAutocomplete({
     if (result.success) {
       setShowSaveButton(false);
       // Refresh search to include the new broker
-      debouncedSearch(value);
+      searchFunction(value);
     } else {
       console.error('Failed to save broker:', result.error);
       // Could show a toast notification here
@@ -131,7 +133,7 @@ export default function BrokerAutocomplete({
     setSavingBroker(false);
   };
 
-  const validateEditForm = (field: string, value: string) => {
+  const validateEditForm = (field: string) => {
     const errors = { name: '', email: '', contact: '' };
     
     if (field === 'name' || field === 'all') {
@@ -187,7 +189,6 @@ export default function BrokerAutocomplete({
     
     // Validate the specific field after a short delay
     setTimeout(() => {
-      const newForm = { ...editForm, [field]: value };
       const errors = { name: '', email: '', contact: '' };
       
       if (field === 'name' && !value.trim()) {
@@ -215,7 +216,7 @@ export default function BrokerAutocomplete({
 
   const handleUpdateBroker = async (brokerId: string) => {
     // Validate all fields before saving
-    const isValid = validateEditForm('all', '');
+    const isValid = validateEditForm('all');
     if (!isValid) {
       return; // Don't save if validation fails
     }
@@ -241,7 +242,7 @@ export default function BrokerAutocomplete({
         return;
       }
     } else {
-      brokerData.contact = null as any; // Will be stored as null in DB
+      brokerData.contact = undefined; // Will be stored as null in DB
     }
 
     const result = await updateBroker(supabase, brokerId, brokerData);
@@ -251,7 +252,7 @@ export default function BrokerAutocomplete({
       setEditForm({ name: '', email: '', contact: '' });
       setEditFormErrors({ name: '', email: '', contact: '' });
       // Refresh search to show updated broker
-      debouncedSearch(value);
+      searchFunction(value);
       
       // If this broker was selected, update the form
       if (result.data && result.data.name === value) {
@@ -502,17 +503,6 @@ export default function BrokerAutocomplete({
   );
 }
 
-// Debounce utility function
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-}
 
 // Format phone number for display
 function formatPhoneForDisplay(phone: number): string {
