@@ -19,6 +19,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [compressionStats, setCompressionStats] = useState<{ [key: string]: string }>({});
   const [failedFiles, setFailedFiles] = useState<{ [key: string]: { file: File; error: string } }>({});
+  const [fileStatus, setFileStatus] = useState<{ [key: string]: 'compressing' | 'uploading' | 'completed' | 'failed' }>({});
   const supabase = createClient();
 
   const fetchDocuments = useCallback(async () => {
@@ -49,6 +50,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
       
       try {
         setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
+        setFileStatus(prev => ({ ...prev, [fileKey]: 'compressing' }));
         
         // Quick client-side PDF validation
         if (file.type === 'application/pdf') {
@@ -58,21 +60,33 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           
           if (header !== '%PDF') {
             setError(prev => prev + (prev ? '\n' : '') + `${file.name}: Not a valid PDF file`);
+            setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
             continue;
           }
         }
         
-        const result = await uploadDocument(supabase, loadId, file);
+        const result = await uploadDocument(
+          supabase, 
+          loadId, 
+          file, 
+          false, 
+          (phase, progress) => {
+            setFileStatus(prev => ({ ...prev, [fileKey]: phase }));
+            setUploadProgress(prev => ({ ...prev, [fileKey]: progress }));
+          }
+        );
         
         if (result.success && result.data) {
           setDocuments(prev => [result.data!, ...prev]);
           setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
+          setFileStatus(prev => ({ ...prev, [fileKey]: 'completed' }));
           
           // Store compression stats if available
           if (result.compressionStats) {
             setCompressionStats(prev => ({ ...prev, [fileKey]: result.compressionStats! }));
           }
         } else {
+          setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
           // Check if fallback is allowed
           if (result.allowFallback) {
             setFailedFiles(prev => ({ ...prev, [fileKey]: { file, error: result.error! } }));
@@ -82,6 +96,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
         }
              } catch {
          setError(prev => prev + (prev ? '\n' : '') + `${file.name}: Upload failed`);
+         setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
        }
       
       // Remove progress and compression stats after a delay
@@ -95,6 +110,11 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           const newStats = { ...prev };
           delete newStats[fileKey];
           return newStats;
+        });
+        setFileStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[fileKey];
+          return newStatus;
         });
       }, 5000); // Show compression stats for 5 seconds
     }
@@ -112,11 +132,21 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
       setUploading(true);
       setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
       
-      const result = await uploadDocument(supabase, loadId, failedFile.file, true);
+      const result = await uploadDocument(
+        supabase, 
+        loadId, 
+        failedFile.file, 
+        true, 
+        (phase, progress) => {
+          setFileStatus(prev => ({ ...prev, [fileKey]: phase }));
+          setUploadProgress(prev => ({ ...prev, [fileKey]: progress }));
+        }
+      );
       
       if (result.success && result.data) {
         setDocuments(prev => [result.data!, ...prev]);
         setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
+        setFileStatus(prev => ({ ...prev, [fileKey]: 'completed' }));
         setFailedFiles(prev => {
           const newFailedFiles = { ...prev };
           delete newFailedFiles[fileKey];
@@ -126,9 +156,11 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
         // Add note about no compression
         setCompressionStats(prev => ({ ...prev, [fileKey]: 'Uploaded without compression' }));
       } else {
+        setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
         setError(prev => prev + (prev ? '\n' : '') + `${failedFile.file.name}: ${result.error}`);
       }
     } catch {
+      setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
       setError(prev => prev + (prev ? '\n' : '') + `${failedFile.file.name}: Upload failed`);
     } finally {
       setUploading(false);
@@ -144,6 +176,11 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           const newStats = { ...prev };
           delete newStats[fileKey];
           return newStats;
+        });
+        setFileStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[fileKey];
+          return newStatus;
         });
       }, 5000);
     }
@@ -215,25 +252,53 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           {/* Upload Progress */}
           {Object.keys(uploadProgress).length > 0 && (
             <div className="edit-form-section">
-              {Object.entries(uploadProgress).map(([fileKey, progress]) => (
-                <div key={fileKey} className="document-upload-progress">
-                  <div className="document-upload-progress-header">
-                    <span className="text-muted">{fileKey.split('_')[0]}</span>
-                    <span className="text-muted">{progress}%</span>
-                  </div>
-                  <div className="progress-container">
-                    <div
-                      className="progress-bar"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                  {compressionStats[fileKey] && (
-                    <div className="compression-stats" style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
-                      {compressionStats[fileKey]}
+              {Object.entries(uploadProgress).map(([fileKey, progress]) => {
+                const status = fileStatus[fileKey];
+                const getStatusText = () => {
+                  switch (status) {
+                    case 'compressing': return 'Compressing...';
+                    case 'uploading': return 'Uploading...';
+                    case 'completed': return 'Completed';
+                    case 'failed': return 'Failed';
+                    default: return `${progress}%`;
+                  }
+                };
+                
+                const getProgressValue = () => {
+                  switch (status) {
+                    case 'compressing': return Math.max(progress, 10); // Show actual compression progress
+                    case 'uploading': return Math.max(progress, 60); // Show actual upload progress
+                    case 'completed': return 100;
+                    case 'failed': return 0;
+                    default: return progress;
+                  }
+                };
+                
+                return (
+                  <div key={fileKey} className="document-upload-progress">
+                    <div className="document-upload-progress-header">
+                      <span className="text-muted">{fileKey.split('_')[0]}</span>
+                      <span className="text-muted">{getStatusText()}</span>
                     </div>
-                  )}
-                </div>
-              ))}
+                    <div className="progress-container">
+                      <div
+                        className="progress-bar"
+                        style={{ 
+                          width: `${getProgressValue()}%`,
+                          backgroundColor: status === 'compressing' ? '#f59e0b' : 
+                                         status === 'failed' ? '#ef4444' : '#10b981',
+                          animation: status === 'compressing' ? 'pulse 1.5s ease-in-out infinite' : 'none'
+                        }}
+                      ></div>
+                    </div>
+                    {compressionStats[fileKey] && (
+                      <div className="compression-stats" style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+                        {compressionStats[fileKey]}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 

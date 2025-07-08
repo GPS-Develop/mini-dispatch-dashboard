@@ -117,7 +117,8 @@ export const uploadDocument = async (
   supabase: SupabaseClient,
   loadId: string, 
   file: File,
-  useOriginal: boolean = false
+  useOriginal: boolean = false,
+  onProgress?: (phase: 'compressing' | 'uploading', progress: number) => void
 ): Promise<{ success: boolean; data?: LoadDocument; error?: string; compressionStats?: string; allowFallback?: boolean }> => {
   try {
     // Validate file
@@ -131,11 +132,14 @@ export const uploadDocument = async (
 
     // Try to compress unless explicitly asked to use original
     if (!useOriginal && shouldCompressFile()) {
+      onProgress?.('compressing', 10);
       const compressionResult = await compressPDFFile(file);
+      onProgress?.('compressing', 40);
       
       if (compressionResult.success && compressionResult.compressedFile) {
         fileToUpload = compressionResult.compressedFile;
         compressionStats = formatCompressionStats(compressionResult);
+        onProgress?.('compressing', 50);
         
         // Validate compressed file size
         if (fileToUpload.size > MAX_FILE_SIZE) {
@@ -161,6 +165,8 @@ export const uploadDocument = async (
         }
       }
     }
+    
+    onProgress?.('uploading', 60);
 
     // Generate unique filename
     const timestamp = Date.now();
@@ -168,6 +174,7 @@ export const uploadDocument = async (
     const filePath = `load_${loadId}/${fileName}`;
 
     // Upload to Supabase Storage
+    onProgress?.('uploading', 70);
     const { error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(filePath, fileToUpload);
@@ -175,6 +182,8 @@ export const uploadDocument = async (
     if (uploadError) {
       return { success: false, error: uploadError.message };
     }
+    
+    onProgress?.('uploading', 90);
 
     // Save metadata to database with file path (not full URL)
     const { data: dbData, error: dbError } = await supabase
@@ -192,6 +201,8 @@ export const uploadDocument = async (
       await supabase.storage.from(STORAGE_BUCKET).remove([filePath]);
       return { success: false, error: dbError.message };
     }
+    
+    onProgress?.('uploading', 95);
 
     // Log document upload activity
     try {
