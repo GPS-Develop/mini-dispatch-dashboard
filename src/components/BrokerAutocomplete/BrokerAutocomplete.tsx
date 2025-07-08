@@ -35,6 +35,7 @@ export default function BrokerAutocomplete({
   const [editingBroker, setEditingBroker] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', contact: '' });
   const [updatingBroker, setUpdatingBroker] = useState(false);
+  const [editFormErrors, setEditFormErrors] = useState({ name: '', email: '', contact: '' });
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -130,6 +131,36 @@ export default function BrokerAutocomplete({
     setSavingBroker(false);
   };
 
+  const validateEditForm = (field: string, value: string) => {
+    const errors = { name: '', email: '', contact: '' };
+    
+    if (field === 'name' || field === 'all') {
+      if (!editForm.name.trim()) {
+        errors.name = 'Broker name is required';
+      }
+    }
+    
+    if (field === 'email' || field === 'all') {
+      if (!editForm.email.trim()) {
+        errors.email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email)) {
+        errors.email = 'Invalid email format';
+      }
+    }
+    
+    if (field === 'contact' || field === 'all') {
+      if (editForm.contact.trim()) {
+        const sanitized = sanitizePhone(editForm.contact);
+        if (!sanitized || sanitized.length !== 10) {
+          errors.contact = 'Contact must be a valid 10-digit phone number';
+        }
+      }
+    }
+    
+    setEditFormErrors(errors);
+    return !Object.values(errors).some(error => error !== '');
+  };
+
   const handleEditBroker = (broker: Broker) => {
     setEditingBroker(broker.id);
     setEditForm({
@@ -137,14 +168,58 @@ export default function BrokerAutocomplete({
       email: broker.email || '',
       contact: broker.contact ? broker.contact.toString() : ''
     });
+    setEditFormErrors({ name: '', email: '', contact: '' });
   };
 
   const handleCancelEdit = () => {
     setEditingBroker(null);
     setEditForm({ name: '', email: '', contact: '' });
+    setEditFormErrors({ name: '', email: '', contact: '' });
+  };
+
+  const handleEditFormChange = (field: 'name' | 'email' | 'contact', value: string) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error for this field when user starts typing
+    if (editFormErrors[field]) {
+      setEditFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    
+    // Validate the specific field after a short delay
+    setTimeout(() => {
+      const newForm = { ...editForm, [field]: value };
+      const errors = { name: '', email: '', contact: '' };
+      
+      if (field === 'name' && !value.trim()) {
+        errors.name = 'Broker name is required';
+      }
+      
+      if (field === 'email') {
+        if (!value.trim()) {
+          errors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          errors.email = 'Invalid email format';
+        }
+      }
+      
+      if (field === 'contact' && value.trim()) {
+        const sanitized = sanitizePhone(value);
+        if (!sanitized || sanitized.length !== 10) {
+          errors.contact = 'Contact must be a valid 10-digit phone number';
+        }
+      }
+      
+      setEditFormErrors(prev => ({ ...prev, [field]: errors[field] }));
+    }, 300);
   };
 
   const handleUpdateBroker = async (brokerId: string) => {
+    // Validate all fields before saving
+    const isValid = validateEditForm('all', '');
+    if (!isValid) {
+      return; // Don't save if validation fails
+    }
+
     setUpdatingBroker(true);
 
     const brokerData: { name?: string; email?: string; contact?: number } = {
@@ -153,14 +228,17 @@ export default function BrokerAutocomplete({
 
     if (editForm.email.trim()) {
       brokerData.email = editForm.email.trim();
-    } else {
-      brokerData.email = null as any; // Will be stored as null in DB
     }
 
     if (editForm.contact.trim()) {
       const sanitizedContact = sanitizePhone(editForm.contact);
-      if (sanitizedContact) {
+      if (sanitizedContact && sanitizedContact.length === 10) {
         brokerData.contact = parseInt(sanitizedContact);
+      } else {
+        // This shouldn't happen due to validation, but just in case
+        setEditFormErrors(prev => ({ ...prev, contact: 'Invalid phone number format' }));
+        setUpdatingBroker(false);
+        return;
       }
     } else {
       brokerData.contact = null as any; // Will be stored as null in DB
@@ -171,6 +249,7 @@ export default function BrokerAutocomplete({
     if (result.success) {
       setEditingBroker(null);
       setEditForm({ name: '', email: '', contact: '' });
+      setEditFormErrors({ name: '', email: '', contact: '' });
       // Refresh search to show updated broker
       debouncedSearch(value);
       
@@ -274,44 +353,60 @@ export default function BrokerAutocomplete({
                     <input
                       type="text"
                       value={editForm.name}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) => handleEditFormChange('name', e.target.value)}
                       placeholder="Broker name"
                       style={{
                         width: '100%',
                         padding: '4px 8px',
-                        border: '1px solid #d1d5db',
+                        border: editFormErrors.name ? '1px solid #ef4444' : '1px solid #d1d5db',
                         borderRadius: '4px',
                         fontSize: '14px',
-                        marginBottom: '4px'
+                        marginBottom: '2px'
                       }}
                     />
+                    {editFormErrors.name && (
+                      <div style={{ fontSize: '11px', color: '#ef4444', marginBottom: '4px' }}>
+                        {editFormErrors.name}
+                      </div>
+                    )}
                     <input
                       type="email"
                       value={editForm.email}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="Email"
+                      onChange={(e) => handleEditFormChange('email', e.target.value)}
+                      placeholder="Email *"
                       style={{
                         width: '100%',
                         padding: '4px 8px',
-                        border: '1px solid #d1d5db',
+                        border: editFormErrors.email ? '1px solid #ef4444' : '1px solid #d1d5db',
                         borderRadius: '4px',
                         fontSize: '12px',
-                        marginBottom: '4px'
+                        marginBottom: '2px'
                       }}
                     />
+                    {editFormErrors.email && (
+                      <div style={{ fontSize: '11px', color: '#ef4444', marginBottom: '4px' }}>
+                        {editFormErrors.email}
+                      </div>
+                    )}
                     <input
                       type="tel"
                       value={editForm.contact}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, contact: e.target.value }))}
-                      placeholder="Contact"
+                      onChange={(e) => handleEditFormChange('contact', e.target.value)}
+                      placeholder="Contact (10 digits)"
                       style={{
                         width: '100%',
                         padding: '4px 8px',
-                        border: '1px solid #d1d5db',
+                        border: editFormErrors.contact ? '1px solid #ef4444' : '1px solid #d1d5db',
                         borderRadius: '4px',
-                        fontSize: '12px'
+                        fontSize: '12px',
+                        marginBottom: '2px'
                       }}
                     />
+                    {editFormErrors.contact && (
+                      <div style={{ fontSize: '11px', color: '#ef4444', marginBottom: '4px' }}>
+                        {editFormErrors.contact}
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                     <button
@@ -330,7 +425,7 @@ export default function BrokerAutocomplete({
                     </button>
                     <button
                       onClick={() => handleUpdateBroker(broker.id)}
-                      disabled={updatingBroker || !editForm.name.trim()}
+                      disabled={updatingBroker || !editForm.name.trim() || Object.values(editFormErrors).some(error => error !== '')}
                       style={{
                         padding: '4px 8px',
                         fontSize: '12px',
@@ -338,8 +433,8 @@ export default function BrokerAutocomplete({
                         borderRadius: '4px',
                         backgroundColor: '#3b82f6',
                         color: 'white',
-                        cursor: updatingBroker || !editForm.name.trim() ? 'not-allowed' : 'pointer',
-                        opacity: updatingBroker || !editForm.name.trim() ? 0.5 : 1
+                        cursor: (updatingBroker || !editForm.name.trim() || Object.values(editFormErrors).some(error => error !== '')) ? 'not-allowed' : 'pointer',
+                        opacity: (updatingBroker || !editForm.name.trim() || Object.values(editFormErrors).some(error => error !== '')) ? 0.5 : 1
                       }}
                     >
                       {updatingBroker ? 'Saving...' : 'Save'}
