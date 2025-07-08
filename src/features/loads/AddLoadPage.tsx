@@ -4,6 +4,7 @@ import { useDrivers } from "../../features/drivers/DriverContext";
 import { useLoads } from "../../features/loads/LoadContext";
 import { useRouter } from "next/navigation";
 import { sanitizePhone, validateRate } from '../../utils/validation';
+import BrokerAutocomplete from '../../components/BrokerAutocomplete/BrokerAutocomplete';
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
@@ -377,11 +378,14 @@ export default function AddLoadPage() {
           <div className="form-three-column">
             <div className="form-field-container">
               <label className="label-text">Broker Name *</label>
-              <input 
-                name="brokerName" 
-                value={form.brokerName} 
-                onChange={handleChange} 
-                className={errors.brokerName ? "input-field-error" : "input-field"}
+              <BrokerAutocomplete
+                value={form.brokerName}
+                email={form.brokerEmail}
+                contact={form.brokerContact}
+                onChange={(field, value) => {
+                  setForm(prev => ({ ...prev, [field]: value }));
+                }}
+                error={errors.brokerName}
                 placeholder="Enter broker company name"
               />
               {errors.brokerName && <div className="text-error text-sm">{errors.brokerName}</div>}

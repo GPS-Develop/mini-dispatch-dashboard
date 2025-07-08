@@ -28,6 +28,15 @@ export interface Delivery {
   datetime: string;
 }
 
+export interface Broker {
+  id: string;
+  name: string;
+  email?: string;
+  contact?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface FormErrors {
   [key: string]: string;
 }
