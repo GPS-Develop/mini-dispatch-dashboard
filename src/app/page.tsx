@@ -84,11 +84,6 @@ export default function Home() {
 
   useEffect(() => {
     fetchRecentActivities();
-    
-    // Set up periodic refresh every 30 seconds to catch new activities
-    const interval = setInterval(fetchRecentActivities, 30000);
-    
-    return () => clearInterval(interval);
   }, [fetchRecentActivities]);
 
   function getDriverName(driver_id: string) {
