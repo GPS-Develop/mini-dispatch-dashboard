@@ -4,11 +4,6 @@ import { LoadDocument } from '../types';
 // Types for compression
 export type CompressionLevel = 'low' | 'recommended' | 'extreme';
 
-export interface CompressionOptions {
-  enabled: boolean;
-  level?: CompressionLevel;
-}
-
 export interface CompressionResult {
   success: boolean;
   compressedFile?: File;
@@ -23,52 +18,37 @@ const STORAGE_BUCKET = 'load-pdfs';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_FILE_SIZE_WITH_COMPRESSION = 25 * 1024 * 1024; // 25MB - allow larger files if compression is enabled
 const ALLOWED_TYPES = ['application/pdf'];
-const COMPRESSION_THRESHOLD = 1024 * 1024; // 1MB - recommend compression for files larger than this
+// const COMPRESSION_THRESHOLD = 1024 * 1024; // 1MB - recommend compression for files larger than this (no longer used)
 
 // Validate file before upload
-export const validateFile = (file: File, compressionOptions?: CompressionOptions): { isValid: boolean; error?: string } => {
+export const validateFile = (file: File): { isValid: boolean; error?: string } => {
   if (!ALLOWED_TYPES.includes(file.type)) {
     return { isValid: false, error: 'Only PDF files are allowed' };
   }
   
-  // If compression is enabled, allow larger files
-  const maxSize = compressionOptions?.enabled ? MAX_FILE_SIZE_WITH_COMPRESSION : MAX_FILE_SIZE;
-  const maxSizeText = compressionOptions?.enabled ? '25MB' : '10MB';
-  
-  if (file.size > maxSize) {
+  // Allow larger files since compression is always enabled
+  if (file.size > MAX_FILE_SIZE_WITH_COMPRESSION) {
     return { 
       isValid: false, 
-      error: `File size must be less than ${maxSizeText}${compressionOptions?.enabled ? ' (compression enabled)' : ''}` 
+      error: 'File size must be less than 25MB' 
     };
   }
   
   return { isValid: true };
 };
 
-// Check if file should be compressed
-export const shouldCompressFile = (file: File): boolean => {
-  return file.size > COMPRESSION_THRESHOLD;
+// Check if file should be compressed (now always true - compress all files)
+export const shouldCompressFile = (): boolean => {
+  return true; // Always compress all files
 };
 
 // Compress PDF file using the API endpoint
 export const compressPDFFile = async (
-  file: File,
-  options: CompressionOptions = { enabled: true, level: 'recommended' }
+  file: File
 ): Promise<CompressionResult> => {
   try {
-    if (!options.enabled) {
-      return {
-        success: false,
-        originalSize: file.size,
-        compressedSize: file.size,
-        compressionRatio: 0,
-        error: 'Compression disabled'
-      };
-    }
-
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('compressionLevel', options.level || 'recommended');
 
     const response = await fetch('/api/compress-pdf', {
       method: 'POST',
@@ -137,11 +117,11 @@ export const uploadDocument = async (
   supabase: SupabaseClient,
   loadId: string, 
   file: File,
-  compressionOptions: CompressionOptions = { enabled: true, level: 'recommended' }
-): Promise<{ success: boolean; data?: LoadDocument; error?: string; compressionStats?: string }> => {
+  useOriginal: boolean = false
+): Promise<{ success: boolean; data?: LoadDocument; error?: string; compressionStats?: string; allowFallback?: boolean }> => {
   try {
-    // Validate file with compression options
-    const validation = validateFile(file, compressionOptions);
+    // Validate file
+    const validation = validateFile(file);
     if (!validation.isValid) {
       return { success: false, error: validation.error };
     }
@@ -149,9 +129,9 @@ export const uploadDocument = async (
     let fileToUpload = file;
     let compressionStats = '';
 
-    // Try to compress if enabled and file is large enough
-    if (compressionOptions.enabled && shouldCompressFile(file)) {
-      const compressionResult = await compressPDFFile(file, compressionOptions);
+    // Try to compress unless explicitly asked to use original
+    if (!useOriginal && shouldCompressFile()) {
+      const compressionResult = await compressPDFFile(file);
       
       if (compressionResult.success && compressionResult.compressedFile) {
         fileToUpload = compressionResult.compressedFile;
@@ -165,16 +145,20 @@ export const uploadDocument = async (
           };
         }
       } else {
-        // If compression fails and original file is too large, return error
-        if (file.size > MAX_FILE_SIZE) {
+        // If compression fails, check if we can offer fallback
+        if (file.size <= MAX_FILE_SIZE) {
+          return { 
+            success: false, 
+            error: `Compression failed: ${compressionResult.error}`,
+            allowFallback: true
+          };
+        } else {
+          // File is too large and compression failed
           return { 
             success: false, 
             error: `Cannot upload file: ${compressionResult.error}. File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds 10MB limit and compression is required.` 
           };
         }
-        // If compression fails but original file is small enough, continue with original
-        console.warn('PDF compression failed, using original file:', compressionResult.error);
-        compressionStats = `Compression failed: ${compressionResult.error}`;
       }
     }
 

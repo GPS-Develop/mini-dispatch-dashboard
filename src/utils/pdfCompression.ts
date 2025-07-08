@@ -45,10 +45,6 @@ function validatePDF(buffer: Buffer): { isValid: boolean; error?: string } {
 // Types for compression levels
 export type CompressionLevel = 'low' | 'recommended' | 'extreme';
 
-export interface CompressionOptions {
-  level?: CompressionLevel;
-}
-
 export interface CompressionResult {
   success: boolean;
   compressedBuffer?: Buffer;
@@ -74,13 +70,11 @@ const getILovePDFApi = () => {
  * Compress a PDF file buffer using iLoveAPI
  * @param fileBuffer - The PDF file buffer to compress
  * @param fileName - Original filename (for temporary file operations)
- * @param options - Compression options
  * @returns Promise with compression result
  */
 export const compressPDFBuffer = async (
   fileBuffer: Buffer,
-  fileName: string,
-  options: CompressionOptions = {}
+  fileName: string
 ): Promise<CompressionResult> => {
   let tempInputPath: string | null = null;
   const tempOutputPath: string | null = null;
@@ -127,15 +121,11 @@ export const compressPDFBuffer = async (
     const tempFileName = `${timestamp}_${sanitizedFileName}`;
     tempInputPath = path.join(tempDir, tempFileName);
     
-    console.log(`Starting PDF compression for file: ${fileName} (${(fileBuffer.length / 1024 / 1024).toFixed(2)}MB)`);
-    
     // Write buffer to temporary file
     fs.writeFileSync(tempInputPath, fileBuffer);
     
     // Verify file was written correctly
     const writtenFileSize = fs.statSync(tempInputPath).size;
-    console.log(`File written to: ${tempInputPath} (${writtenFileSize} bytes)`);
-    
     if (writtenFileSize !== fileBuffer.length) {
       throw new Error(`File write error: expected ${fileBuffer.length} bytes, got ${writtenFileSize} bytes`);
     }
@@ -143,9 +133,7 @@ export const compressPDFBuffer = async (
     // Check file permissions
     try {
       fs.accessSync(tempInputPath, fs.constants.R_OK);
-      console.log('File is readable');
-    } catch (accessError) {
-      console.error('File access error:', accessError);
+    } catch {
       throw new Error('Temporary file is not readable');
     }
     
@@ -155,44 +143,20 @@ export const compressPDFBuffer = async (
     // Create compress task
     const compressTask = ilovepdf.newTask('compress');
     
-    console.log('Starting compression task...');
-    console.log('Task created, starting workflow...');
-    
-    // Set compression level
-    const compressionLevel = options.level || 'recommended';
-    console.log(`Will use compression level: ${compressionLevel}`);
+    // Set compression level (always use recommended)
+    const compressionLevel = 'recommended';
     
     // Follow the exact workflow from the documentation
-    const startResult = await compressTask.start();
-    console.log('Task started successfully:', startResult);
+    await compressTask.start();
     
-    console.log('Adding file to compression task...');
-    console.log('File path:', tempInputPath);
-    console.log('File exists:', fs.existsSync(tempInputPath));
-    
-    // Create ILovePDFFile instance
+    // Create ILovePDFFile instance and add to task
     const ilovePDFFile = new ILovePDFFile(tempInputPath);
-    console.log('Created ILovePDFFile instance');
-    
-    // Add file to task
-    const addFileResult = await compressTask.addFile(ilovePDFFile);
-    console.log('File added successfully:', addFileResult);
-    
-    // Log PDF information if available
-    if (addFileResult && typeof addFileResult === 'object') {
-      console.log('PDF Info:', {
-        pageNumber: 'pageNumber' in addFileResult ? addFileResult.pageNumber : 'N/A',
-        pageSizes: 'pageSizes' in addFileResult ? addFileResult.pageSizes : 'N/A'
-      });
-    }
+    await compressTask.addFile(ilovePDFFile);
     
     // Process the task with compression level
-    console.log('Starting task processing...');
-    const processResult = await compressTask.process({ compression_level: compressionLevel });
-    console.log('Processing completed successfully:', processResult);
+    await compressTask.process({ compression_level: compressionLevel });
     
     // Download compressed file
-    console.log('Downloading compressed file...');
     const compressedData = await compressTask.download();
     
     // Convert to Buffer if needed
@@ -213,16 +177,6 @@ export const compressPDFBuffer = async (
     };
     
   } catch (error) {
-    console.error('PDF compression error:', error);
-    
-    // More detailed error logging
-    if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { status?: number; data?: unknown; headers?: unknown } };
-      console.error('API Response Status:', axiosError.response?.status);
-      console.error('API Response Data:', axiosError.response?.data);
-      console.error('API Response Headers:', axiosError.response?.headers);
-    }
-    
     let errorMessage = 'Unknown compression error';
     if (error instanceof Error) {
       errorMessage = error.message;
@@ -235,7 +189,7 @@ export const compressPDFBuffer = async (
           const apiMessage = axiosError.response?.data?.error?.message;
           
           if (apiMessage === "Request can't be processed successfully") {
-            errorMessage = 'PDF compression service cannot process this file. The file may be password-protected, corrupted, or in an unsupported format. Try disabling compression or using a different PDF.';
+            errorMessage = 'PDF compression service cannot process this file. The file may be password-protected, corrupted, or in an unsupported format.';
           } else {
             errorMessage = 'PDF file may be corrupted or in an unsupported format';
           }
@@ -260,16 +214,16 @@ export const compressPDFBuffer = async (
     if (tempInputPath && fs.existsSync(tempInputPath)) {
       try {
         fs.unlinkSync(tempInputPath);
-      } catch (cleanupError) {
-        console.warn('Failed to cleanup temporary input file:', cleanupError);
+      } catch {
+        // Ignore cleanup errors
       }
     }
     
     if (tempOutputPath && fs.existsSync(tempOutputPath)) {
       try {
         fs.unlinkSync(tempOutputPath);
-      } catch (cleanupError) {
-        console.warn('Failed to cleanup temporary output file:', cleanupError);
+      } catch {
+        // Ignore cleanup errors
       }
     }
   }
@@ -278,19 +232,17 @@ export const compressPDFBuffer = async (
 /**
  * Compress a PDF file using iLoveAPI
  * @param file - The File object to compress
- * @param options - Compression options
  * @returns Promise with compression result
  */
 export const compressPDFFile = async (
-  file: File,
-  options: CompressionOptions = {}
+  file: File
 ): Promise<CompressionResult> => {
   try {
     // Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    return await compressPDFBuffer(buffer, file.name, options);
+    return await compressPDFBuffer(buffer, file.name);
   } catch (error) {
     return {
       success: false,
@@ -327,20 +279,3 @@ export const formatCompressionStats = (result: CompressionResult): string => {
   return `Compressed from ${originalMB}MB to ${compressedMB}MB (${savings}% reduction)`;
 };
 
-/**
- * Get compression level description
- * @param level - Compression level
- * @returns Human-readable description
- */
-export const getCompressionLevelDescription = (level: CompressionLevel): string => {
-  switch (level) {
-    case 'low':
-      return 'Minimal compression with no quality loss';
-    case 'recommended':
-      return 'Best balance between compression and quality';
-    case 'extreme':
-      return 'Maximum compression (may affect quality)';
-    default:
-      return 'Unknown compression level';
-  }
-};

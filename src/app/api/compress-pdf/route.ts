@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { compressPDFBuffer, type CompressionLevel } from '../../../utils/pdfCompression';
+import { compressPDFBuffer } from '../../../utils/pdfCompression';
 
 export async function POST(request: NextRequest) {
   try {
     // Get the form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const compressionLevel = formData.get('compressionLevel') as CompressionLevel || 'recommended';
     
     if (!file) {
       return NextResponse.json(
@@ -27,10 +26,8 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    // Compress the PDF
-    const result = await compressPDFBuffer(buffer, file.name, {
-      level: compressionLevel
-    });
+    // Compress the PDF (compression level is now always 'recommended')
+    const result = await compressPDFBuffer(buffer, file.name);
     
     if (!result.success) {
       return NextResponse.json(

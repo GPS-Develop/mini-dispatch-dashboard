@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { LoadDocument } from '../../types';
-import { uploadDocument, getLoadDocuments, deleteDocument, getSignedUrl, CompressionOptions, CompressionLevel } from '../../utils/documentUtils';
+import { uploadDocument, getLoadDocuments, deleteDocument, getSignedUrl } from '../../utils/documentUtils';
 import { createClient } from '../../utils/supabase/client';
 import Button from '../Button/Button';
 
@@ -17,9 +17,8 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
-  const [compressionEnabled, setCompressionEnabled] = useState(true);
-  const [compressionLevel, setCompressionLevel] = useState<CompressionLevel>('recommended');
   const [compressionStats, setCompressionStats] = useState<{ [key: string]: string }>({});
+  const [failedFiles, setFailedFiles] = useState<{ [key: string]: { file: File; error: string } }>({});
   const supabase = createClient();
 
   const fetchDocuments = useCallback(async () => {
@@ -63,12 +62,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           }
         }
         
-        const compressionOptions: CompressionOptions = {
-          enabled: compressionEnabled,
-          level: compressionLevel
-        };
-        
-        const result = await uploadDocument(supabase, loadId, file, compressionOptions);
+        const result = await uploadDocument(supabase, loadId, file);
         
         if (result.success && result.data) {
           setDocuments(prev => [result.data!, ...prev]);
@@ -79,7 +73,12 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
             setCompressionStats(prev => ({ ...prev, [fileKey]: result.compressionStats! }));
           }
         } else {
-          setError(prev => prev + (prev ? '\n' : '') + `${file.name}: ${result.error}`);
+          // Check if fallback is allowed
+          if (result.allowFallback) {
+            setFailedFiles(prev => ({ ...prev, [fileKey]: { file, error: result.error! } }));
+          } else {
+            setError(prev => prev + (prev ? '\n' : '') + `${file.name}: ${result.error}`);
+          }
         }
              } catch {
          setError(prev => prev + (prev ? '\n' : '') + `${file.name}: Upload failed`);
@@ -103,6 +102,51 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
     setUploading(false);
     // Clear the input
     event.target.value = '';
+  };
+
+  const handleUploadOriginal = async (fileKey: string) => {
+    const failedFile = failedFiles[fileKey];
+    if (!failedFile) return;
+
+    try {
+      setUploading(true);
+      setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
+      
+      const result = await uploadDocument(supabase, loadId, failedFile.file, true);
+      
+      if (result.success && result.data) {
+        setDocuments(prev => [result.data!, ...prev]);
+        setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
+        setFailedFiles(prev => {
+          const newFailedFiles = { ...prev };
+          delete newFailedFiles[fileKey];
+          return newFailedFiles;
+        });
+        
+        // Add note about no compression
+        setCompressionStats(prev => ({ ...prev, [fileKey]: 'Uploaded without compression' }));
+      } else {
+        setError(prev => prev + (prev ? '\n' : '') + `${failedFile.file.name}: ${result.error}`);
+      }
+    } catch {
+      setError(prev => prev + (prev ? '\n' : '') + `${failedFile.file.name}: Upload failed`);
+    } finally {
+      setUploading(false);
+      
+      // Remove progress after delay
+      setTimeout(() => {
+        setUploadProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[fileKey];
+          return newProgress;
+        });
+        setCompressionStats(prev => {
+          const newStats = { ...prev };
+          delete newStats[fileKey];
+          return newStats;
+        });
+      }, 5000);
+    }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -161,51 +205,10 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
               className="input-field"
             />
             <p className="text-hint">
-              Select one or more PDF files (max {compressionEnabled ? '25MB' : '10MB'} each)
+              Select one or more PDF files (max 25MB each)
             </p>
-          </div>
-
-          {/* Compression Settings */}
-          <div className="edit-form-section">
-            <label className="label-text">
-              PDF Compression Settings
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <input
-                  type="checkbox"
-                  checked={compressionEnabled}
-                  onChange={(e) => setCompressionEnabled(e.target.checked)}
-                  disabled={uploading}
-                />
-                <span>Enable PDF compression</span>
-              </label>
-            </div>
-            
-            {compressionEnabled && (
-              <div style={{ marginLeft: '24px' }}>
-                <select
-                  value={compressionLevel}
-                  onChange={(e) => setCompressionLevel(e.target.value as CompressionLevel)}
-                  disabled={uploading}
-                  className="input-field"
-                  style={{ width: '200px' }}
-                >
-                  <option value="low">Low (minimal compression)</option>
-                  <option value="recommended">Recommended (balanced)</option>
-                  <option value="extreme">Extreme (maximum compression)</option>
-                </select>
-              </div>
-            )}
-            
-            <p className="text-hint">
-              {compressionEnabled 
-                ? `Compression helps reduce file size. Files larger than 1MB will be compressed using ${compressionLevel} level.`
-                : 'Compression is disabled. Files will be uploaded as-is (max 10MB).'
-              }
-            </p>
-            <p className="text-hint" style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
-              💡 If you get compression errors, try disabling compression for problematic files or use a different compression level.
+            <p className="text-hint" style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+              All files will be automatically compressed to reduce storage space.
             </p>
           </div>
 
@@ -234,21 +237,75 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
             </div>
           )}
 
+          {/* Failed Files with Fallback Option */}
+          {Object.keys(failedFiles).length > 0 && (
+            <div className="edit-form-section">
+              <h4 className="heading-sm" style={{ marginBottom: '12px', color: '#ef4444' }}>
+                Compression Failed
+              </h4>
+              {Object.entries(failedFiles).map(([fileKey, { file, error }]) => (
+                <div key={fileKey} className="failed-file-item" style={{ 
+                  padding: '12px', 
+                  border: '1px solid #fecaca', 
+                  borderRadius: '6px', 
+                  backgroundColor: '#fef2f2',
+                  marginBottom: '8px'
+                }}>
+                  <div className="failed-file-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span className="text-muted" style={{ fontWeight: '500' }}>{file.name}</span>
+                    <span className="text-muted" style={{ fontSize: '12px' }}>
+                      {(file.size / (1024 * 1024)).toFixed(2)}MB
+                    </span>
+                  </div>
+                  <div className="failed-file-error" style={{ fontSize: '12px', color: '#dc2626', marginBottom: '8px' }}>
+                    {error}
+                  </div>
+                  <div className="failed-file-actions" style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => handleUploadOriginal(fileKey)}
+                      disabled={uploading}
+                      className="btn btn-sm"
+                      style={{
+                        fontSize: '12px',
+                        padding: '4px 8px',
+                        backgroundColor: '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: uploading ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      Upload Without Compression
+                    </button>
+                    <button
+                      onClick={() => setFailedFiles(prev => {
+                        const newFailedFiles = { ...prev };
+                        delete newFailedFiles[fileKey];
+                        return newFailedFiles;
+                      })}
+                      className="btn btn-sm"
+                      style={{
+                        fontSize: '12px',
+                        padding: '4px 8px',
+                        backgroundColor: '#6b7280',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Error Display */}
           {error && (
             <div className="alert-error">
               <p style={{ whiteSpace: 'pre-line' }}>{error}</p>
-              {error.includes('compression service cannot process') && (
-                <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#fef3c7', borderRadius: '4px', fontSize: '12px' }}>
-                  <strong>💡 Suggested solutions:</strong>
-                  <ul style={{ margin: '4px 0', paddingLeft: '16px' }}>
-                    <li>Disable compression below and try again</li>
-                    <li>Try a different compression level (extreme → recommended → low)</li>
-                    <li>Open the PDF in a viewer and re-save it</li>
-                    <li>Use a different PDF file</li>
-                  </ul>
-                </div>
-              )}
             </div>
           )}
 
