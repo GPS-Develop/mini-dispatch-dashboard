@@ -185,6 +185,21 @@ export default function DriverLoadDetails() {
       if (error) throw error;
 
       setLoad(prev => prev ? { ...prev, status: newStatus } : null);
+
+      // Log status update activity - only if status changed from "Scheduled"
+      if (load.status !== "Scheduled") {
+        try {
+          const driverName = user?.user_metadata?.name || 'Unknown Driver';
+          
+          await supabase.rpc('add_status_update_activity', {
+            p_driver_name: driverName,
+            p_load_reference_id: load.reference_id,
+            p_new_status: newStatus
+          });
+        } catch (activityError) {
+          console.error('Failed to log status update activity:', activityError);
+        }
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update load status';
       setError(errorMessage);
