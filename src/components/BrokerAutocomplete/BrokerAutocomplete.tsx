@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Broker } from '../../types';
-import { searchBrokers, createBroker } from '../../utils/brokerUtils';
+import { searchBrokers, createBroker, updateBroker } from '../../utils/brokerUtils';
 import { createClient } from '../../utils/supabase/client';
 import { sanitizePhone } from '../../utils/validation';
 
@@ -32,6 +32,9 @@ export default function BrokerAutocomplete({
   const [loading, setLoading] = useState(false);
   const [savingBroker, setSavingBroker] = useState(false);
   const [showSaveButton, setShowSaveButton] = useState(false);
+  const [editingBroker, setEditingBroker] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', contact: '' });
+  const [updatingBroker, setUpdatingBroker] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -127,6 +130,63 @@ export default function BrokerAutocomplete({
     setSavingBroker(false);
   };
 
+  const handleEditBroker = (broker: Broker) => {
+    setEditingBroker(broker.id);
+    setEditForm({
+      name: broker.name,
+      email: broker.email || '',
+      contact: broker.contact ? broker.contact.toString() : ''
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingBroker(null);
+    setEditForm({ name: '', email: '', contact: '' });
+  };
+
+  const handleUpdateBroker = async (brokerId: string) => {
+    setUpdatingBroker(true);
+
+    const brokerData: { name?: string; email?: string; contact?: number } = {
+      name: editForm.name.trim()
+    };
+
+    if (editForm.email.trim()) {
+      brokerData.email = editForm.email.trim();
+    } else {
+      brokerData.email = null as any; // Will be stored as null in DB
+    }
+
+    if (editForm.contact.trim()) {
+      const sanitizedContact = sanitizePhone(editForm.contact);
+      if (sanitizedContact) {
+        brokerData.contact = parseInt(sanitizedContact);
+      }
+    } else {
+      brokerData.contact = null as any; // Will be stored as null in DB
+    }
+
+    const result = await updateBroker(supabase, brokerId, brokerData);
+    
+    if (result.success) {
+      setEditingBroker(null);
+      setEditForm({ name: '', email: '', contact: '' });
+      // Refresh search to show updated broker
+      debouncedSearch(value);
+      
+      // If this broker was selected, update the form
+      if (result.data && result.data.name === value) {
+        onChange('brokerName', result.data.name);
+        onChange('brokerEmail', result.data.email || '');
+        onChange('brokerContact', result.data.contact ? result.data.contact.toString() : '');
+      }
+    } else {
+      console.error('Failed to update broker:', result.error);
+    }
+    
+    setUpdatingBroker(false);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     onChange('brokerName', newValue);
@@ -206,30 +266,137 @@ export default function BrokerAutocomplete({
           )}
           
           {!loading && suggestions.map((broker) => (
-            <div
-              key={broker.id}
-              onClick={() => handleSelectBroker(broker)}
-              style={{
-                padding: '12px',
-                cursor: 'pointer',
-                borderBottom: '1px solid #f3f4f6',
-                fontSize: '14px'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#f9fafb';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'white';
-              }}
-            >
-              <div style={{ fontWeight: '500', color: '#111827' }}>
-                {broker.name}
-              </div>
-              {(broker.email || broker.contact) && (
-                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
-                  {broker.email && <span>{broker.email}</span>}
-                  {broker.email && broker.contact && <span> • </span>}
-                  {broker.contact && <span>{formatPhoneForDisplay(broker.contact)}</span>}
+            <div key={broker.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+              {editingBroker === broker.id ? (
+                // Edit mode
+                <div style={{ padding: '12px' }}>
+                  <div style={{ marginBottom: '8px' }}>
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Broker name"
+                      style={{
+                        width: '100%',
+                        padding: '4px 8px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        marginBottom: '4px'
+                      }}
+                    />
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="Email"
+                      style={{
+                        width: '100%',
+                        padding: '4px 8px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        marginBottom: '4px'
+                      }}
+                    />
+                    <input
+                      type="tel"
+                      value={editForm.contact}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, contact: e.target.value }))}
+                      placeholder="Contact"
+                      style={{
+                        width: '100%',
+                        padding: '4px 8px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        fontSize: '12px'
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={updatingBroker}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '4px',
+                        backgroundColor: 'white',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleUpdateBroker(broker.id)}
+                      disabled={updatingBroker || !editForm.name.trim()}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        cursor: updatingBroker || !editForm.name.trim() ? 'not-allowed' : 'pointer',
+                        opacity: updatingBroker || !editForm.name.trim() ? 0.5 : 1
+                      }}
+                    >
+                      {updatingBroker ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // View mode
+                <div
+                  style={{
+                    padding: '12px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white';
+                  }}
+                >
+                  <div
+                    onClick={() => handleSelectBroker(broker)}
+                    style={{ flex: 1 }}
+                  >
+                    <div style={{ fontWeight: '500', color: '#111827' }}>
+                      {broker.name}
+                    </div>
+                    {(broker.email || broker.contact) && (
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                        {broker.email && <span>{broker.email}</span>}
+                        {broker.email && broker.contact && <span> • </span>}
+                        {broker.contact && <span>{formatPhoneForDisplay(broker.contact)}</span>}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditBroker(broker);
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      marginLeft: '8px'
+                    }}
+                    title="Edit broker information"
+                  >
+                    Edit
+                  </button>
                 </div>
               )}
             </div>
