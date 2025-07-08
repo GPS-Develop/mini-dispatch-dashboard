@@ -20,6 +20,8 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   const [compressionStats, setCompressionStats] = useState<{ [key: string]: string }>({});
   const [failedFiles, setFailedFiles] = useState<{ [key: string]: { file: File; error: string } }>({});
   const [fileStatus, setFileStatus] = useState<{ [key: string]: 'compressing' | 'uploading' | 'completed' | 'failed' }>({});
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ documentId: string; fileName: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const supabase = createClient();
 
   const fetchDocuments = useCallback(async () => {
@@ -186,15 +188,27 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
     }
   };
 
-  const handleDeleteDocument = async (documentId: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+  const handleDeleteDocument = (documentId: string, fileName: string) => {
+    setDeleteConfirmation({ documentId, fileName });
+  };
 
-    const result = await deleteDocument(supabase, documentId);
+  const confirmDelete = async () => {
+    if (!deleteConfirmation) return;
+
+    setDeleting(true);
+    const result = await deleteDocument(supabase, deleteConfirmation.documentId);
+    
     if (result.success) {
-      setDocuments(prev => prev.filter(doc => doc.id !== documentId));
+      setDocuments(prev => prev.filter(doc => doc.id !== deleteConfirmation.documentId));
+      setDeleteConfirmation(null);
     } else {
       setError(result.error || 'Failed to delete document');
     }
+    setDeleting(false);
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation(null);
   };
 
   const openDocument = async (filePath: string) => {
@@ -282,17 +296,12 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                     </div>
                     <div className="progress-container">
                       <div
-                        className="progress-bar"
-                        style={{ 
-                          width: `${getProgressValue()}%`,
-                          backgroundColor: status === 'compressing' ? '#f59e0b' : 
-                                         status === 'failed' ? '#ef4444' : '#10b981',
-                          animation: status === 'compressing' ? 'pulse 1.5s ease-in-out infinite' : 'none'
-                        }}
+                        className={`progress-bar ${status ? `progress-bar-${status}` : ''}`}
+                        style={{ width: `${getProgressValue()}%` }}
                       ></div>
                     </div>
                     {compressionStats[fileKey] && (
-                      <div className="compression-stats" style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+                      <div className="compression-stats">
                         {compressionStats[fileKey]}
                       </div>
                     )}
@@ -304,41 +313,26 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
 
           {/* Failed Files with Fallback Option */}
           {Object.keys(failedFiles).length > 0 && (
-            <div className="edit-form-section">
-              <h4 className="heading-sm" style={{ marginBottom: '12px', color: '#ef4444' }}>
+            <div className="failed-files-section">
+              <h4 className="heading-sm failed-files-heading">
                 Compression Failed
               </h4>
               {Object.entries(failedFiles).map(([fileKey, { file, error }]) => (
-                <div key={fileKey} className="failed-file-item" style={{ 
-                  padding: '12px', 
-                  border: '1px solid #fecaca', 
-                  borderRadius: '6px', 
-                  backgroundColor: '#fef2f2',
-                  marginBottom: '8px'
-                }}>
-                  <div className="failed-file-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span className="text-muted" style={{ fontWeight: '500' }}>{file.name}</span>
-                    <span className="text-muted" style={{ fontSize: '12px' }}>
+                <div key={fileKey} className="failed-file-item">
+                  <div className="failed-file-header">
+                    <span className="text-muted failed-file-name">{file.name}</span>
+                    <span className="text-muted failed-file-size">
                       {(file.size / (1024 * 1024)).toFixed(2)}MB
                     </span>
                   </div>
-                  <div className="failed-file-error" style={{ fontSize: '12px', color: '#dc2626', marginBottom: '8px' }}>
+                  <div className="failed-file-error">
                     {error}
                   </div>
-                  <div className="failed-file-actions" style={{ display: 'flex', gap: '8px' }}>
+                  <div className="failed-file-actions">
                     <button
                       onClick={() => handleUploadOriginal(fileKey)}
                       disabled={uploading}
-                      className="btn btn-sm"
-                      style={{
-                        fontSize: '12px',
-                        padding: '4px 8px',
-                        backgroundColor: '#10b981',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: uploading ? 'not-allowed' : 'pointer'
-                      }}
+                      className="failed-file-btn failed-file-btn-upload"
                     >
                       Upload Without Compression
                     </button>
@@ -348,16 +342,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                         delete newFailedFiles[fileKey];
                         return newFailedFiles;
                       })}
-                      className="btn btn-sm"
-                      style={{
-                        fontSize: '12px',
-                        padding: '4px 8px',
-                        backgroundColor: '#6b7280',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
+                      className="failed-file-btn failed-file-btn-cancel"
                     >
                       Cancel
                     </button>
@@ -423,7 +408,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                         View
                       </button>
                       <button
-                        onClick={() => handleDeleteDocument(doc.id)}
+                        onClick={() => handleDeleteDocument(doc.id, doc.file_name)}
                         className="document-action-delete"
                       >
                         Delete
@@ -446,6 +431,60 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           </Button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation && (
+        <div className="modal-overlay" onClick={cancelDelete}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="heading-md">Delete Document</h3>
+              <button
+                onClick={cancelDelete}
+                className="modal-close-btn"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="delete-confirmation-content">
+                <div className="delete-confirmation-icon">
+                  <svg className="delete-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div className="delete-confirmation-text">
+                  <p className="delete-confirmation-message">
+                    Are you sure you want to delete this document?
+                  </p>
+                  <p className="delete-confirmation-filename">
+                    {deleteConfirmation.fileName}
+                  </p>
+                  <p className="delete-confirmation-warning">
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <Button
+                variant="secondary"
+                onClick={cancelDelete}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

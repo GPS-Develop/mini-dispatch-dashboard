@@ -1332,6 +1332,171 @@ select.input-field {
   margin-bottom: var(--spacing-xs);
 }
 
+/* Progress Bar States */
+.progress-bar-compressing {
+  background-color: var(--color-warning);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.progress-bar-uploading {
+  background-color: var(--color-success);
+}
+
+.progress-bar-completed {
+  background-color: var(--color-success);
+}
+
+.progress-bar-failed {
+  background-color: var(--color-danger);
+}
+
+/* Compression Stats */
+.compression-stats {
+  font-size: 0.6875rem;
+  color: var(--color-success);
+  margin-top: 0.25rem;
+}
+
+/* Failed Files */
+.failed-files-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.failed-files-heading {
+  margin-bottom: 0.75rem;
+  color: var(--color-danger);
+}
+
+.failed-file-item {
+  padding: 0.75rem;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  background-color: #fef2f2;
+  margin-bottom: 0.5rem;
+}
+
+.failed-file-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.failed-file-name {
+  font-weight: 500;
+}
+
+.failed-file-size {
+  font-size: 0.75rem;
+}
+
+.failed-file-error {
+  font-size: 0.75rem;
+  color: var(--color-danger);
+  margin-bottom: 0.5rem;
+}
+
+.failed-file-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Failed File Action Buttons */
+.failed-file-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: opacity var(--transition-normal);
+}
+
+.failed-file-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.failed-file-btn-upload {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.failed-file-btn-upload:hover:not(:disabled) {
+  background-color: var(--color-success-hover);
+}
+
+.failed-file-btn-cancel {
+  background-color: var(--color-text-muted);
+  color: white;
+}
+
+.failed-file-btn-cancel:hover:not(:disabled) {
+  background-color: var(--color-text-light);
+}
+
+/* Delete Confirmation Modal */
+.delete-confirmation-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg) 0;
+}
+
+.delete-confirmation-icon {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  background-color: #fef2f2;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-danger);
+}
+
+.delete-confirmation-text {
+  flex: 1;
+}
+
+.delete-confirmation-message {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+}
+
+.delete-confirmation-filename {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  background-color: var(--color-bg-section);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  word-break: break-all;
+}
+
+.delete-confirmation-warning {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .document-list-section {
   flex: 1;
   overflow-y: auto;
