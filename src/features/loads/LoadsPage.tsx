@@ -355,9 +355,9 @@ export default function LoadsPage() {
       
       {/* Modal for load details */}
       {selected && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" onClick={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}>
           {!editMode ? (
-            <div className="modal-content">
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <button
                 className="modal-close-btn"
                 onClick={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
@@ -452,7 +452,7 @@ export default function LoadsPage() {
               </div>
             </div>
           ) : editForm ? (
-            <div className="modal-content-lg">
+            <div className="modal-content-lg" onClick={(e) => e.stopPropagation()}>
               <button
                 className="modal-close-btn"
                 onClick={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
@@ -689,8 +689,8 @@ export default function LoadsPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && loadToDelete && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={cancelDelete}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="heading-lg text-danger">⚠️ Confirm Delete</h2>
             </div>

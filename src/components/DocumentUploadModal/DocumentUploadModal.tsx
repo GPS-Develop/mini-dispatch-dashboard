@@ -100,8 +100,8 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content-lg">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content-lg" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
           <h2 className="heading-lg">

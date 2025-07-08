@@ -286,8 +286,8 @@ export default function DriversPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && driverToDelete && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={cancelDelete}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="heading-md text-error">⚠️ Confirm Deactivation</h2>
             </div>
@@ -321,8 +321,8 @@ export default function DriversPage() {
 
       {/* Edit Driver Modal */}
       {showEditModal && driverToEdit && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={cancelEdit}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="heading-md">Edit Driver</h2>
             </div>
