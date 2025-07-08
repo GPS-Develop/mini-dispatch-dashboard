@@ -188,6 +188,30 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
   async function deleteLoad(id: string) {
     setError(null);
     try {
+      // First, get all documents associated with this load to delete from storage
+      const { data: documents, error: documentsError } = await supabase
+        .from('load_documents')
+        .select('file_url')
+        .eq('load_id', id);
+
+      if (documentsError) {
+        setError(documentsError.message);
+        return;
+      }
+
+      // Delete all files from the load-pdfs bucket
+      if (documents && documents.length > 0) {
+        const filePaths = documents.map(doc => doc.file_url);
+        const { error: storageError } = await supabase.storage
+          .from('load-pdfs')
+          .remove(filePaths);
+
+        if (storageError) {
+          console.warn('Failed to delete some files from storage:', storageError.message);
+          // Continue with database deletion even if storage deletion fails
+        }
+      }
+
       // With CASCADE delete, we only need to delete the load
       // All related pickups, deliveries, and documents will be automatically deleted
       const { error } = await supabase
