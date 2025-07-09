@@ -109,10 +109,15 @@ export const compressPDFBuffer = async (
     // Initialize iLoveAPI
     const ilovepdf = getILovePDFApi();
     
-    // Create temporary directory for processing
-    const tempDir = path.join(process.cwd(), 'temp', 'pdf-compression');
+    // Create temporary directory for processing (use /tmp on Vercel)
+    const tempDir = process.env.VERCEL 
+      ? path.join('/tmp', 'pdf-compression')
+      : path.join(process.cwd(), 'temp', 'pdf-compression');
+    
+    console.log('Creating temp directory:', tempDir);
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
+      console.log('Temp directory created successfully');
     }
     
     // Create temporary input file with sanitized name

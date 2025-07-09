@@ -40,11 +40,23 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
 
 // Check if file should be compressed (skip for large files on Vercel)
 export const shouldCompressFile = (file: File): boolean => {
+  const decision = {
+    isVercel: !!process.env.VERCEL,
+    fileSize: file.size,
+    limit: VERCEL_COMPRESSION_LIMIT,
+    isLargeFile: file.size > VERCEL_COMPRESSION_LIMIT,
+    shouldSkip: process.env.VERCEL && file.size > VERCEL_COMPRESSION_LIMIT
+  };
+  
+  console.log('shouldCompressFile decision:', decision);
+  
   // Skip compression on Vercel for files larger than 4MB to avoid 413 errors
   if (process.env.VERCEL && file.size > VERCEL_COMPRESSION_LIMIT) {
+    console.log('Skipping compression due to Vercel size limit');
     return false;
   }
   
+  console.log('Will attempt compression');
   return true; // Compress all other files
 };
 
@@ -54,6 +66,12 @@ export const uploadLargeFileViaBlob = async (
   loadId: string
 ): Promise<CompressionResult> => {
   try {
+    console.log('Starting Vercel Blob upload for large file:', {
+      fileName: file.name,
+      fileSize: file.size,
+      loadId
+    });
+    
     const { upload } = await import('@vercel/blob/client');
     
     // Create a unique filename that includes loadId
@@ -61,11 +79,15 @@ export const uploadLargeFileViaBlob = async (
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const pathname = `${loadId}/${timestamp}_${sanitizedName}`;
     
-    await upload(pathname, file, {
+    console.log('Uploading to Vercel Blob with pathname:', pathname);
+    
+    const result = await upload(pathname, file, {
       access: 'public',
       handleUploadUrl: '/api/process-large-pdf',
       clientPayload: JSON.stringify({ loadId }),
     });
+    
+    console.log('Vercel Blob upload successful:', result);
     
     return {
       success: true,
@@ -75,6 +97,7 @@ export const uploadLargeFileViaBlob = async (
     };
     
   } catch (error) {
+    console.error('Vercel Blob upload failed:', error);
     return {
       success: false,
       originalSize: file.size,
@@ -173,6 +196,19 @@ export const uploadDocument = async (
     let fileToUpload = file;
     let compressionStats = '';
 
+    // Debug logging
+    console.log('Upload decision logic:', {
+      useOriginal,
+      fileSize: file.size,
+      fileSizeMB: (file.size / (1024 * 1024)).toFixed(2),
+      vercelCompressionLimit: VERCEL_COMPRESSION_LIMIT,
+      vercelCompressionLimitMB: (VERCEL_COMPRESSION_LIMIT / (1024 * 1024)).toFixed(2),
+      shouldCompress: shouldCompressFile(file),
+      isLargeFile: file.size > VERCEL_COMPRESSION_LIMIT,
+      environment: process.env.NODE_ENV,
+      isVercel: !!process.env.VERCEL
+    });
+
     // Try to compress unless explicitly asked to use original
     if (!useOriginal && shouldCompressFile(file)) {
       onProgress?.('compressing', 10);
@@ -208,21 +244,34 @@ export const uploadDocument = async (
         }
       }
     } else if (!useOriginal && file.size > VERCEL_COMPRESSION_LIMIT) {
+      console.log('Large file detected, using Vercel Blob for background processing');
+      
       // Large file - use Vercel Blob for background processing
       onProgress?.('compressing', 10);
-      const blobResult = await uploadLargeFileViaBlob(file, loadId);
-      onProgress?.('compressing', 100);
       
-      if (blobResult.success) {
-        // Return success immediately - the background processing will handle the database entry
-        return {
-          success: true,
-          compressionStats: `Large file (${(file.size / (1024 * 1024)).toFixed(2)}MB) uploaded for background processing`
-        };
-      } else {
+      try {
+        const blobResult = await uploadLargeFileViaBlob(file, loadId);
+        onProgress?.('compressing', 100);
+        
+        if (blobResult.success) {
+          console.log('Large file upload to Blob successful');
+          // Return success immediately - the background processing will handle the database entry
+          return {
+            success: true,
+            compressionStats: `Large file (${(file.size / (1024 * 1024)).toFixed(2)}MB) uploaded for background processing`
+          };
+        } else {
+          console.error('Large file upload to Blob failed:', blobResult.error);
+          return {
+            success: false,
+            error: `Large file upload failed: ${blobResult.error}`
+          };
+        }
+      } catch (error) {
+        console.error('Exception during large file upload:', error);
         return {
           success: false,
-          error: `Large file upload failed: ${blobResult.error}`
+          error: `Large file upload exception: ${error instanceof Error ? error.message : 'Unknown error'}`
         };
       }
     }
