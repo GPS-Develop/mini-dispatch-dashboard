@@ -109,8 +109,16 @@ export const compressPDFBuffer = async (
     // Initialize iLoveAPI
     const ilovepdf = getILovePDFApi();
     
+    // Helper function to detect if we're running on Vercel
+    const isVercel = !!(
+      process.env.VERCEL || 
+      process.env.VERCEL_ENV || 
+      process.env.NEXT_PUBLIC_VERCEL_URL ||
+      process.env.VERCEL_URL
+    );
+
     // Create temporary directory for processing (use /tmp on Vercel)
-    const tempDir = process.env.VERCEL 
+    const tempDir = isVercel 
       ? path.join('/tmp', 'pdf-compression')
       : path.join(process.cwd(), 'temp', 'pdf-compression');
     

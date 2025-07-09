@@ -38,20 +38,37 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
   return { isValid: true };
 };
 
+// Helper function to detect if we're running on Vercel
+const isRunningOnVercel = (): boolean => {
+  return !!(
+    process.env.VERCEL || 
+    process.env.VERCEL_ENV || 
+    process.env.NEXT_PUBLIC_VERCEL_URL ||
+    process.env.VERCEL_URL
+  );
+};
+
 // Check if file should be compressed (skip for large files on Vercel)
 export const shouldCompressFile = (file: File): boolean => {
+  const isVercel = isRunningOnVercel();
   const decision = {
-    isVercel: !!process.env.VERCEL,
+    isVercel,
     fileSize: file.size,
     limit: VERCEL_COMPRESSION_LIMIT,
     isLargeFile: file.size > VERCEL_COMPRESSION_LIMIT,
-    shouldSkip: process.env.VERCEL && file.size > VERCEL_COMPRESSION_LIMIT
+    shouldSkip: isVercel && file.size > VERCEL_COMPRESSION_LIMIT,
+    envVars: {
+      VERCEL: !!process.env.VERCEL,
+      VERCEL_ENV: !!process.env.VERCEL_ENV,
+      VERCEL_URL: !!process.env.VERCEL_URL,
+      NEXT_PUBLIC_VERCEL_URL: !!process.env.NEXT_PUBLIC_VERCEL_URL
+    }
   };
   
   console.log('shouldCompressFile decision:', decision);
   
   // Skip compression on Vercel for files larger than 4MB to avoid 413 errors
-  if (process.env.VERCEL && file.size > VERCEL_COMPRESSION_LIMIT) {
+  if (isVercel && file.size > VERCEL_COMPRESSION_LIMIT) {
     console.log('Skipping compression due to Vercel size limit');
     return false;
   }
@@ -206,7 +223,7 @@ export const uploadDocument = async (
       shouldCompress: shouldCompressFile(file),
       isLargeFile: file.size > VERCEL_COMPRESSION_LIMIT,
       environment: process.env.NODE_ENV,
-      isVercel: !!process.env.VERCEL
+      isVercel: isRunningOnVercel()
     });
 
     // Try to compress unless explicitly asked to use original
