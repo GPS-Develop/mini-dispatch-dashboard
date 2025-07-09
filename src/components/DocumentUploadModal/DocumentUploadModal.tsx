@@ -93,7 +93,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           if (result.allowFallback) {
             setFailedFiles(prev => ({ ...prev, [fileKey]: { file, error: result.error! } }));
           } else {
-            setError(prev => prev + (prev ? '\n' : '') + `${file.name}: ${result.error}`);
+            setError(prev => prev + (prev ? '\n' : '') + `${file.name}: ${result.error || 'Upload failed with unknown error'}`);
           }
         }
              } catch {

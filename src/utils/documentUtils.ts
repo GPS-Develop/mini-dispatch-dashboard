@@ -281,7 +281,7 @@ export const uploadDocument = async (
           console.error('Large file upload to Blob failed:', blobResult.error);
           return {
             success: false,
-            error: `Large file upload failed: ${blobResult.error}`
+            error: `Large file upload failed: ${blobResult.error || 'Unknown error during blob upload'}`
           };
         }
       } catch (error) {

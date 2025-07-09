@@ -1,7 +1,7 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { del } from '@vercel/blob';
-import { createClient } from '../../../utils/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { compressPDFBuffer } from '../../../utils/pdfCompression';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -43,14 +43,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         try {
           // Parse the token payload
           const payload = JSON.parse(tokenPayload || '{}');
+          console.log('Parsed payload:', payload);
           
           // Process the PDF in the background
           await processLargePDF(blob.url, blob.pathname, payload);
+          console.log('Background processing completed successfully');
           
         } catch (error) {
           console.error('Background processing failed:', error);
+          console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+          console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
           // TODO: Implement proper error handling/retry logic
-          throw new Error('Could not process PDF');
+          throw new Error(`Could not process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       },
     });
@@ -66,7 +70,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 
 async function processLargePDF(blobUrl: string, pathname: string, payload: { loadId: string; uploadTime: number }) {
-  const supabase = createClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   
   try {
     const { loadId } = payload;
@@ -195,6 +202,24 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
     
   } catch (error) {
     console.error('PDF processing error:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // Try to update the database entry to mark as failed if we have the processingEntry
+    try {
+      await supabase
+        .from('load_documents')
+        .update({
+          processing_status: 'failed',
+          error_message: error instanceof Error ? error.message : 'Unknown processing error'
+        })
+        .eq('load_id', payload.loadId)
+        .eq('file_name', pathname.split('/').pop()?.replace(/^\d+_/, '') || pathname);
+    } catch (dbError) {
+      console.error('Failed to update database with error status:', dbError);
+    }
+    
     // TODO: Implement proper error handling and user notification
     throw error;
   }
