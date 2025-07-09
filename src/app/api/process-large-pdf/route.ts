@@ -1,0 +1,201 @@
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
+import { NextRequest, NextResponse } from 'next/server';
+import { del } from '@vercel/blob';
+import { createClient } from '../../../utils/supabase/client';
+import { compressPDFBuffer } from '../../../utils/pdfCompression';
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  const body = (await request.json()) as HandleUploadBody;
+
+  try {
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname: string, clientPayload: string | null) => {
+        // TODO: Add authentication check here
+        // const { user } = await auth(request);
+        // if (!user) throw new Error('Not authenticated');
+
+        console.log('Generating token for large PDF upload:', pathname);
+
+        // Parse the client payload to get loadId
+        let loadId = '';
+        if (clientPayload) {
+          try {
+            const payload = JSON.parse(clientPayload);
+            loadId = payload.loadId;
+          } catch (error) {
+            console.error('Failed to parse client payload:', error);
+          }
+        }
+
+        return {
+          allowedContentTypes: ['application/pdf'],
+          tokenPayload: JSON.stringify({
+            loadId,
+            uploadTime: Date.now(),
+          }),
+        };
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        console.log('Large PDF upload completed, starting background processing:', blob.pathname);
+
+        try {
+          // Parse the token payload
+          const payload = JSON.parse(tokenPayload || '{}');
+          
+          // Process the PDF in the background
+          await processLargePDF(blob.url, blob.pathname, payload);
+          
+        } catch (error) {
+          console.error('Background processing failed:', error);
+          // TODO: Implement proper error handling/retry logic
+          throw new Error('Could not process PDF');
+        }
+      },
+    });
+
+    return NextResponse.json(jsonResponse);
+  } catch (error) {
+    console.error('Large PDF upload handler error:', error);
+    return NextResponse.json(
+      { error: (error as Error).message },
+      { status: 400 }
+    );
+  }
+}
+
+async function processLargePDF(blobUrl: string, pathname: string, payload: { loadId: string; uploadTime: number }) {
+  const supabase = createClient();
+  
+  try {
+    const { loadId } = payload;
+    console.log('Starting PDF processing for:', pathname, 'loadId:', loadId);
+    
+    // Extract original filename from pathname
+    const originalFileName = pathname.split('/').pop() || pathname;
+    const cleanFileName = originalFileName.replace(/^\d+_/, ''); // Remove timestamp prefix
+    
+    // 1. Create a processing entry in the database
+    const { data: processingEntry, error: dbError } = await supabase
+      .from('load_documents')
+      .insert({
+        load_id: loadId,
+        file_name: cleanFileName,
+        file_url: 'processing', // Special status to indicate processing
+        processing_status: 'processing',
+        original_size: 0, // Will be updated after processing
+      })
+      .select()
+      .single();
+    
+    if (dbError) {
+      throw new Error(`Database entry failed: ${dbError.message}`);
+    }
+    
+    console.log('Created processing entry:', processingEntry.id);
+    
+    // 2. Download the PDF from Vercel Blob
+    const response = await fetch(blobUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download PDF: ${response.statusText}`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    console.log('Downloaded PDF, size:', buffer.length);
+    
+    // 3. Compress the PDF using iLoveAPI
+    const compressionResult = await compressPDFBuffer(buffer, cleanFileName);
+    
+    if (!compressionResult.success) {
+      // Update database entry with error status
+      await supabase
+        .from('load_documents')
+        .update({
+          processing_status: 'failed',
+          error_message: compressionResult.error
+        })
+        .eq('id', processingEntry.id);
+      
+      throw new Error(`Compression failed: ${compressionResult.error}`);
+    }
+    
+    console.log('PDF compressed successfully');
+    
+    // 4. Upload compressed PDF to Supabase Storage
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${cleanFileName}`;
+    const filePath = `load_${loadId}/${fileName}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('load-pdfs')
+      .upload(filePath, compressionResult.compressedBuffer!, {
+        contentType: 'application/pdf',
+        upsert: false
+      });
+    
+    if (uploadError) {
+      // Update database entry with error status
+      await supabase
+        .from('load_documents')
+        .update({
+          processing_status: 'failed',
+          error_message: uploadError.message
+        })
+        .eq('id', processingEntry.id);
+      
+      throw new Error(`Supabase upload failed: ${uploadError.message}`);
+    }
+    
+    console.log('Uploaded to Supabase:', uploadData.path);
+    
+    // 5. Update database entry with final details
+    await supabase
+      .from('load_documents')
+      .update({
+        file_url: uploadData.path,
+        processing_status: 'completed',
+        original_size: compressionResult.originalSize,
+        compressed_size: compressionResult.compressedSize,
+        compression_ratio: compressionResult.compressionRatio,
+        error_message: null
+      })
+      .eq('id', processingEntry.id);
+    
+    console.log('Updated database entry with final details');
+    
+    // 6. Log document upload activity
+    try {
+      const { data: loadData } = await supabase
+        .from('loads')
+        .select('reference_id, driver_id, drivers!inner(name)')
+        .eq('id', loadId)
+        .single();
+      
+      if (loadData) {
+        const driverName = (loadData as { drivers?: { name?: string } }).drivers?.name || 'Unknown Driver';
+        
+        await supabase.rpc('add_document_upload_activity', {
+          p_driver_name: driverName,
+          p_load_reference_id: loadData.reference_id,
+          p_file_name: cleanFileName
+        });
+      }
+    } catch (activityError) {
+      console.error('Failed to log document upload activity:', activityError);
+    }
+    
+    // 7. Delete the temporary file from Vercel Blob
+    await del(blobUrl);
+    console.log('Cleaned up temporary blob');
+    
+    console.log('Large PDF processing completed successfully');
+    
+  } catch (error) {
+    console.error('PDF processing error:', error);
+    // TODO: Implement proper error handling and user notification
+    throw error;
+  }
+}

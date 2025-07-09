@@ -259,7 +259,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
               Select one or more PDF files (max 25MB each)
             </p>
             <p className="text-hint" style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
-              All files will be automatically compressed to reduce storage space.
+              Files under 4MB will be automatically compressed. Larger files will be processed in the background.
             </p>
           </div>
 

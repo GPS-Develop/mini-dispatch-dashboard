@@ -17,6 +17,7 @@ export interface CompressionResult {
 const STORAGE_BUCKET = 'load-pdfs';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_FILE_SIZE_WITH_COMPRESSION = 25 * 1024 * 1024; // 25MB - allow larger files if compression is enabled
+const VERCEL_COMPRESSION_LIMIT = 4 * 1024 * 1024; // 4MB - Vercel serverless function limit
 const ALLOWED_TYPES = ['application/pdf'];
 // const COMPRESSION_THRESHOLD = 1024 * 1024; // 1MB - recommend compression for files larger than this (no longer used)
 
@@ -37,9 +38,51 @@ export const validateFile = (file: File): { isValid: boolean; error?: string } =
   return { isValid: true };
 };
 
-// Check if file should be compressed (now always true - compress all files)
-export const shouldCompressFile = (): boolean => {
-  return true; // Always compress all files
+// Check if file should be compressed (skip for large files on Vercel)
+export const shouldCompressFile = (file: File): boolean => {
+  // Skip compression on Vercel for files larger than 4MB to avoid 413 errors
+  if (process.env.VERCEL && file.size > VERCEL_COMPRESSION_LIMIT) {
+    return false;
+  }
+  
+  return true; // Compress all other files
+};
+
+// Upload large file via Vercel Blob for background processing
+export const uploadLargeFileViaBlob = async (
+  file: File,
+  loadId: string
+): Promise<CompressionResult> => {
+  try {
+    const { upload } = await import('@vercel/blob/client');
+    
+    // Create a unique filename that includes loadId
+    const timestamp = Date.now();
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const pathname = `${loadId}/${timestamp}_${sanitizedName}`;
+    
+    await upload(pathname, file, {
+      access: 'public',
+      handleUploadUrl: '/api/process-large-pdf',
+      clientPayload: JSON.stringify({ loadId }),
+    });
+    
+    return {
+      success: true,
+      originalSize: file.size,
+      compressedSize: file.size, // Will be updated when processing completes
+      compressionRatio: 0, // Will be updated when processing completes
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      originalSize: file.size,
+      compressedSize: file.size,
+      compressionRatio: 0,
+      error: error instanceof Error ? error.message : 'Large file upload failed'
+    };
+  }
 };
 
 // Compress PDF file using the API endpoint
@@ -131,7 +174,7 @@ export const uploadDocument = async (
     let compressionStats = '';
 
     // Try to compress unless explicitly asked to use original
-    if (!useOriginal && shouldCompressFile()) {
+    if (!useOriginal && shouldCompressFile(file)) {
       onProgress?.('compressing', 10);
       const compressionResult = await compressPDFFile(file);
       onProgress?.('compressing', 40);
@@ -163,6 +206,24 @@ export const uploadDocument = async (
             error: `Cannot upload file: ${compressionResult.error}. File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds 10MB limit and compression is required.` 
           };
         }
+      }
+    } else if (!useOriginal && file.size > VERCEL_COMPRESSION_LIMIT) {
+      // Large file - use Vercel Blob for background processing
+      onProgress?.('compressing', 10);
+      const blobResult = await uploadLargeFileViaBlob(file, loadId);
+      onProgress?.('compressing', 100);
+      
+      if (blobResult.success) {
+        // Return success immediately - the background processing will handle the database entry
+        return {
+          success: true,
+          compressionStats: `Large file (${(file.size / (1024 * 1024)).toFixed(2)}MB) uploaded for background processing`
+        };
+      } else {
+        return {
+          success: false,
+          error: `Large file upload failed: ${blobResult.error}`
+        };
       }
     }
     
