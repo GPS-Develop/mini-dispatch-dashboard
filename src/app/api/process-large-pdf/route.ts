@@ -90,8 +90,6 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
         load_id: loadId,
         file_name: cleanFileName,
         file_url: 'processing', // Special status to indicate processing
-        processing_status: 'processing',
-        original_size: 0, // Will be updated after processing
       })
       .select()
       .single();
@@ -117,12 +115,11 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
     const compressionResult = await compressPDFBuffer(buffer, cleanFileName);
     
     if (!compressionResult.success) {
-      // Update database entry with error status
+      // Update database entry with error status - just mark as failed in file_url
       await supabase
         .from('load_documents')
         .update({
-          processing_status: 'failed',
-          error_message: compressionResult.error
+          file_url: `failed: ${compressionResult.error}`
         })
         .eq('id', processingEntry.id);
       
@@ -148,8 +145,7 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
       await supabase
         .from('load_documents')
         .update({
-          processing_status: 'failed',
-          error_message: uploadError.message
+          file_url: `failed: ${uploadError.message}`
         })
         .eq('id', processingEntry.id);
       
@@ -162,12 +158,7 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
     await supabase
       .from('load_documents')
       .update({
-        file_url: uploadData.path,
-        processing_status: 'completed',
-        original_size: compressionResult.originalSize,
-        compressed_size: compressionResult.compressedSize,
-        compression_ratio: compressionResult.compressionRatio,
-        error_message: null
+        file_url: uploadData.path
       })
       .eq('id', processingEntry.id);
     
@@ -206,13 +197,12 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
-    // Try to update the database entry to mark as failed if we have the processingEntry
+    // Try to update the database entry to mark as failed
     try {
       await supabase
         .from('load_documents')
         .update({
-          processing_status: 'failed',
-          error_message: error instanceof Error ? error.message : 'Unknown processing error'
+          file_url: `failed: ${error instanceof Error ? error.message : 'Unknown processing error'}`
         })
         .eq('load_id', payload.loadId)
         .eq('file_name', pathname.split('/').pop()?.replace(/^\d+_/, '') || pathname);
