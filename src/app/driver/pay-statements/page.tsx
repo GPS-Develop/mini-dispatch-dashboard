@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Pickup, Delivery, Driver } from '@/types';
+import { Pickup, Delivery } from '@/types';
 
 interface Load {
   id: string;
@@ -96,12 +96,12 @@ export default function DriverPayStatements() {
         auth_user_id: driverData.auth_user_id
       });
 
-      await fetchDeliveredLoads(driverData.id);
     } catch {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, supabase, router, signOut]);
 
   const fetchDeliveredLoads = useCallback(async (driverId: string) => {

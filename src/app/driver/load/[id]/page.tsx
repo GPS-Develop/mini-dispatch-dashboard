@@ -115,7 +115,7 @@ export default function DriverLoadDetails() {
       } else {
         // Handle document fetch error silently - documents will remain empty
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -222,7 +222,7 @@ export default function DriverLoadDetails() {
       } else {
         setError(result.error || 'Failed to open document');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to open document');
     }
   };
@@ -250,7 +250,7 @@ export default function DriverLoadDetails() {
             p_load_reference_id: load.reference_id,
             p_new_status: newStatus
           });
-        } catch (activityError) {
+        } catch {
           // Activity logging failed silently - status update still succeeded
         }
       }
