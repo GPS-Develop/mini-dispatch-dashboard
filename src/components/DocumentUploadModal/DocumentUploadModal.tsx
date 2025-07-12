@@ -408,6 +408,16 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                       <div className="document-item-info">
                         <p className="document-item-name">
                           {doc.file_name}
+                          {doc.file_url === 'processing' && (
+                            <span className="text-muted" style={{ fontSize: '12px', marginLeft: '8px' }}>
+                              (Processing...)
+                            </span>
+                          )}
+                          {doc.file_url.startsWith('failed:') && (
+                            <span className="text-muted" style={{ fontSize: '12px', marginLeft: '8px', color: '#ef4444' }}>
+                              (Failed)
+                            </span>
+                          )}
                         </p>
                         <p className="document-item-date">
                           {new Date(doc.uploaded_at).toLocaleDateString()} at{' '}
@@ -419,12 +429,16 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                       <button
                         onClick={() => openDocument(doc.file_url)}
                         className="document-action-view"
+                        disabled={doc.file_url === 'processing' || doc.file_url.startsWith('failed:')}
+                        title={doc.file_url === 'processing' ? 'Document is still processing' : doc.file_url.startsWith('failed:') ? 'Document processing failed' : ''}
                       >
                         View
                       </button>
                       <button
                         onClick={() => handleDeleteDocument(doc.id, doc.file_name)}
                         className="document-action-delete"
+                        disabled={doc.file_url === 'processing'}
+                        title={doc.file_url === 'processing' ? 'Cannot delete while processing' : ''}
                       >
                         Delete
                       </button>
