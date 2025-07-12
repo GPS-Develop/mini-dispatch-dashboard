@@ -290,7 +290,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
               Select one or more PDF files (max 25MB each)
             </p>
             <p className="text-hint text-hint-small text-success">
-              Files under 4MB will be automatically compressed. Larger files will be processed in the background.
+              Large files will be compressed.
             </p>
           </div>
 

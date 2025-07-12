@@ -132,18 +132,7 @@ export default function DriverLoadDetails() {
     fetchLoadDetails();
   }, [user, router, fetchLoadDetails]);
 
-  // Poll for processing documents
-  useEffect(() => {
-    const hasProcessingDocs = documents.some(doc => doc.file_url === 'processing');
-    
-    if (hasProcessingDocs) {
-      const pollInterval = setInterval(() => {
-        fetchLoadDetails();
-      }, 5000); // Poll every 5 seconds
-      
-      return () => clearInterval(pollInterval);
-    }
-  }, [documents, fetchLoadDetails]);
+  // Removed auto-polling - drivers can manually refresh using the refresh button
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -184,17 +173,10 @@ export default function DriverLoadDetails() {
           setCompressionStats(prev => ({ ...prev, [fileKey]: result.compressionStats! }));
         }
         
-        // For background processing, show processing status and refresh the document list multiple times
+        // For background processing, show processing status (no auto-refresh)
         if (result.compressionStats && result.compressionStats.includes('background processing')) {
           setFileStatus(prev => ({ ...prev, [fileKey]: 'processing' }));
-          
-          // Refresh multiple times to catch when processing completes
-          const refreshTimes = [3000, 6000, 10000, 15000]; // 3s, 6s, 10s, 15s
-          refreshTimes.forEach(delay => {
-            setTimeout(() => {
-              fetchLoadDetails();
-            }, delay);
-          });
+          // Note: Driver can manually refresh to check processing status
         }
       } else {
         setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
@@ -507,7 +489,7 @@ export default function DriverLoadDetails() {
                 Select PDF files (max 25MB each)
               </p>
               <p className="text-hint text-hint-small text-success">
-                Files under 4MB will be automatically compressed. Larger files will be processed in the background.
+                Large files will be compressed.
               </p>
             </div>
 
@@ -520,7 +502,7 @@ export default function DriverLoadDetails() {
                     switch (status) {
                       case 'compressing': return 'Compressing...';
                       case 'uploading': return 'Uploading...';
-                      case 'processing': return 'Processing in background...';
+                      case 'processing': return 'Processing in background - use refresh button to check';
                       case 'completed': return 'Completed';
                       case 'failed': return 'Failed';
                       default: return `${progress}%`;
