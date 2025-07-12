@@ -80,7 +80,7 @@ export function LoadDetailsModal({
           </div>
         </div>
         <div className="modal-footer">
-          <div className="button-group" style={{ width: '100%' }}>
+          <div className="button-group button-group-full-width">
             <Button
               variant="secondary"
               onClick={onEdit}
@@ -125,7 +125,7 @@ export function LoadDetailsModal({
             <Button
               variant="danger"
               onClick={onDelete}
-              style={{ marginTop: 'var(--spacing-lg)', paddingTop: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border)' }}
+              className="delete-button-separated"
               aria-label="Delete this load"
             >
               🗑️ Delete Load

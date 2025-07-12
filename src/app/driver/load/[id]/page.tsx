@@ -60,6 +60,9 @@ export default function DriverLoadDetails() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const [compressionStats, setCompressionStats] = useState<{ [key: string]: string }>({});
+  const [fileStatus, setFileStatus] = useState<{ [key: string]: 'compressing' | 'uploading' | 'completed' | 'failed' | 'processing' }>({});
 
   const fetchLoadDetails = useCallback(async () => {
     if (!params.id) return;
@@ -129,22 +132,72 @@ export default function DriverLoadDetails() {
     fetchLoadDetails();
   }, [user, router, fetchLoadDetails]);
 
+  // Poll for processing documents
+  useEffect(() => {
+    const hasProcessingDocs = documents.some(doc => doc.file_url === 'processing');
+    
+    if (hasProcessingDocs) {
+      const pollInterval = setInterval(() => {
+        fetchLoadDetails();
+      }, 5000); // Poll every 5 seconds
+      
+      return () => clearInterval(pollInterval);
+    }
+  }, [documents, fetchLoadDetails]);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0 || !load) return;
 
     const file = files[0];
+    const fileKey = `${file.name}_${Date.now()}`;
     
     try {
       setUploading(true);
       setError('');
+      setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
+      setFileStatus(prev => ({ ...prev, [fileKey]: 'compressing' }));
 
-      // Use the existing upload utility
-      const result = await uploadDocument(supabase, load.id, file);
+      // Use the existing upload utility with progress tracking
+      const result = await uploadDocument(
+        supabase, 
+        load.id, 
+        file,
+        false,
+        (phase, progress) => {
+          setFileStatus(prev => ({ ...prev, [fileKey]: phase }));
+          setUploadProgress(prev => ({ ...prev, [fileKey]: progress }));
+        }
+      );
       
-      if (result.success && result.data) {
-        setDocuments(prev => [result.data!, ...prev]);
+      if (result.success) {
+        setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
+        setFileStatus(prev => ({ ...prev, [fileKey]: 'completed' }));
+        
+        // For regular uploads with immediate database entry
+        if (result.data) {
+          setDocuments(prev => [result.data!, ...prev]);
+        }
+        
+        // Store compression stats if available
+        if (result.compressionStats) {
+          setCompressionStats(prev => ({ ...prev, [fileKey]: result.compressionStats! }));
+        }
+        
+        // For background processing, show processing status and refresh the document list multiple times
+        if (result.compressionStats && result.compressionStats.includes('background processing')) {
+          setFileStatus(prev => ({ ...prev, [fileKey]: 'processing' }));
+          
+          // Refresh multiple times to catch when processing completes
+          const refreshTimes = [3000, 6000, 10000, 15000]; // 3s, 6s, 10s, 15s
+          refreshTimes.forEach(delay => {
+            setTimeout(() => {
+              fetchLoadDetails();
+            }, delay);
+          });
+        }
       } else {
+        setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
         setError(result.error || 'Failed to upload document');
       }
       
@@ -154,8 +207,29 @@ export default function DriverLoadDetails() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload document';
       setError(errorMessage);
+      setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
     } finally {
       setUploading(false);
+      
+      // Remove progress and compression stats after a delay
+      const timeoutDelay = compressionStats[fileKey]?.includes('background processing') ? 8000 : 5000;
+      setTimeout(() => {
+        setUploadProgress(prev => {
+          const newProgress = { ...prev };
+          delete newProgress[fileKey];
+          return newProgress;
+        });
+        setCompressionStats(prev => {
+          const newStats = { ...prev };
+          delete newStats[fileKey];
+          return newStats;
+        });
+        setFileStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[fileKey];
+          return newStatus;
+        });
+      }, timeoutDelay);
     }
   };
 
@@ -430,16 +504,60 @@ export default function DriverLoadDetails() {
                 className="driver-file-input"
               />
               <p className="text-hint">
-                Select PDF files (max 10MB each)
+                Select PDF files (max 25MB each)
+              </p>
+              <p className="text-hint text-hint-small text-success">
+                Files under 4MB will be automatically compressed. Larger files will be processed in the background.
               </p>
             </div>
 
-            {uploading && (
-              <div className="driver-upload-progress">
-                <div className="driver-upload-progress-content">
-                  <div className="spinner-sm"></div>
-                  <span className="text-primary">Uploading document...</span>
-                </div>
+            {/* Upload Progress */}
+            {Object.keys(uploadProgress).length > 0 && (
+              <div className="driver-upload-progress-section">
+                {Object.entries(uploadProgress).map(([fileKey, progress]) => {
+                  const status = fileStatus[fileKey];
+                  const getStatusText = () => {
+                    switch (status) {
+                      case 'compressing': return 'Compressing...';
+                      case 'uploading': return 'Uploading...';
+                      case 'processing': return 'Processing in background...';
+                      case 'completed': return 'Completed';
+                      case 'failed': return 'Failed';
+                      default: return `${progress}%`;
+                    }
+                  };
+                  
+                  const getProgressValue = () => {
+                    switch (status) {
+                      case 'compressing': return Math.max(progress, 10);
+                      case 'uploading': return Math.max(progress, 60);
+                      case 'processing': return 100;
+                      case 'completed': return 100;
+                      case 'failed': return 0;
+                      default: return progress;
+                    }
+                  };
+                  
+                  return (
+                    <div key={fileKey} className="driver-upload-progress-item">
+                      <div className="driver-upload-progress-header">
+                        <span className="text-muted">{fileKey.split('_')[0]}</span>
+                        <span className="text-muted">{getStatusText()}</span>
+                      </div>
+                      <div className="driver-progress-container">
+                        <div
+                          className={`driver-progress-bar ${status ? `driver-progress-bar-${status}` : ''}`}
+                          style={{ '--progress-width': `${getProgressValue()}%` } as React.CSSProperties}
+                        ></div>
+                      </div>
+                      {compressionStats[fileKey] && (
+                        <div className="driver-compression-stats">
+                          {compressionStats[fileKey]}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -464,18 +582,42 @@ export default function DriverLoadDetails() {
                   <div className="driver-document-info">
                     <div className="driver-document-icon">📄</div>
                     <div className="driver-document-details">
-                      <div className="driver-document-name">{doc.file_name}</div>
+                      <div className="driver-document-name">
+                        {doc.file_name}
+                        {doc.file_url === 'processing' && (
+                          <span className="driver-document-status driver-document-status-processing">
+                            (Processing...)
+                          </span>
+                        )}
+                        {doc.file_url.startsWith('failed:') && (
+                          <span className="driver-document-status driver-document-status-failed">
+                            (Failed)
+                          </span>
+                        )}
+                      </div>
                       <div className="driver-document-date">
                         Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => viewDocument(doc)}
-                    className="driver-document-view-btn"
-                  >
-                    View
-                  </button>
+                  {doc.file_url === 'processing' ? (
+                    <button
+                      onClick={() => fetchLoadDetails()}
+                      className="driver-document-view-btn"
+                      title="Refresh to check processing status"
+                    >
+                      Refresh
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => viewDocument(doc)}
+                      className="driver-document-view-btn"
+                      disabled={doc.file_url.startsWith('failed:')}
+                      title={doc.file_url.startsWith('failed:') ? 'Document processing failed' : ''}
+                    >
+                      View
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

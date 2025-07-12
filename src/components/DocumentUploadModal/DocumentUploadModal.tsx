@@ -289,7 +289,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
             <p className="text-hint">
               Select one or more PDF files (max 25MB each)
             </p>
-            <p className="text-hint" style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
+            <p className="text-hint text-hint-small text-success">
               Files under 4MB will be automatically compressed. Larger files will be processed in the background.
             </p>
           </div>
@@ -330,7 +330,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                     <div className="progress-container">
                       <div
                         className={`progress-bar ${status ? `progress-bar-${status}` : ''}`}
-                        style={{ width: `${getProgressValue()}%` }}
+                        style={{ '--progress-width': `${getProgressValue()}%` } as React.CSSProperties}
                       ></div>
                     </div>
                     {compressionStats[fileKey] && (
@@ -388,7 +388,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           {/* Error Display */}
           {error && (
             <div className="alert-error">
-              <p style={{ whiteSpace: 'pre-line' }}>{error}</p>
+              <p className="error-text-multiline">{error}</p>
             </div>
           )}
 
@@ -427,12 +427,12 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                         <p className="document-item-name">
                           {doc.file_name}
                           {doc.file_url === 'processing' && (
-                            <span className="text-muted" style={{ fontSize: '12px', marginLeft: '8px' }}>
+                            <span className="document-status document-status-processing">
                               (Processing...)
                             </span>
                           )}
                           {doc.file_url.startsWith('failed:') && (
-                            <span className="text-muted" style={{ fontSize: '12px', marginLeft: '8px', color: '#ef4444' }}>
+                            <span className="document-status document-status-failed">
                               (Failed)
                             </span>
                           )}
