@@ -229,25 +229,8 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
         throw new Error(`Driver is currently on load(s): ${loadReferences}. Please mark the load(s) as delivered before deactivating the driver.`);
       }
       
-      // Check if driver has any delivered loads that need driver_id cleared
-      const deliveredLoads = loads.filter(load => 
-        load.driver_id === id && 
-        load.status === "Delivered"
-      );
-      
-      if (deliveredLoads.length > 0) {
-        // Clear driver_id from delivered loads to remove foreign key constraint
-        const { error: updateError } = await supabase
-          .from("loads")
-          .update({ driver_id: null })
-          .eq("driver_id", id)
-          .eq("status", "Delivered");
-        
-        if (updateError) {
-          setError(`Failed to clear driver from delivered loads: ${updateError.message}`);
-          return;
-        }
-      }
+      // Note: We don't need to clear driver_id from delivered loads since we're using soft delete
+      // Historical data should be preserved to maintain load assignment records
       
       // Soft delete: set driver_status to 'inactive'
       const { error } = await supabase
