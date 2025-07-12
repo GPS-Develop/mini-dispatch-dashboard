@@ -66,7 +66,6 @@ export default function DriverDashboard() {
 
       // Check if driver is inactive
       if (driverData.driver_status === 'inactive') {
-        console.log('Driver account has been deactivated, logging out...');
         await signOut();
         router.push('/login');
         return;
@@ -259,6 +258,16 @@ export default function DriverDashboard() {
             </div>
             <div className="driver-stat-label">Delivered</div>
           </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="driver-quick-actions">
+          <button
+            onClick={() => router.push('/driver/pay-statements')}
+            className="driver-action-btn driver-action-btn-primary"
+          >
+            View Pay Statements
+          </button>
         </div>
 
         {/* Loads List */}

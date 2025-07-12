@@ -2754,6 +2754,31 @@ select.input-field {
   margin-top: var(--spacing-xs);
 }
 
+.driver-quick-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.driver-action-btn {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  border: none;
+  font-size: 0.875rem;
+}
+
+.driver-action-btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.driver-action-btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
 .driver-loads-section {
   display: flex;
   flex-direction: column;
@@ -3752,4 +3777,263 @@ select.input-field {
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--color-border);
+}
+
+/* ==============================================
+   DRIVER PAY STATEMENTS STYLES
+   ============================================== */
+
+/* Driver Pay Statements */
+.driver-pay-filter-section {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.driver-date-range-inputs {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-md);
+}
+
+.driver-date-input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.driver-pay-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.driver-pay-summary-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.driver-pay-summary-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-xs);
+}
+
+.driver-pay-total-earnings {
+  color: var(--color-success);
+}
+
+.driver-pay-summary-label {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  font-weight: 500;
+}
+
+.driver-pay-loads-section {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.driver-pay-empty-state {
+  text-align: center;
+  padding: var(--spacing-xxl);
+}
+
+.driver-pay-empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.driver-pay-loads-table {
+  margin-top: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.driver-pay-table-header {
+  display: grid;
+  grid-template-columns: 100px 1fr 120px 150px 100px;
+  background-color: var(--color-gray-50);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+}
+
+.driver-pay-table-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 120px 150px 100px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.driver-pay-table-row:last-child {
+  border-bottom: none;
+}
+
+.driver-pay-table-total-row {
+  background-color: var(--color-gray-50);
+  font-weight: 600;
+}
+
+.driver-pay-table-cell {
+  padding: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.driver-pay-table-load {
+  justify-content: center;
+}
+
+.driver-pay-table-route {
+  justify-content: flex-start;
+}
+
+.driver-pay-table-type {
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.driver-pay-table-date {
+  justify-content: center;
+}
+
+.driver-pay-table-rate {
+  justify-content: flex-end;
+  font-weight: 600;
+}
+
+.driver-pay-load-reference {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.driver-pay-route-content {
+  color: var(--color-text);
+  line-height: 1.4;
+  white-space: pre-line;
+  font-size: 0.875rem;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.driver-pay-load-type {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.driver-pay-temperature {
+  color: var(--color-text-light);
+  font-size: 0.75rem;
+}
+
+.driver-pay-completion-date {
+  color: var(--color-text);
+}
+
+.driver-pay-load-rate {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.driver-pay-total-label {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.driver-pay-total-loads {
+  color: var(--color-text-light);
+  font-weight: 600;
+}
+
+.driver-pay-total-amount {
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Upload Progress for Driver Pay Statements */
+.driver-upload-progress-section {
+  margin-top: var(--spacing-lg);
+}
+
+.driver-upload-progress-item {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.driver-upload-progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs);
+}
+
+.driver-progress-container {
+  width: 100%;
+  height: 8px;
+  background-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.driver-compression-stats {
+  margin-top: var(--spacing-xs);
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+}
+
+/* Responsive Design for Pay Statements */
+@media (max-width: 768px) {
+  .driver-date-range-inputs {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .driver-pay-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .driver-pay-table-header,
+  .driver-pay-table-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .driver-pay-table-cell {
+    border-bottom: 1px solid var(--color-border-light);
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  
+  .driver-pay-table-cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--color-text-light);
+    min-width: 80px;
+  }
+  
+  .driver-pay-route-content {
+    flex: 1;
+    text-align: left;
+  }
+  
+  .driver-pay-table-header {
+    display: none;
+  }
 }

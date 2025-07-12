@@ -91,7 +91,7 @@ export default function DriverLoadDetails() {
         .eq('load_id', params.id);
 
       if (pickupsError) {
-        console.error('Error fetching pickups:', pickupsError);
+        // Handle pickup fetch error silently - pickups will remain empty
       } else {
         setPickups(pickupsData || []);
       }
@@ -103,7 +103,7 @@ export default function DriverLoadDetails() {
         .eq('load_id', params.id);
 
       if (deliveriesError) {
-        console.error('Error fetching deliveries:', deliveriesError);
+        // Handle delivery fetch error silently - deliveries will remain empty
       } else {
         setDeliveries(deliveriesData || []);
       }
@@ -113,10 +113,9 @@ export default function DriverLoadDetails() {
       if (documentsResult.success && documentsResult.data) {
         setDocuments(documentsResult.data);
       } else {
-        console.error('Error fetching documents:', documentsResult.error);
+        // Handle document fetch error silently - documents will remain empty
       }
     } catch (err) {
-      console.error('Error fetching load details:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -224,7 +223,6 @@ export default function DriverLoadDetails() {
         setError(result.error || 'Failed to open document');
       }
     } catch (err) {
-      console.error('Error opening document:', err);
       setError('Failed to open document');
     }
   };
@@ -253,7 +251,7 @@ export default function DriverLoadDetails() {
             p_new_status: newStatus
           });
         } catch (activityError) {
-          console.error('Failed to log status update activity:', activityError);
+          // Activity logging failed silently - status update still succeeded
         }
       }
     } catch (err) {
