@@ -73,7 +73,7 @@ export const uploadLargeFileViaBlob = async (
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const pathname = `${loadId}/${timestamp}_${sanitizedName}`;
     
-    const result = await upload(pathname, file, {
+    await upload(pathname, file, {
       access: 'public',
       handleUploadUrl: '/api/process-large-pdf',
       clientPayload: JSON.stringify({ loadId }),

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           try {
             const payload = JSON.parse(clientPayload);
             loadId = payload.loadId;
-          } catch (error) {
+          } catch {
             // Silent fail - will be handled in processing
           }
         }
