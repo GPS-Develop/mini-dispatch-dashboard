@@ -122,10 +122,8 @@ export const compressPDFBuffer = async (
       ? path.join('/tmp', 'pdf-compression')
       : path.join(process.cwd(), 'temp', 'pdf-compression');
     
-    console.log('Creating temp directory:', tempDir);
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
-      console.log('Temp directory created successfully');
     }
     
     // Create temporary input file with sanitized name

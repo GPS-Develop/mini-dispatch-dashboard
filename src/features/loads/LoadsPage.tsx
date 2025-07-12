@@ -415,7 +415,7 @@ export default function LoadsPage() {
                     variant="teal"
                     onClick={() => setShowUploadModal(true)}
                   >
-                    📄 Upload Documents
+                    📄 Upload/View Documents
                   </Button>
                   {selected.status !== "Delivered" && (
                     <Button

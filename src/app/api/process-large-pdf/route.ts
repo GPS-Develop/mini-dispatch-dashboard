@@ -16,8 +16,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         // const { user } = await auth(request);
         // if (!user) throw new Error('Not authenticated');
 
-        console.log('Generating token for large PDF upload:', pathname);
-
         // Parse the client payload to get loadId
         let loadId = '';
         if (clientPayload) {
@@ -25,7 +23,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             const payload = JSON.parse(clientPayload);
             loadId = payload.loadId;
           } catch (error) {
-            console.error('Failed to parse client payload:', error);
+            // Silent fail - will be handled in processing
           }
         }
 
@@ -38,21 +36,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
-        console.log('Large PDF upload completed, starting background processing:', blob.pathname);
-
         try {
           // Parse the token payload
           const payload = JSON.parse(tokenPayload || '{}');
-          console.log('Parsed payload:', payload);
           
           // Process the PDF in the background
           await processLargePDF(blob.url, blob.pathname, payload);
-          console.log('Background processing completed successfully');
           
         } catch (error) {
           console.error('Background processing failed:', error);
-          console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
-          console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
           // TODO: Implement proper error handling/retry logic
           throw new Error(`Could not process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -77,7 +69,6 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
   
   try {
     const { loadId } = payload;
-    console.log('Starting PDF processing for:', pathname, 'loadId:', loadId);
     
     // Extract original filename from pathname
     const originalFileName = pathname.split('/').pop() || pathname;
@@ -98,8 +89,6 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
       throw new Error(`Database entry failed: ${dbError.message}`);
     }
     
-    console.log('Created processing entry:', processingEntry.id);
-    
     // 2. Download the PDF from Vercel Blob
     const response = await fetch(blobUrl);
     if (!response.ok) {
@@ -108,8 +97,6 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
     
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
-    console.log('Downloaded PDF, size:', buffer.length);
     
     // 3. Compress the PDF using iLoveAPI
     const compressionResult = await compressPDFBuffer(buffer, cleanFileName);
@@ -125,8 +112,6 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
       
       throw new Error(`Compression failed: ${compressionResult.error}`);
     }
-    
-    console.log('PDF compressed successfully');
     
     // 4. Upload compressed PDF to Supabase Storage
     const timestamp = Date.now();
@@ -152,8 +137,6 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
       throw new Error(`Supabase upload failed: ${uploadError.message}`);
     }
     
-    console.log('Uploaded to Supabase:', uploadData.path);
-    
     // 5. Update database entry with final details
     await supabase
       .from('load_documents')
@@ -161,8 +144,6 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
         file_url: uploadData.path
       })
       .eq('id', processingEntry.id);
-    
-    console.log('Updated database entry with final details');
     
     // 6. Log document upload activity
     try {
@@ -187,15 +168,9 @@ async function processLargePDF(blobUrl: string, pathname: string, payload: { loa
     
     // 7. Delete the temporary file from Vercel Blob
     await del(blobUrl);
-    console.log('Cleaned up temporary blob');
-    
-    console.log('Large PDF processing completed successfully');
     
   } catch (error) {
     console.error('PDF processing error:', error);
-    console.error('Error type:', typeof error);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // Try to update the database entry to mark as failed
     try {
