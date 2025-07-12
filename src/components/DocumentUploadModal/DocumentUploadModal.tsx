@@ -19,7 +19,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [compressionStats, setCompressionStats] = useState<{ [key: string]: string }>({});
   const [failedFiles, setFailedFiles] = useState<{ [key: string]: { file: File; error: string } }>({});
-  const [fileStatus, setFileStatus] = useState<{ [key: string]: 'compressing' | 'uploading' | 'completed' | 'failed' }>({});
+  const [fileStatus, setFileStatus] = useState<{ [key: string]: 'compressing' | 'uploading' | 'completed' | 'failed' | 'processing' }>({});
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ documentId: string; fileName: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const supabase = createClient();
@@ -78,14 +78,26 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           }
         );
         
-        if (result.success && result.data) {
-          setDocuments(prev => [result.data!, ...prev]);
+        if (result.success) {
           setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
           setFileStatus(prev => ({ ...prev, [fileKey]: 'completed' }));
+          
+          // For regular uploads with immediate database entry
+          if (result.data) {
+            setDocuments(prev => [result.data!, ...prev]);
+          }
           
           // Store compression stats if available
           if (result.compressionStats) {
             setCompressionStats(prev => ({ ...prev, [fileKey]: result.compressionStats! }));
+          }
+          
+          // For background processing, show processing status and refresh the document list
+          if (result.compressionStats && result.compressionStats.includes('background processing')) {
+            setFileStatus(prev => ({ ...prev, [fileKey]: 'processing' }));
+            setTimeout(() => {
+              fetchDocuments();
+            }, 3000); // Refresh after 3 seconds to pick up the processed document
           }
         } else {
           setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
@@ -102,6 +114,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
        }
       
       // Remove progress and compression stats after a delay
+      const timeoutDelay = compressionStats[fileKey]?.includes('background processing') ? 8000 : 5000;
       setTimeout(() => {
         setUploadProgress(prev => {
           const newProgress = { ...prev };
@@ -118,7 +131,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
           delete newStatus[fileKey];
           return newStatus;
         });
-      }, 5000); // Show compression stats for 5 seconds
+      }, timeoutDelay); // Show background processing stats longer
     }
 
     setUploading(false);
@@ -272,6 +285,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                   switch (status) {
                     case 'compressing': return 'Compressing...';
                     case 'uploading': return 'Uploading...';
+                    case 'processing': return 'Processing in background...';
                     case 'completed': return 'Completed';
                     case 'failed': return 'Failed';
                     default: return `${progress}%`;
@@ -282,6 +296,7 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                   switch (status) {
                     case 'compressing': return Math.max(progress, 10); // Show actual compression progress
                     case 'uploading': return Math.max(progress, 60); // Show actual upload progress
+                    case 'processing': return 100; // Show complete for background processing
                     case 'completed': return 100;
                     case 'failed': return 0;
                     default: return progress;
