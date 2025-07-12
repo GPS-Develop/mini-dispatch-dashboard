@@ -156,7 +156,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
         />
 
         {/* Main Content */}
-        <main className="main-content">{children}</main>
+        <main className="main-content" role="main" aria-label="Main content">{children}</main>
       </div>
     );
   }

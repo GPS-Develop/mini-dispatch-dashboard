@@ -88,13 +88,14 @@ export default function Sidebar({ isMobileOpen = false, onMobileClose }: Sidebar
         </div>
 
         {/* Navigation */}
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" role="navigation" aria-label="Main navigation">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.label}
               href={item.href}
               className={`sidebar-nav-item ${pathname === item.href ? 'active' : ''}`}
               onClick={handleNavClick}
+              aria-current={pathname === item.href ? 'page' : undefined}
             >
               {item.label}
             </Link>
@@ -117,7 +118,7 @@ export default function Sidebar({ isMobileOpen = false, onMobileClose }: Sidebar
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="sidebar-desktop">
+      <aside className="sidebar-desktop" role="complementary" aria-label="Navigation sidebar">
         {renderSidebarContent()}
       </aside>
 
@@ -125,10 +126,11 @@ export default function Sidebar({ isMobileOpen = false, onMobileClose }: Sidebar
       <div 
         className={`sidebar-overlay ${isMobileOpen ? 'open' : ''}`}
         onClick={handleOverlayClick}
+        aria-hidden={!isMobileOpen}
       />
 
       {/* Mobile Sidebar */}
-      <aside className={`sidebar-mobile ${isMobileOpen ? 'open' : ''}`}>
+      <aside className={`sidebar-mobile ${isMobileOpen ? 'open' : ''}`} role="complementary" aria-label="Mobile navigation sidebar">
         {/* Close Button */}
         <button
           onClick={onMobileClose}
