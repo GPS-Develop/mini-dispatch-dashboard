@@ -37,18 +37,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // If there's an error or no driver record, skip the check
         if (error) {
-          console.log('Error checking driver status (treating as admin):', error);
+          // Silently treat as admin - don't log in production
           return;
         }
 
         // If driver exists but is inactive, log them out
         if (driverData && driverData.driver_status === 'inactive') {
-          console.log('Driver status changed to inactive, logging out...');
           await supabase.auth.signOut();
         }
-      } catch (error) {
-        // Ignore errors in status check
-        console.log('Error checking driver status:', error);
+      } catch {
+        // Ignore errors in status check - fail silently in production
       }
     }
   }, [supabase]);

@@ -9,11 +9,9 @@ import { formatPhoneForDisplay, sanitizePhone, formatRateForDisplay } from '../.
 import DocumentUploadModal from '../../components/DocumentUploadModal/DocumentUploadModal';
 import { EmptyLoads } from '../../components/EmptyState/EmptyState';
 import { Pickup, Delivery, InputChangeEvent, SelectChangeEvent, TextareaChangeEvent, FormSubmitEvent } from '../../types';
+import { US_STATES } from '../../utils/constants';
 
 const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
-];
 
 export default function LoadsPage() {
   const { loads, updateLoad, deleteLoad, error: loadError, loading: loadLoading } = useLoads();

@@ -5,14 +5,12 @@ import { useLoads } from "../../features/loads/LoadContext";
 import { useRouter } from "next/navigation";
 import { sanitizePhone, validateRate } from '../../utils/validation';
 import BrokerAutocomplete from '../../components/BrokerAutocomplete/BrokerAutocomplete';
+import { US_STATES } from '../../utils/constants';
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
   const { addFullLoad, error: loadError, loading: loadLoading } = useLoads();
   const router = useRouter();
-  const US_STATES = [
-    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
-  ];
   const [form, setForm] = useState({
     referenceId: "",
     pickups: [

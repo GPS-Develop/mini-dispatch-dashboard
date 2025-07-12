@@ -140,6 +140,12 @@ export interface LoadDocument {
   file_name: string;
   file_url: string;
   uploaded_at: string;
+  // Background processing fields (optional for backward compatibility)
+  processing_status?: 'processing' | 'completed' | 'failed';
+  error_message?: string | null;
+  original_size?: number;
+  compressed_size?: number;
+  compression_ratio?: number;
 }
 
 // Event handler types
