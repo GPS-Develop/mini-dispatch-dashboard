@@ -39,6 +39,19 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
     fetchDocuments();
   }, [fetchDocuments]);
 
+  // Poll for processing documents
+  useEffect(() => {
+    const hasProcessingDocs = documents.some(doc => doc.file_url === 'processing');
+    
+    if (hasProcessingDocs) {
+      const pollInterval = setInterval(() => {
+        fetchDocuments();
+      }, 5000); // Poll every 5 seconds
+      
+      return () => clearInterval(pollInterval);
+    }
+  }, [documents, fetchDocuments]);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -92,12 +105,17 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
             setCompressionStats(prev => ({ ...prev, [fileKey]: result.compressionStats! }));
           }
           
-          // For background processing, show processing status and refresh the document list
+          // For background processing, show processing status and refresh the document list multiple times
           if (result.compressionStats && result.compressionStats.includes('background processing')) {
             setFileStatus(prev => ({ ...prev, [fileKey]: 'processing' }));
-            setTimeout(() => {
-              fetchDocuments();
-            }, 3000); // Refresh after 3 seconds to pick up the processed document
+            
+            // Refresh multiple times to catch when processing completes
+            const refreshTimes = [3000, 6000, 10000, 15000]; // 3s, 6s, 10s, 15s
+            refreshTimes.forEach(delay => {
+              setTimeout(() => {
+                fetchDocuments();
+              }, delay);
+            });
           }
         } else {
           setFileStatus(prev => ({ ...prev, [fileKey]: 'failed' }));
@@ -434,14 +452,22 @@ export default function DocumentUploadModal({ loadId, loadReferenceId, onClose }
                       >
                         View
                       </button>
-                      <button
-                        onClick={() => handleDeleteDocument(doc.id, doc.file_name)}
-                        className="document-action-delete"
-                        disabled={doc.file_url === 'processing'}
-                        title={doc.file_url === 'processing' ? 'Cannot delete while processing' : ''}
-                      >
-                        Delete
-                      </button>
+                      {doc.file_url === 'processing' ? (
+                        <button
+                          onClick={() => fetchDocuments()}
+                          className="document-action-view"
+                          title="Refresh to check processing status"
+                        >
+                          Refresh
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDeleteDocument(doc.id, doc.file_name)}
+                          className="document-action-delete"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
