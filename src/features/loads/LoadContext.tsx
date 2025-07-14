@@ -31,7 +31,7 @@ const LoadContext = createContext<{
   loading: boolean;
   error: string | null;
   fetchLoads: () => Promise<void>;
-  addFullLoad: (load: Record<string, unknown>, pickups: Array<{ address: string; city: string; state: string; datetime: string }>, deliveries: Array<{ address: string; city: string; state: string; datetime: string }>) => Promise<void>;
+  addFullLoad: (load: Record<string, unknown>, pickups: Array<{ name: string; address: string; city: string; state: string; datetime: string }>, deliveries: Array<{ name: string; address: string; city: string; state: string; datetime: string }>) => Promise<void>;
 } | null>(null);
 
 export function LoadProvider({ children }: { children: React.ReactNode }) {

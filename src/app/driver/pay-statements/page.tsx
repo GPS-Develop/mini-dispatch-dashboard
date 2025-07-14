@@ -101,7 +101,6 @@ export default function DriverPayStatements() {
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, supabase, router, signOut]);
 
   const fetchDeliveredLoads = useCallback(async (driverId: string) => {
