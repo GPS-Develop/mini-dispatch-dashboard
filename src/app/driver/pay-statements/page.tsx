@@ -215,11 +215,13 @@ export default function DriverPayStatements() {
     if (locations.length === 0) return 'N/A';
     
     return locations.map((location, index) => {
+      const name = location.name || '';
       const address = location.address || '';
       const city = location.city || '';
       const state = location.state || '';
-      const fullLocation = address ? `${address}, ${city}, ${state}` : `${city}, ${state}`;
-      return `${index + 1}. ${fullLocation}`;
+      
+      const locationString = `${name} - ${address}, ${city}, ${state}`;
+      return `${index + 1}. ${locationString}`;
     }).join('\n');
   };
 

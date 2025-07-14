@@ -334,6 +334,7 @@ export default function DriverDashboard() {
                         <div className="driver-load-route-label">Pickup</div>
                         {(pickupsMap[load.id] || []).map((p, i) => (
                           <div key={p.id || i} className="driver-load-route-location">
+                            <div className="driver-load-location-name">{p.name}</div>
                             <div className="driver-load-address">{p.address}, {p.city ? `${p.city}, ` : ''}{p.state}</div>
                             <div className="driver-load-datetime">{formatDateTime(p.datetime)}</div>
                           </div>
@@ -347,6 +348,7 @@ export default function DriverDashboard() {
                         <div className="driver-load-route-label">Delivery</div>
                         {(deliveriesMap[load.id] || []).map((d, i) => (
                           <div key={d.id || i} className="driver-load-route-location">
+                            <div className="driver-load-location-name">{d.name}</div>
                             <div className="driver-load-address">{d.address}, {d.city ? `${d.city}, ` : ''}{d.state}</div>
                             <div className="driver-load-datetime">{formatDateTime(d.datetime)}</div>
                           </div>

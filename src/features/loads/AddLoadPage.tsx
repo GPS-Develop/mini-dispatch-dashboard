@@ -14,10 +14,10 @@ export default function AddLoadPage() {
   const [form, setForm] = useState({
     referenceId: "",
     pickups: [
-      { address: "", city: "", state: "", datetime: "" }
+      { name: "", address: "", city: "", state: "", datetime: "" }
     ],
     deliveries: [
-      { address: "", city: "", state: "", datetime: "" }
+      { name: "", address: "", city: "", state: "", datetime: "" }
     ],
     loadType: "Reefer",
     temperature: "",
@@ -41,7 +41,7 @@ export default function AddLoadPage() {
   }
 
   function handlePickupChange(idx: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target as { name: 'address' | 'city' | 'state' | 'datetime'; value: string };
+    const { name, value } = e.target as { name: 'name' | 'address' | 'city' | 'state' | 'datetime'; value: string };
     setForm((prev) => {
       const pickups = [...prev.pickups];
       pickups[idx][name] = value;
@@ -50,7 +50,7 @@ export default function AddLoadPage() {
   }
 
   function handleDeliveryChange(idx: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    const { name, value } = e.target as { name: 'address' | 'city' | 'state' | 'datetime'; value: string };
+    const { name, value } = e.target as { name: 'name' | 'address' | 'city' | 'state' | 'datetime'; value: string };
     setForm((prev) => {
       const deliveries = [...prev.deliveries];
       deliveries[idx][name] = value;
@@ -59,7 +59,7 @@ export default function AddLoadPage() {
   }
 
   function addPickup() {
-    setForm((prev) => ({ ...prev, pickups: [...prev.pickups, { address: "", city: "", state: "", datetime: "" }] }));
+    setForm((prev) => ({ ...prev, pickups: [...prev.pickups, { name: "", address: "", city: "", state: "", datetime: "" }] }));
   }
 
   function removePickup(idx: number) {
@@ -67,7 +67,7 @@ export default function AddLoadPage() {
   }
 
   function addDelivery() {
-    setForm((prev) => ({ ...prev, deliveries: [...prev.deliveries, { address: "", city: "", state: "", datetime: "" }] }));
+    setForm((prev) => ({ ...prev, deliveries: [...prev.deliveries, { name: "", address: "", city: "", state: "", datetime: "" }] }));
   }
 
   function removeDelivery(idx: number) {
@@ -79,6 +79,21 @@ export default function AddLoadPage() {
     if (!form.referenceId) newErrors.referenceId = "Required";
     if (form.pickups.length === 0) newErrors.pickups = "At least one pickup required";
     if (form.deliveries.length === 0) newErrors.deliveries = "At least one delivery required";
+    
+    // Validate pickup names
+    form.pickups.forEach((pickup, idx) => {
+      if (!pickup.name.trim()) {
+        newErrors[`pickup_name_${idx}`] = "Pickup location name is required";
+      }
+    });
+    
+    // Validate delivery names  
+    form.deliveries.forEach((delivery, idx) => {
+      if (!delivery.name.trim()) {
+        newErrors[`delivery_name_${idx}`] = "Delivery location name is required";
+      }
+    });
+    
     if (!form.loadType) newErrors.loadType = "Required";
     if (form.loadType === "Reefer" && (!form.temperature || isNaN(parseFloat(form.temperature)))) {
       newErrors.temperature = "Temperature is required for reefer loads";
@@ -216,6 +231,14 @@ export default function AddLoadPage() {
               <div key={idx} className="form-item-card">
                 <div className="form-item-inputs">
                   <input
+                    name="name"
+                    placeholder="Location Name *"
+                    value={pickup.name}
+                    onChange={e => handlePickupChange(idx, e)}
+                    className="input-field-flex"
+                    required
+                  />
+                  <input
                     name="address"
                     placeholder="Address"
                     value={pickup.address}
@@ -277,6 +300,14 @@ export default function AddLoadPage() {
             {form.deliveries.map((delivery, idx) => (
               <div key={idx} className="form-item-card">
                 <div className="form-item-inputs">
+                  <input
+                    name="name"
+                    placeholder="Location Name *"
+                    value={delivery.name}
+                    onChange={e => handleDeliveryChange(idx, e)}
+                    className="input-field-flex"
+                    required
+                  />
                   <input
                     name="address"
                     placeholder="Address"

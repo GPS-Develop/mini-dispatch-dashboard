@@ -235,6 +235,7 @@ export default function LoadsPage() {
     // Update pickups
     for (const p of editForm.pickups) {
         const { error: pickupError } = await supabase.from("pickups").update({
+        name: p.name,
         address: p.address,
         city: p.city,
         state: p.state,
@@ -249,6 +250,7 @@ export default function LoadsPage() {
     // Update deliveries
     for (const d of editForm.deliveries) {
         const { error: deliveryError } = await supabase.from("deliveries").update({
+        name: d.name,
         address: d.address,
         city: d.city,
         state: d.state,

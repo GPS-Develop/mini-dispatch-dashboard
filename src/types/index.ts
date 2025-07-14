@@ -13,6 +13,7 @@ export interface User {
 export interface Pickup {
   id?: string;
   load_id: string;
+  name: string;
   address: string;
   city: string;
   state: string;
@@ -22,6 +23,7 @@ export interface Pickup {
 export interface Delivery {
   id?: string;
   load_id: string;
+  name: string;
   address: string;
   city: string;
   state: string;
@@ -57,12 +59,14 @@ export interface EditForm {
 export interface AddLoadForm {
   referenceId: string;
   pickups: Array<{
+    name: string;
     address: string;
     city: string;
     state: string;
     datetime: string;
   }>;
   deliveries: Array<{
+    name: string;
     address: string;
     city: string;
     state: string;

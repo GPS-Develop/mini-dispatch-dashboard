@@ -24,6 +24,7 @@ interface Load {
 interface Pickup {
   id: string;
   load_id: string;
+  name: string;
   address: string;
   city: string;
   state: string;
@@ -33,6 +34,7 @@ interface Pickup {
 interface Delivery {
   id: string;
   load_id: string;
+  name: string;
   address: string;
   city: string;
   state: string;
@@ -356,6 +358,7 @@ export default function DriverLoadDetails() {
                   <div key={pickup.id} className="driver-load-route-item">
                     <div className="driver-load-route-indicator driver-load-pickup-indicator"></div>
                     <div className="driver-load-route-details">
+                      <div className="driver-load-location-name">{pickup.name}</div>
                       <div className="driver-load-address">{pickup.address}</div>
                       <div className="driver-load-address">{pickup.city ? `${pickup.city}, ` : ''}{pickup.state}</div>
                       <div className="driver-load-datetime">{formatDateTime(pickup.datetime)}</div>
@@ -375,6 +378,7 @@ export default function DriverLoadDetails() {
                   <div key={delivery.id} className="driver-load-route-item">
                     <div className="driver-load-route-indicator driver-load-delivery-indicator"></div>
                     <div className="driver-load-route-details">
+                      <div className="driver-load-location-name">{delivery.name}</div>
                       <div className="driver-load-address">{delivery.address}</div>
                       <div className="driver-load-address">{delivery.city ? `${delivery.city}, ` : ''}{delivery.state}</div>
                       <div className="driver-load-datetime">{formatDateTime(delivery.datetime)}</div>

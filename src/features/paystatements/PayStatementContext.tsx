@@ -67,8 +67,8 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
           reference_id,
           rate,
           status,
-          pickups!inner(datetime, address, state, city),
-          deliveries!inner(datetime, address, state, city)
+          pickups!inner(name, datetime, address, state, city),
+          deliveries!inner(name, datetime, address, state, city)
         `)
         .eq("driver_id", driverId)
         .eq("status", "Delivered");
@@ -83,8 +83,8 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
         reference_id: string;
         rate: number | string;
         status: string;
-        pickups: Array<{ datetime: string; address: string; state: string; city: string }>;
-        deliveries: Array<{ datetime: string; address: string; state: string; city: string }>;
+        pickups: Array<{ name: string; datetime: string; address: string; state: string; city: string }>;
+        deliveries: Array<{ name: string; datetime: string; address: string; state: string; city: string }>;
       }
 
       // Filter loads by period based on pickup date
@@ -105,16 +105,22 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
 
         // Get all pickup locations with numbering
         const pickupLocations = load.pickups.map((pickup, index: number) => {
+          const name = pickup.name || '';
           const address = pickup.address || '';
           const state = pickup.state || '';
-          return `${index + 1}. ${address}, ${state}`;
+          
+          const locationString = `${name} - ${address}, ${state}`;
+          return `${index + 1}. ${locationString}`;
         }).join('\n');
 
         // Get all delivery locations with numbering
         const deliveryLocations = load.deliveries.map((delivery, index: number) => {
+          const name = delivery.name || '';
           const address = delivery.address || '';
           const state = delivery.state || '';
-          return `${index + 1}. ${address}, ${state}`;
+          
+          const locationString = `${name} - ${address}, ${state}`;
+          return `${index + 1}. ${locationString}`;
         }).join('\n');
 
         // Use earliest pickup date and latest delivery date

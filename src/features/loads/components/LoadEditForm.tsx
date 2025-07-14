@@ -71,6 +71,18 @@ export function LoadEditForm({
               <div key={pickup.id || idx} className="edit-form-item">
                 <div className="form-grid-2">
                   <div className="form-group">
+                    <label className="label-text">Location Name</label>
+                    <input
+                      name="name"
+                      value={pickup.name || ''}
+                      onChange={e => onPickupChange(idx, e)}
+                      className="input-field"
+                      placeholder="Location Name *"
+                      aria-label={`Pickup ${idx + 1} name`}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
                     <label className="label-text">Address</label>
                     <input
                       name="address"
@@ -130,6 +142,18 @@ export function LoadEditForm({
             {editForm.deliveries && editForm.deliveries.length > 0 && editForm.deliveries.map((delivery: Delivery, idx: number) => (
               <div key={delivery.id || idx} className="edit-form-item">
                 <div className="form-grid-2">
+                  <div className="form-group">
+                    <label className="label-text">Location Name</label>
+                    <input
+                      name="name"
+                      value={delivery.name || ''}
+                      onChange={e => onDeliveryChange(idx, e)}
+                      className="input-field"
+                      placeholder="Location Name *"
+                      aria-label={`Delivery ${idx + 1} name`}
+                      required
+                    />
+                  </div>
                   <div className="form-group">
                     <label className="label-text">Address</label>
                     <input

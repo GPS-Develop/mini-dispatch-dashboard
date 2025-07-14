@@ -709,6 +709,14 @@ select.input-field {
   color: var(--color-text);
 }
 
+.driver-load-location-name {
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 1rem;
+  margin-bottom: var(--spacing-xs);
+  text-transform: capitalize;
+}
+
 .driver-actions {
   display: flex;
   flex-direction: column;

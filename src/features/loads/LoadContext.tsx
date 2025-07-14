@@ -230,7 +230,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function addFullLoad(load: Record<string, unknown>, pickups: Array<{ address: string; city: string; state: string; datetime: string }>, deliveries: Array<{ address: string; city: string; state: string; datetime: string }>) {
+  async function addFullLoad(load: Record<string, unknown>, pickups: Array<{ name: string; address: string; city: string; state: string; datetime: string }>, deliveries: Array<{ name: string; address: string; city: string; state: string; datetime: string }>) {
     setError(null);
     
     // Validate rate before sending to database
@@ -264,6 +264,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       const { error: pickupError } = await supabase.from("pickups").insert([
         {
           load_id: loadId,
+          name: p.name,
           address: p.address,
           city: p.city,
           state: p.state,
@@ -281,6 +282,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       const { error: deliveryError } = await supabase.from("deliveries").insert([
         {
           load_id: loadId,
+          name: d.name,
           address: d.address,
           city: d.city,
           state: d.state,
