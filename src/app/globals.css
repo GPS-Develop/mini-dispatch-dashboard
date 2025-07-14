@@ -1599,10 +1599,23 @@ select.input-field {
   font-weight: 500;
   cursor: pointer;
   transition: color var(--transition-normal);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .document-action-view:hover {
   color: var(--color-primary-hover);
+  background-color: var(--color-primary-bg-hover, rgba(59, 130, 246, 0.1));
+}
+
+.document-action-view:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  background-color: transparent;
 }
 
 .document-action-delete {
@@ -1613,10 +1626,33 @@ select.input-field {
   font-weight: 500;
   cursor: pointer;
   transition: color var(--transition-normal);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .document-action-delete:hover {
   color: var(--color-danger-hover);
+  background-color: var(--color-danger-bg-hover, rgba(220, 38, 38, 0.1));
+}
+
+/* Mobile touch target improvements for document action buttons */
+@media (max-width: 768px) {
+  .document-action-view,
+  .document-action-delete {
+    min-height: 44px; /* iOS recommended minimum touch target */
+    min-width: 44px;
+    padding: var(--spacing-md);
+    font-size: 0.9rem;
+  }
+  
+  .document-item-actions {
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+  }
 }
 
 /* Dashboard Styles */
@@ -3241,13 +3277,24 @@ select.input-field {
   background: none;
   border: none;
   cursor: pointer;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-sm);
   transition: color var(--transition-normal);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .driver-document-view-btn:hover {
   color: var(--color-primary-hover);
+  background-color: var(--color-primary-bg-hover, rgba(59, 130, 246, 0.1));
+}
+
+.driver-document-view-btn:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  background-color: transparent;
 }
 
 /* Mobile responsive adjustments for load details */
@@ -3280,6 +3327,10 @@ select.input-field {
 
   .driver-document-view-btn {
     align-self: flex-end;
+    min-height: 44px; /* iOS recommended minimum touch target */
+    min-width: 44px;
+    padding: var(--spacing-md);
+    font-size: 0.9rem;
   }
 }
 
