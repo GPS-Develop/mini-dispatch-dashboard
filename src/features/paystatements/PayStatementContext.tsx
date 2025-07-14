@@ -67,8 +67,8 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
           reference_id,
           rate,
           status,
-          pickups!inner(name, datetime, address, state, city),
-          deliveries!inner(name, datetime, address, state, city)
+          pickups!inner(name, datetime, address, state, city, postal_code),
+          deliveries!inner(name, datetime, address, state, city, postal_code)
         `)
         .eq("driver_id", driverId)
         .eq("status", "Delivered");
@@ -83,8 +83,8 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
         reference_id: string;
         rate: number | string;
         status: string;
-        pickups: Array<{ name: string; datetime: string; address: string; state: string; city: string }>;
-        deliveries: Array<{ name: string; datetime: string; address: string; state: string; city: string }>;
+        pickups: Array<{ name: string; datetime: string; address: string; state: string; city: string; postal_code: string }>;
+        deliveries: Array<{ name: string; datetime: string; address: string; state: string; city: string; postal_code: string }>;
       }
 
       // Filter loads by period based on pickup date
@@ -108,8 +108,9 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
           const name = pickup.name || '';
           const address = pickup.address || '';
           const state = pickup.state || '';
+          const postalCode = pickup.postal_code || '';
           
-          const locationString = `${name} - ${address}, ${state}`;
+          const locationString = `${name} - ${address}, ${state} ${postalCode}`;
           return `${index + 1}. ${locationString}`;
         }).join('\n');
 
@@ -118,8 +119,9 @@ export function PayStatementProvider({ children }: { children: React.ReactNode }
           const name = delivery.name || '';
           const address = delivery.address || '';
           const state = delivery.state || '';
+          const postalCode = delivery.postal_code || '';
           
-          const locationString = `${name} - ${address}, ${state}`;
+          const locationString = `${name} - ${address}, ${state} ${postalCode}`;
           return `${index + 1}. ${locationString}`;
         }).join('\n');
 

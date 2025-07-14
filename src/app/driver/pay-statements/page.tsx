@@ -218,8 +218,9 @@ export default function DriverPayStatements() {
       const address = location.address || '';
       const city = location.city || '';
       const state = location.state || '';
+      const postalCode = location.postal_code || '';
       
-      const locationString = `${name} - ${address}, ${city}, ${state}`;
+      const locationString = `${name} - ${address}, ${city}, ${state} ${postalCode}`;
       return `${index + 1}. ${locationString}`;
     }).join('\n');
   };

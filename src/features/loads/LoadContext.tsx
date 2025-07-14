@@ -31,7 +31,7 @@ const LoadContext = createContext<{
   loading: boolean;
   error: string | null;
   fetchLoads: () => Promise<void>;
-  addFullLoad: (load: Record<string, unknown>, pickups: Array<{ name: string; address: string; city: string; state: string; datetime: string }>, deliveries: Array<{ name: string; address: string; city: string; state: string; datetime: string }>) => Promise<void>;
+  addFullLoad: (load: Record<string, unknown>, pickups: Array<{ name: string; address: string; city: string; state: string; postal_code: string; datetime: string }>, deliveries: Array<{ name: string; address: string; city: string; state: string; postal_code: string; datetime: string }>) => Promise<void>;
 } | null>(null);
 
 export function LoadProvider({ children }: { children: React.ReactNode }) {
@@ -230,7 +230,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function addFullLoad(load: Record<string, unknown>, pickups: Array<{ name: string; address: string; city: string; state: string; datetime: string }>, deliveries: Array<{ name: string; address: string; city: string; state: string; datetime: string }>) {
+  async function addFullLoad(load: Record<string, unknown>, pickups: Array<{ name: string; address: string; city: string; state: string; postal_code: string; datetime: string }>, deliveries: Array<{ name: string; address: string; city: string; state: string; postal_code: string; datetime: string }>) {
     setError(null);
     
     // Validate rate before sending to database
@@ -268,6 +268,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
           address: p.address,
           city: p.city,
           state: p.state,
+          postal_code: p.postal_code,
           datetime: p.datetime,
         }
       ]);
@@ -286,6 +287,7 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
           address: d.address,
           city: d.city,
           state: d.state,
+          postal_code: d.postal_code,
           datetime: d.datetime,
         }
       ]);

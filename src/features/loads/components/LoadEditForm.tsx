@@ -120,6 +120,18 @@ export function LoadEditForm({
                     </select>
                   </div>
                   <div className="form-group">
+                    <label className="label-text">Postal Code *</label>
+                    <input
+                      name="postal_code"
+                      value={pickup.postal_code || ''}
+                      onChange={e => onPickupChange(idx, e)}
+                      className="input-field"
+                      placeholder="Postal Code"
+                      aria-label={`Pickup ${idx + 1} postal code`}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
                     <label className="label-text">Date & Time</label>
                     <input
                       type="datetime-local"
@@ -190,6 +202,18 @@ export function LoadEditForm({
                         <option key={st} value={st}>{st}</option>
                       ))}
                     </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="label-text">Postal Code *</label>
+                    <input
+                      name="postal_code"
+                      value={delivery.postal_code || ''}
+                      onChange={e => onDeliveryChange(idx, e)}
+                      className="input-field"
+                      placeholder="Postal Code"
+                      aria-label={`Delivery ${idx + 1} postal code`}
+                      required
+                    />
                   </div>
                   <div className="form-group">
                     <label className="label-text">Date & Time</label>

@@ -47,7 +47,7 @@ export function LoadDetailsModal({
               <ol className="load-card-list">
                 {pickups.map((p, i) => (
                   <li key={p.id || i}>
-                    <strong>{p.name}</strong> - {p.address}, {p.city ? `${p.city}, ` : ''}{p.state} ({p.datetime})
+                    <strong>{p.name}</strong> - {p.address}, {p.city ? `${p.city}, ` : ''}{p.state} {p.postal_code} ({p.datetime})
                   </li>
                 ))}
               </ol>
@@ -57,7 +57,7 @@ export function LoadDetailsModal({
               <ol className="load-card-list">
                 {deliveries.map((d, i) => (
                   <li key={d.id || i}>
-                    <strong>{d.name}</strong> - {d.address}, {d.city ? `${d.city}, ` : ''}{d.state} ({d.datetime})
+                    <strong>{d.name}</strong> - {d.address}, {d.city ? `${d.city}, ` : ''}{d.state} {d.postal_code} ({d.datetime})
                   </li>
                 ))}
               </ol>

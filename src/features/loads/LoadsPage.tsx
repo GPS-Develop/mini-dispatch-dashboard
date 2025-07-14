@@ -239,6 +239,7 @@ export default function LoadsPage() {
         address: p.address,
         city: p.city,
         state: p.state,
+        postal_code: p.postal_code,
         datetime: p.datetime,
       }).eq("id", p.id);
         
@@ -254,6 +255,7 @@ export default function LoadsPage() {
         address: d.address,
         city: d.city,
         state: d.state,
+        postal_code: d.postal_code,
         datetime: d.datetime,
       }).eq("id", d.id);
         

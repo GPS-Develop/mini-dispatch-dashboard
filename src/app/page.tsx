@@ -146,7 +146,7 @@ export default function Home() {
                       <span className="dashboard-load-label">Pickups:</span>
                       <ol className="dashboard-load-list">
                         {(pickupsMap[load.id] || []).map((p, i) => (
-                          <li key={p.id || i}><strong>{p.name}</strong> - {p.address}, {p.city ? `${p.city}, ` : ''}{p.state} ({p.datetime})</li>
+                          <li key={p.id || i}><strong>{p.name}</strong> - {p.address}, {p.city ? `${p.city}, ` : ''}{p.state} {p.postal_code} ({p.datetime})</li>
                         ))}
                       </ol>
                     </div>
@@ -154,7 +154,7 @@ export default function Home() {
                       <span className="dashboard-load-label">Deliveries:</span>
                       <ol className="dashboard-load-list">
                         {(deliveriesMap[load.id] || []).map((d, i) => (
-                          <li key={d.id || i}><strong>{d.name}</strong> - {d.address}, {d.city ? `${d.city}, ` : ''}{d.state} ({d.datetime})</li>
+                          <li key={d.id || i}><strong>{d.name}</strong> - {d.address}, {d.city ? `${d.city}, ` : ''}{d.state} {d.postal_code} ({d.datetime})</li>
                         ))}
                       </ol>
                     </div>

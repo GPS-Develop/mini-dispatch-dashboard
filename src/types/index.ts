@@ -17,6 +17,7 @@ export interface Pickup {
   address: string;
   city: string;
   state: string;
+  postal_code: string;
   datetime: string;
 }
 
@@ -27,6 +28,7 @@ export interface Delivery {
   address: string;
   city: string;
   state: string;
+  postal_code: string;
   datetime: string;
 }
 
@@ -63,6 +65,7 @@ export interface AddLoadForm {
     address: string;
     city: string;
     state: string;
+    postal_code: string;
     datetime: string;
   }>;
   deliveries: Array<{
@@ -70,6 +73,7 @@ export interface AddLoadForm {
     address: string;
     city: string;
     state: string;
+    postal_code: string;
     datetime: string;
   }>;
   loadType: string;

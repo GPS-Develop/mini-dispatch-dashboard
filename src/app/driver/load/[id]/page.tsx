@@ -28,6 +28,7 @@ interface Pickup {
   address: string;
   city: string;
   state: string;
+  postal_code: string;
   datetime: string;
 }
 
@@ -38,6 +39,7 @@ interface Delivery {
   address: string;
   city: string;
   state: string;
+  postal_code: string;
   datetime: string;
 }
 
@@ -360,7 +362,7 @@ export default function DriverLoadDetails() {
                     <div className="driver-load-route-details">
                       <div className="driver-load-location-name">{pickup.name}</div>
                       <div className="driver-load-address">{pickup.address}</div>
-                      <div className="driver-load-address">{pickup.city ? `${pickup.city}, ` : ''}{pickup.state}</div>
+                      <div className="driver-load-address">{pickup.city ? `${pickup.city}, ` : ''}{pickup.state} {pickup.postal_code}</div>
                       <div className="driver-load-datetime">{formatDateTime(pickup.datetime)}</div>
                     </div>
                   </div>
@@ -380,7 +382,7 @@ export default function DriverLoadDetails() {
                     <div className="driver-load-route-details">
                       <div className="driver-load-location-name">{delivery.name}</div>
                       <div className="driver-load-address">{delivery.address}</div>
-                      <div className="driver-load-address">{delivery.city ? `${delivery.city}, ` : ''}{delivery.state}</div>
+                      <div className="driver-load-address">{delivery.city ? `${delivery.city}, ` : ''}{delivery.state} {delivery.postal_code}</div>
                       <div className="driver-load-datetime">{formatDateTime(delivery.datetime)}</div>
                     </div>
                   </div>
