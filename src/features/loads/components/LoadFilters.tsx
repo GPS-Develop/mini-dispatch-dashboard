@@ -11,7 +11,7 @@ interface LoadFiltersProps {
   drivers: Driver[];
 }
 
-const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered"];
+const statusOptions = ["All", "Scheduled", "In-Transit", "Delivered", "Loads with Lumper"];
 
 export function LoadFilters({
   search,

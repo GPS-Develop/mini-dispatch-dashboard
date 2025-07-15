@@ -72,7 +72,10 @@ export default function LoadsPage() {
 
   const filteredLoads = useMemo(() => {
     return loads.filter((l) => {
-      const matchesStatus = statusFilter === "All" || l.status === statusFilter;
+      const lumperService = lumperMap[l.id];
+      const matchesStatus = statusFilter === "All" || 
+        (statusFilter === "Loads with Lumper" && lumperService && !lumperService.no_lumper) ||
+        (statusFilter !== "Loads with Lumper" && l.status === statusFilter);
       const driver = drivers.find((d) => d.id === l.driver_id);
       const matchesDriver = !driverFilter || (driver && driver.name === driverFilter);
       const pickupSearch = (pickupsMap[l.id] || []).some(
@@ -93,7 +96,7 @@ export default function LoadsPage() {
         deliverySearch;
       return matchesStatus && matchesDriver && matchesSearch;
     });
-  }, [loads, pickupsMap, deliveriesMap, statusFilter, driverFilter, search, drivers]);
+  }, [loads, pickupsMap, deliveriesMap, lumperMap, statusFilter, driverFilter, search, drivers]);
 
   useEffect(() => {
     if (selected && editMode) {
