@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Pickup, Delivery } from '@/types';
+import { Pickup, Delivery, LumperService } from '@/types';
 
 interface Load {
   id: string;
@@ -42,6 +42,7 @@ export default function DriverDashboard() {
   const [driver, setDriver] = useState<Driver | null>(null);
   const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
+  const [lumperMap, setLumperMap] = useState<Record<string, LumperService>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Scheduled' | 'In-Transit' | 'Delivered'>('All');
@@ -116,8 +117,14 @@ export default function DriverDashboard() {
           .select("*")  
           .in("load_id", loadIds);
 
+        const { data: lumperServices } = await supabase
+          .from("lumper_services")
+          .select("*")
+          .in("load_id", loadIds);
+
         const pickupsByLoad: Record<string, Pickup[]> = {};
         const deliveriesByLoad: Record<string, Delivery[]> = {};
+        const lumperByLoad: Record<string, LumperService> = {};
         
         pickups?.forEach(p => {
           if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
@@ -128,9 +135,14 @@ export default function DriverDashboard() {
           if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
           deliveriesByLoad[d.load_id].push(d);
         });
+
+        lumperServices?.forEach(l => {
+          lumperByLoad[l.load_id] = l;
+        });
         
         setPickupsMap(pickupsByLoad);
         setDeliveriesMap(deliveriesByLoad);
+        setLumperMap(lumperByLoad);
       }
     } catch {
       setError('An unexpected error occurred');
@@ -172,6 +184,28 @@ export default function DriverDashboard() {
       minute: '2-digit',
       hour12: true
     });
+  };
+
+  const getLumperInfo = (load_id: string) => {
+    const lumperService = lumperMap[load_id];
+    if (!lumperService) return "Not specified";
+
+    if (lumperService.no_lumper) {
+      return "No lumper";
+    }
+
+    const payments = [];
+    if (lumperService.paid_by_broker && lumperService.broker_amount) {
+      payments.push(`Broker: $${lumperService.broker_amount}`);
+    }
+    if (lumperService.paid_by_company && lumperService.company_amount) {
+      payments.push(`Company: $${lumperService.company_amount}`);
+    }
+    if (lumperService.paid_by_driver && lumperService.driver_amount) {
+      payments.push(`Driver: $${lumperService.driver_amount}`);
+    }
+
+    return payments.length > 0 ? payments.join(", ") : "No payment details";
   };
 
 
@@ -366,6 +400,10 @@ export default function DriverDashboard() {
                     <div className="driver-load-detail-item">
                       <div className="driver-load-detail-label">Rate</div>
                       <div className="driver-load-detail-value driver-load-rate">${load.rate.toLocaleString()}</div>
+                    </div>
+                    <div className="driver-load-detail-item">
+                      <div className="driver-load-detail-label">Lumper</div>
+                      <div className="driver-load-detail-value">{getLumperInfo(load.id)}</div>
                     </div>
                   </div>
 

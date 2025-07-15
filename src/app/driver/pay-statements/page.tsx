@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Pickup, Delivery } from '@/types';
+import { Pickup, Delivery, LumperService } from '@/types';
 
 interface Load {
   id: string;
@@ -36,6 +36,7 @@ interface DriverInternal {
 interface LoadWithDetails extends Load {
   pickups: Pickup[];
   deliveries: Delivery[];
+  lumper_service?: LumperService;
 }
 
 export default function DriverPayStatements() {
@@ -153,8 +154,14 @@ export default function DriverPayStatements() {
         .select("*")  
         .in("load_id", loadIds);
 
+      const { data: lumperServices } = await supabase
+        .from("lumper_services")
+        .select("*")
+        .in("load_id", loadIds);
+
       const pickupsByLoad: Record<string, Pickup[]> = {};
       const deliveriesByLoad: Record<string, Delivery[]> = {};
+      const lumperByLoad: Record<string, LumperService> = {};
       
       pickups?.forEach(p => {
         if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
@@ -166,11 +173,16 @@ export default function DriverPayStatements() {
         deliveriesByLoad[d.load_id].push(d);
       });
 
+      lumperServices?.forEach(l => {
+        lumperByLoad[l.load_id] = l;
+      });
+
       // Combine filtered loads with their pickup/delivery details
       const loadsWithDetails: LoadWithDetails[] = filteredLoads.map(load => ({
         ...load,
         pickups: pickupsByLoad[load.id] || [],
-        deliveries: deliveriesByLoad[load.id] || []
+        deliveries: deliveriesByLoad[load.id] || [],
+        lumper_service: lumperByLoad[load.id]
       }));
 
       setDeliveredLoads(loadsWithDetails);
@@ -233,6 +245,13 @@ export default function DriverPayStatements() {
 
   // Calculate totals
   const totalEarnings = deliveredLoads.reduce((sum, load) => sum + load.rate, 0);
+  const totalLumperReimbursements = deliveredLoads.reduce((sum, load) => {
+    if (load.lumper_service?.paid_by_driver && load.lumper_service.driver_amount) {
+      return sum + load.lumper_service.driver_amount;
+    }
+    return sum;
+  }, 0);
+  const totalPay = totalEarnings + totalLumperReimbursements;
   const totalLoads = deliveredLoads.length;
 
   if (loading) {
@@ -336,13 +355,21 @@ export default function DriverPayStatements() {
             <div className="driver-pay-summary-number driver-pay-total-earnings">
               ${totalEarnings.toLocaleString()}
             </div>
-            <div className="driver-pay-summary-label">Total Earnings</div>
+            <div className="driver-pay-summary-label">Load Earnings</div>
           </div>
-          <div className="driver-pay-summary-card">
-            <div className="driver-pay-summary-number">
-              ${totalLoads > 0 ? Math.round(totalEarnings / totalLoads).toLocaleString() : '0'}
+          {totalLumperReimbursements > 0 && (
+            <div className="driver-pay-summary-card">
+              <div className="driver-pay-summary-number driver-pay-lumper-reimbursements">
+                ${totalLumperReimbursements.toLocaleString()}
+              </div>
+              <div className="driver-pay-summary-label">Lumper Reimbursements</div>
             </div>
-            <div className="driver-pay-summary-label">Average per Load</div>
+          )}
+          <div className="driver-pay-summary-card">
+            <div className="driver-pay-summary-number driver-pay-total-pay">
+              ${totalPay.toLocaleString()}
+            </div>
+            <div className="driver-pay-summary-label">Total Pay</div>
           </div>
         </div>
 
@@ -367,7 +394,7 @@ export default function DriverPayStatements() {
                 <div className="driver-pay-table-cell driver-pay-table-route">Route</div>
                 <div className="driver-pay-table-cell driver-pay-table-type">Type</div>
                 <div className="driver-pay-table-cell driver-pay-table-date">Completed</div>
-                <div className="driver-pay-table-cell driver-pay-table-rate">Rate</div>
+                <div className="driver-pay-table-cell driver-pay-table-rate">Total Pay</div>
               </div>
               
               {deliveredLoads.map((load) => (
@@ -389,8 +416,11 @@ export default function DriverPayStatements() {
                   <div className="driver-pay-table-cell driver-pay-table-date" data-label="Completed">
                     <span className="driver-pay-completion-date">{formatDateTime(load.created_at)}</span>
                   </div>
-                  <div className="driver-pay-table-cell driver-pay-table-rate" data-label="Rate">
+                  <div className="driver-pay-table-cell driver-pay-table-rate" data-label="Total Pay">
                     <span className="driver-pay-load-rate">${load.rate.toLocaleString()}</span>
+                    {load.lumper_service?.paid_by_driver && load.lumper_service.driver_amount && (
+                      <span className="driver-pay-lumper-addition"> (+${load.lumper_service.driver_amount.toLocaleString()})</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -407,6 +437,9 @@ export default function DriverPayStatements() {
                 </div>
                 <div className="driver-pay-table-cell driver-pay-table-rate">
                   <span className="driver-pay-total-amount">${totalEarnings.toLocaleString()}</span>
+                  {totalLumperReimbursements > 0 && (
+                    <span className="driver-pay-total-lumper-addition"> (+${totalLumperReimbursements.toLocaleString()})</span>
+                  )}
                 </div>
               </div>
             </div>

@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import { usePayStatements } from "./PayStatementContext";
 import { useDrivers } from "../drivers/DriverContext";
 import { useRouter } from "next/navigation";
+import { createClient } from '../../utils/supabase/client';
 import Button from '../../components/Button/Button';
 import { TripSummary } from "../../types";
 
 const ADDITION_FIELDS = [
   { key: 'dispatch_difference', label: 'Dispatch Difference' },
   { key: 'bonus', label: 'Bonus' },
+  { key: 'lumper_reimbursement', label: 'Lumper Reimbursement' },
   { key: 'other_addition', label: 'Other Addition' },
 ];
 
@@ -27,6 +29,7 @@ export default function CreatePayStatementPage() {
   const { addPayStatement, calculateGrossPay, loading: payStatementLoading, error } = usePayStatements();
   const { drivers } = useDrivers();
   const router = useRouter();
+  const supabase = createClient();
 
   const [form, setForm] = useState({
     driver_id: '',
@@ -71,6 +74,64 @@ export default function CreatePayStatementPage() {
     setDeductions(prev => ({ ...prev, [key]: numValue }));
   }
 
+  async function calculateLumperReimbursements(driver_id: string, period_start: string, period_end: string) {
+    try {
+      // Get all loads for this driver in the pay period that were delivered
+      const { data: loads, error: loadsError } = await supabase
+        .from('loads')
+        .select(`
+          id,
+          reference_id,
+          status,
+          created_at,
+          lumper_services (
+            paid_by_driver,
+            driver_amount,
+            driver_payment_reason
+          )
+        `)
+        .eq('driver_id', driver_id)
+        .eq('status', 'Delivered')
+        .gte('created_at', period_start)
+        .lte('created_at', period_end + 'T23:59:59');
+
+      if (loadsError) {
+        console.error('Error fetching lumper data:', loadsError);
+        return;
+      }
+
+      // Calculate total lumper reimbursements
+      let totalLumperReimbursement = 0;
+      const lumperDetails: string[] = [];
+
+      loads?.forEach(load => {
+        const lumperService = load.lumper_services[0]; // Each load should have at most one lumper service
+        if (lumperService?.paid_by_driver && lumperService.driver_amount) {
+          totalLumperReimbursement += lumperService.driver_amount;
+          const reason = lumperService.driver_payment_reason ? ` (${lumperService.driver_payment_reason})` : '';
+          lumperDetails.push(`Load #${load.reference_id}: $${lumperService.driver_amount}${reason}`);
+        }
+      });
+
+      // Auto-populate the lumper reimbursement field if there are any payments
+      if (totalLumperReimbursement > 0) {
+        setAdditions(prev => ({ 
+          ...prev, 
+          lumper_reimbursement: totalLumperReimbursement 
+        }));
+        
+        // Update notes to include lumper details
+        const lumperNote = `Lumper Reimbursements:\n${lumperDetails.join('\n')}`;
+        setForm(prev => ({
+          ...prev,
+          notes: prev.notes ? `${prev.notes}\n\n${lumperNote}` : lumperNote
+        }));
+      }
+    } catch (error) {
+      console.error('Error calculating lumper reimbursements:', error);
+    }
+  }
+
   async function handleCalculateGrossPay() {
     if (!form.driver_id || !form.period_start || !form.period_end) {
       setFormError("Please select driver and period dates first.");
@@ -84,6 +145,9 @@ export default function CreatePayStatementPage() {
       const result = await calculateGrossPay(form.driver_id, form.period_start, form.period_end);
       setGrossPay(result.grossPay);
       setTrips(result.trips);
+
+      // Calculate lumper reimbursements for this period
+      await calculateLumperReimbursements(form.driver_id, form.period_start, form.period_end);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Failed to calculate gross pay');
     } finally {

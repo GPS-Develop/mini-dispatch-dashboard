@@ -4172,3 +4172,61 @@ select.input-field {
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-border-light);
 }
+
+/* Driver Pay Statement Lumper Styles */
+.driver-pay-lumper-reimbursements {
+  color: var(--color-success);
+}
+
+.driver-pay-total-pay {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.driver-pay-table-lumper {
+  text-align: right;
+  min-width: 100px;
+}
+
+.driver-pay-lumper-amount {
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.driver-pay-no-lumper {
+  color: var(--color-text-muted);
+}
+
+.driver-pay-total-lumper {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.driver-pay-table-grand-total-row {
+  background-color: var(--color-bg-section);
+  border-top: 2px solid var(--color-primary);
+  font-weight: 700;
+}
+
+.driver-pay-grand-total-label {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.driver-pay-grand-total-amount {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.driver-pay-lumper-addition {
+  color: var(--color-success);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.driver-pay-total-lumper-addition {
+  color: var(--color-success);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
