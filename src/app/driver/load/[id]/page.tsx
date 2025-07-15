@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
 import { formatPhoneForDisplay } from '@/utils/validation';
 import { uploadDocument, getLoadDocuments, getSignedUrl } from '@/utils/documentUtils';
+import { LumperService, LumperServiceForm } from '@/types';
 
 interface Load {
   id: string;
@@ -61,8 +62,20 @@ export default function DriverLoadDetails() {
   const [pickups, setPickups] = useState<Pickup[]>([]);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [documents, setDocuments] = useState<LoadDocument[]>([]);
+  const [lumperService, setLumperService] = useState<LumperService | null>(null);
+  const [lumperForm, setLumperForm] = useState<LumperServiceForm>({
+    no_lumper: false,
+    paid_by_broker: false,
+    paid_by_company: false,
+    paid_by_driver: false,
+    broker_amount: '',
+    company_amount: '',
+    driver_amount: '',
+    driver_payment_reason: ''
+  });
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [savingLumper, setSavingLumper] = useState(false);
   const [error, setError] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [compressionStats, setCompressionStats] = useState<{ [key: string]: string }>({});
@@ -118,6 +131,31 @@ export default function DriverLoadDetails() {
         setDocuments(documentsResult.data);
       } else {
         // Handle document fetch error silently - documents will remain empty
+      }
+
+      // Fetch lumper service for this load
+      const { data: lumperData, error: lumperError } = await supabase
+        .from('lumper_services')
+        .select('*')
+        .eq('load_id', params.id)
+        .single();
+
+      if (lumperError) {
+        // No lumper service exists yet - that's fine
+        setLumperService(null);
+      } else {
+        setLumperService(lumperData);
+        // Populate form with existing data
+        setLumperForm({
+          no_lumper: lumperData.no_lumper || false,
+          paid_by_broker: lumperData.paid_by_broker,
+          paid_by_company: lumperData.paid_by_company,
+          paid_by_driver: lumperData.paid_by_driver,
+          broker_amount: lumperData.broker_amount?.toString() || '',
+          company_amount: lumperData.company_amount?.toString() || '',
+          driver_amount: lumperData.driver_amount?.toString() || '',
+          driver_payment_reason: lumperData.driver_payment_reason || ''
+        });
       }
     } catch {
       setError('An unexpected error occurred');
@@ -274,6 +312,82 @@ export default function DriverLoadDetails() {
       minute: '2-digit',
       hour12: true
     });
+  };
+
+  const handleLumperCheckboxChange = (field: keyof Pick<LumperServiceForm, 'no_lumper' | 'paid_by_broker' | 'paid_by_company' | 'paid_by_driver'>) => {
+    setLumperForm(prev => {
+      const newForm = { ...prev, [field]: !prev[field] };
+      
+      // If "No Lumper" is selected, uncheck all other options
+      if (field === 'no_lumper' && newForm.no_lumper) {
+        newForm.paid_by_broker = false;
+        newForm.paid_by_company = false;
+        newForm.paid_by_driver = false;
+      } 
+      // If any payment option is selected, uncheck "No Lumper"
+      else if (field !== 'no_lumper' && newForm[field]) {
+        newForm.no_lumper = false;
+      }
+      
+      return newForm;
+    });
+  };
+
+  const handleLumperInputChange = (field: keyof LumperServiceForm, value: string) => {
+    setLumperForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const saveLumperService = async () => {
+    if (!load) return;
+
+    try {
+      setSavingLumper(true);
+      setError('');
+
+      // Prepare data for saving
+      const lumperData = {
+        load_id: load.id,
+        no_lumper: lumperForm.no_lumper,
+        paid_by_broker: lumperForm.paid_by_broker,
+        paid_by_company: lumperForm.paid_by_company,
+        paid_by_driver: lumperForm.paid_by_driver,
+        broker_amount: lumperForm.paid_by_broker && lumperForm.broker_amount ? parseFloat(lumperForm.broker_amount) : null,
+        company_amount: lumperForm.paid_by_company && lumperForm.company_amount ? parseFloat(lumperForm.company_amount) : null,
+        driver_amount: lumperForm.paid_by_driver && lumperForm.driver_amount ? parseFloat(lumperForm.driver_amount) : null,
+        driver_payment_reason: lumperForm.paid_by_driver && lumperForm.driver_payment_reason ? lumperForm.driver_payment_reason : null
+      };
+
+      if (lumperService) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('lumper_services')
+          .update(lumperData)
+          .eq('id', lumperService.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        setLumperService(data);
+      } else {
+        // Create new record
+        const { data, error } = await supabase
+          .from('lumper_services')
+          .insert(lumperData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        setLumperService(data);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save lumper service';
+      setError(errorMessage);
+    } finally {
+      setSavingLumper(false);
+    }
   };
 
 
@@ -445,6 +559,115 @@ export default function DriverLoadDetails() {
                   {load.broker_email}
                 </a>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lumper Service */}
+        <div className="driver-load-details-section">
+          <h2 className="heading-md">Lumper Service</h2>
+          
+          <div className="driver-lumper-form">
+            <div className="driver-lumper-checkboxes">
+              <div className="driver-lumper-checkbox-item">
+                <label className="driver-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={lumperForm.no_lumper}
+                    onChange={() => handleLumperCheckboxChange('no_lumper')}
+                    className="driver-checkbox"
+                  />
+                  <span className="driver-checkbox-text">No Lumper</span>
+                </label>
+              </div>
+
+              <div className="driver-lumper-checkbox-item">
+                <label className="driver-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={lumperForm.paid_by_broker}
+                    onChange={() => handleLumperCheckboxChange('paid_by_broker')}
+                    className="driver-checkbox"
+                  />
+                  <span className="driver-checkbox-text">Paid by Broker</span>
+                </label>
+                {lumperForm.paid_by_broker && (
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={lumperForm.broker_amount}
+                    onChange={(e) => handleLumperInputChange('broker_amount', e.target.value)}
+                    className="input-field driver-lumper-amount-input"
+                    step="0.01"
+                    min="0"
+                  />
+                )}
+              </div>
+
+              <div className="driver-lumper-checkbox-item">
+                <label className="driver-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={lumperForm.paid_by_company}
+                    onChange={() => handleLumperCheckboxChange('paid_by_company')}
+                    className="driver-checkbox"
+                  />
+                  <span className="driver-checkbox-text">Paid by Company</span>
+                </label>
+                {lumperForm.paid_by_company && (
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={lumperForm.company_amount}
+                    onChange={(e) => handleLumperInputChange('company_amount', e.target.value)}
+                    className="input-field driver-lumper-amount-input"
+                    step="0.01"
+                    min="0"
+                  />
+                )}
+              </div>
+
+              <div className="driver-lumper-checkbox-item">
+                <label className="driver-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={lumperForm.paid_by_driver}
+                    onChange={() => handleLumperCheckboxChange('paid_by_driver')}
+                    className="driver-checkbox"
+                  />
+                  <span className="driver-checkbox-text">Paid by Driver</span>
+                </label>
+                {lumperForm.paid_by_driver && (
+                  <div className="driver-lumper-driver-fields">
+                    <input
+                      type="number"
+                      placeholder="Amount"
+                      value={lumperForm.driver_amount}
+                      onChange={(e) => handleLumperInputChange('driver_amount', e.target.value)}
+                      className="input-field driver-lumper-amount-input"
+                      step="0.01"
+                      min="0"
+                    />
+                    <textarea
+                      placeholder="Reason for payment"
+                      value={lumperForm.driver_payment_reason}
+                      onChange={(e) => handleLumperInputChange('driver_payment_reason', e.target.value)}
+                      className="input-field driver-lumper-reason-input"
+                      rows={3}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="driver-lumper-actions">
+              <button
+                onClick={saveLumperService}
+                disabled={savingLumper}
+                className="btn-primary"
+              >
+                {savingLumper ? 'Saving...' : 'Save Lumper Service'}
+              </button>
             </div>
           </div>
         </div>

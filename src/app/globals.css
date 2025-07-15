@@ -4096,3 +4096,79 @@ select.input-field {
     display: none;
   }
 }
+
+/* Fix for lumper text visibility */
+.dashboard-load-detail .dashboard-load-value {
+  color: var(--color-text) !important;
+  font-weight: 500;
+}
+
+.dashboard-load-value {
+  color: var(--color-text) !important;
+}
+
+/* Driver Lumper Service Styles */
+.driver-lumper-form {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.driver-lumper-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.driver-lumper-checkbox-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.driver-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.driver-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
+.driver-checkbox-text {
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.driver-lumper-amount-input {
+  margin-left: 24px;
+  max-width: 200px;
+}
+
+.driver-lumper-driver-fields {
+  margin-left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.driver-lumper-reason-input {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.driver-lumper-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+}

@@ -168,4 +168,31 @@ export interface CreateDriverAccountForm {
   email: string;
   phone: string;
   payRate: number;
+}
+
+// Lumper Service Types
+export interface LumperService {
+  id: string;
+  load_id: string;
+  no_lumper?: boolean;
+  paid_by_broker: boolean;
+  paid_by_company: boolean;
+  paid_by_driver: boolean;
+  broker_amount?: number;
+  company_amount?: number;
+  driver_amount?: number;
+  driver_payment_reason?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LumperServiceForm {
+  no_lumper: boolean;
+  paid_by_broker: boolean;
+  paid_by_company: boolean;
+  paid_by_driver: boolean;
+  broker_amount: string;
+  company_amount: string;
+  driver_amount: string;
+  driver_payment_reason: string;
 } 

@@ -1,7 +1,9 @@
 "use client";
+import { useState, useEffect } from "react";
 import { Load } from "../LoadContext";
-import { Pickup, Delivery } from "../../../types";
+import { Pickup, Delivery, LumperService } from "../../../types";
 import { formatPhoneForDisplay, formatRateForDisplay } from "../../../utils/validation";
+import { createClient } from "../../../utils/supabase/client";
 import Button from "../../../components/Button/Button";
 
 interface LoadDetailsModalProps {
@@ -27,6 +29,54 @@ export function LoadDetailsModal({
   onSetStatus,
   onDelete
 }: LoadDetailsModalProps) {
+  const [lumperService, setLumperService] = useState<LumperService | null>(null);
+  const [loadingLumper, setLoadingLumper] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchLumperService = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('lumper_services')
+          .select('*')
+          .eq('load_id', load.id)
+          .single();
+
+        if (!error && data) {
+          setLumperService(data);
+        }
+      } catch {
+        // No lumper service exists - that's fine
+      } finally {
+        setLoadingLumper(false);
+      }
+    };
+
+    fetchLumperService();
+  }, [load.id, supabase]);
+
+  const formatLumperInfo = () => {
+    if (loadingLumper) return "Loading...";
+    if (!lumperService) return "Not specified";
+
+    if (lumperService.no_lumper) {
+      return "No lumper required";
+    }
+
+    const payments = [];
+    if (lumperService.paid_by_broker && lumperService.broker_amount) {
+      payments.push(`Broker: $${lumperService.broker_amount}`);
+    }
+    if (lumperService.paid_by_company && lumperService.company_amount) {
+      payments.push(`Company: $${lumperService.company_amount}`);
+    }
+    if (lumperService.paid_by_driver && lumperService.driver_amount) {
+      payments.push(`Driver: $${lumperService.driver_amount}${lumperService.driver_payment_reason ? ` (${lumperService.driver_payment_reason})` : ''}`);
+    }
+
+    return payments.length > 0 ? payments.join(", ") : "No payment details";
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -73,6 +123,9 @@ export function LoadDetailsModal({
             </div>
             <div>
               <span className="load-card-detail-label">Broker:</span> {load.broker_name}, {formatPhoneForDisplay(load.broker_contact)}, {load.broker_email}
+            </div>
+            <div>
+              <span className="load-card-detail-label">Lumper:</span> {formatLumperInfo()}
             </div>
             <div>
               <span className="load-card-detail-label">Notes:</span> {load.notes || <span className="text-muted">None</span>}

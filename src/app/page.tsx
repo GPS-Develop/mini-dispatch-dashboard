@@ -4,7 +4,7 @@ import { useLoads } from "../features/loads/LoadContext";
 import { useDrivers } from "../features/drivers/DriverContext";
 import { createClient } from "../utils/supabase/client";
 import { useAuth } from "../contexts/AuthContext";
-import { Pickup, Delivery } from "../types";
+import { Pickup, Delivery, LumperService } from "../types";
 import { SkeletonCard } from "../components/Skeleton/Skeleton";
 import { EmptyActivity } from "../components/EmptyState/EmptyState";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,7 @@ export default function Home() {
   const router = useRouter();
   const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
+  const [lumperMap, setLumperMap] = useState<Record<string, LumperService>>({});
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const supabase = createClient();
@@ -39,8 +40,12 @@ export default function Home() {
       const loadIds = upcomingLoads.map(l => l.id);
       const { data: pickups } = await supabase.from("pickups").select("*").in("load_id", loadIds);
       const { data: deliveries } = await supabase.from("deliveries").select("*").in("load_id", loadIds);
+      const { data: lumperServices } = await supabase.from("lumper_services").select("*").in("load_id", loadIds);
+      
       const pickupsByLoad: Record<string, Pickup[]> = {};
       const deliveriesByLoad: Record<string, Delivery[]> = {};
+      const lumperByLoad: Record<string, LumperService> = {};
+      
       pickups?.forEach(p => {
         if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
         pickupsByLoad[p.load_id].push(p);
@@ -49,8 +54,13 @@ export default function Home() {
         if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
         deliveriesByLoad[d.load_id].push(d);
       });
+      lumperServices?.forEach(l => {
+        lumperByLoad[l.load_id] = l;
+      });
+      
       setPickupsMap(pickupsByLoad);
       setDeliveriesMap(deliveriesByLoad);
+      setLumperMap(lumperByLoad);
   }, [upcomingLoads, supabase]);
 
   useEffect(() => {
@@ -93,6 +103,28 @@ export default function Home() {
       return `${driver.name} (${driver.driver_status.charAt(0).toUpperCase() + driver.driver_status.slice(1)})`;
     }
     return driver.name;
+  }
+
+  function getLumperInfo(load_id: string) {
+    const lumperService = lumperMap[load_id];
+    if (!lumperService) return "Not specified";
+
+    if (lumperService.no_lumper) {
+      return "No lumper";
+    }
+
+    const payments = [];
+    if (lumperService.paid_by_broker && lumperService.broker_amount) {
+      payments.push(`Broker: $${lumperService.broker_amount}`);
+    }
+    if (lumperService.paid_by_company && lumperService.company_amount) {
+      payments.push(`Company: $${lumperService.company_amount}`);
+    }
+    if (lumperService.paid_by_driver && lumperService.driver_amount) {
+      payments.push(`Driver: $${lumperService.driver_amount}`);
+    }
+
+    return payments.length > 0 ? payments.join(", ") : "No payment details";
   }
 
   const clearAllActivities = useCallback(async () => {
@@ -157,6 +189,10 @@ export default function Home() {
                           <li key={d.id || i}><strong>{d.name}</strong> - {d.address}, {d.city ? `${d.city}, ` : ''}{d.state} {d.postal_code} ({d.datetime})</li>
                         ))}
                       </ol>
+                    </div>
+                    <div className="dashboard-load-detail">
+                      <span className="dashboard-load-label">Lumper:</span>
+                      <span className="dashboard-load-value">{getLumperInfo(load.id)}</span>
                     </div>
                     <div className="dashboard-load-status">Status: {load.status}</div>
                   </div>
