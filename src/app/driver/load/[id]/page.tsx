@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
@@ -77,6 +77,7 @@ export default function DriverLoadDetails() {
   const [uploading, setUploading] = useState(false);
   const [savingLumper, setSavingLumper] = useState(false);
   const [error, setError] = useState<string>('');
+  const lumperSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [compressionStats, setCompressionStats] = useState<{ [key: string]: string }>({});
   const [fileStatus, setFileStatus] = useState<{ [key: string]: 'compressing' | 'uploading' | 'completed' | 'failed' | 'processing' }>({});
@@ -272,6 +273,30 @@ export default function DriverLoadDetails() {
   const updateLoadStatus = async (newStatus: "Scheduled" | "In-Transit" | "Delivered") => {
     if (!load) return;
 
+    // Validation for marking as delivered
+    if (newStatus === "Delivered") {
+      const validationErrors = [];
+
+      // Check if lumper service is filled
+      const hasLumperService = lumperService || 
+        (lumperForm.no_lumper || lumperForm.paid_by_broker || lumperForm.paid_by_company || lumperForm.paid_by_driver);
+      
+      if (!hasLumperService) {
+        validationErrors.push("Lumper service information is required");
+      }
+
+      // Check if at least one document is uploaded
+      if (documents.length === 0) {
+        validationErrors.push("At least one document must be uploaded");
+      }
+
+      // Show validation errors if any
+      if (validationErrors.length > 0) {
+        setError(validationErrors.join(". "));
+        return;
+      }
+    }
+
     try {
       const { error } = await supabase
         .from('loads')
@@ -302,6 +327,15 @@ export default function DriverLoadDetails() {
     }
   };
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (lumperSaveTimeoutRef.current) {
+        clearTimeout(lumperSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const formatDateTime = (datetime: string) => {
     return new Date(datetime).toLocaleString('en-US', {
       weekday: 'short',
@@ -314,50 +348,63 @@ export default function DriverLoadDetails() {
     });
   };
 
-  const handleLumperCheckboxChange = (field: keyof Pick<LumperServiceForm, 'no_lumper' | 'paid_by_broker' | 'paid_by_company' | 'paid_by_driver'>) => {
-    setLumperForm(prev => {
-      const newForm = { ...prev, [field]: !prev[field] };
-      
-      // If "No Lumper" is selected, uncheck all other options
-      if (field === 'no_lumper' && newForm.no_lumper) {
-        newForm.paid_by_broker = false;
-        newForm.paid_by_company = false;
-        newForm.paid_by_driver = false;
-      } 
-      // If any payment option is selected, uncheck "No Lumper"
-      else if (field !== 'no_lumper' && newForm[field]) {
-        newForm.no_lumper = false;
-      }
-      
-      return newForm;
-    });
+  const handleLumperCheckboxChange = async (field: keyof Pick<LumperServiceForm, 'no_lumper' | 'paid_by_broker' | 'paid_by_company' | 'paid_by_driver'>) => {
+    const newForm = { ...lumperForm, [field]: !lumperForm[field] };
+    
+    // If "No Lumper" is selected, uncheck all other options
+    if (field === 'no_lumper' && newForm.no_lumper) {
+      newForm.paid_by_broker = false;
+      newForm.paid_by_company = false;
+      newForm.paid_by_driver = false;
+      newForm.broker_amount = '';
+      newForm.company_amount = '';
+      newForm.driver_amount = '';
+      newForm.driver_payment_reason = '';
+    } 
+    // If any payment option is selected, uncheck "No Lumper"
+    else if (field !== 'no_lumper' && newForm[field]) {
+      newForm.no_lumper = false;
+    }
+    
+    setLumperForm(newForm);
+    
+    // Auto-save immediately for checkboxes
+    await autoSaveLumperService(newForm);
   };
 
   const handleLumperInputChange = (field: keyof LumperServiceForm, value: string) => {
-    setLumperForm(prev => ({
-      ...prev,
+    const newForm = {
+      ...lumperForm,
       [field]: value
-    }));
+    };
+    setLumperForm(newForm);
+    
+    // Debounce auto-save for input fields (save after 1 second of inactivity)
+    if (lumperSaveTimeoutRef.current) {
+      clearTimeout(lumperSaveTimeoutRef.current);
+    }
+    lumperSaveTimeoutRef.current = setTimeout(() => {
+      autoSaveLumperService(newForm);
+    }, 1000);
   };
 
-  const saveLumperService = async () => {
+  const autoSaveLumperService = async (formData: LumperServiceForm) => {
     if (!load) return;
 
     try {
       setSavingLumper(true);
-      setError('');
 
       // Prepare data for saving
       const lumperData = {
         load_id: load.id,
-        no_lumper: lumperForm.no_lumper,
-        paid_by_broker: lumperForm.paid_by_broker,
-        paid_by_company: lumperForm.paid_by_company,
-        paid_by_driver: lumperForm.paid_by_driver,
-        broker_amount: lumperForm.paid_by_broker && lumperForm.broker_amount ? parseFloat(lumperForm.broker_amount) : null,
-        company_amount: lumperForm.paid_by_company && lumperForm.company_amount ? parseFloat(lumperForm.company_amount) : null,
-        driver_amount: lumperForm.paid_by_driver && lumperForm.driver_amount ? parseFloat(lumperForm.driver_amount) : null,
-        driver_payment_reason: lumperForm.paid_by_driver && lumperForm.driver_payment_reason ? lumperForm.driver_payment_reason : null
+        no_lumper: formData.no_lumper,
+        paid_by_broker: formData.paid_by_broker,
+        paid_by_company: formData.paid_by_company,
+        paid_by_driver: formData.paid_by_driver,
+        broker_amount: formData.paid_by_broker && formData.broker_amount ? parseFloat(formData.broker_amount) : null,
+        company_amount: formData.paid_by_company && formData.company_amount ? parseFloat(formData.company_amount) : null,
+        driver_amount: formData.paid_by_driver && formData.driver_amount ? parseFloat(formData.driver_amount) : null,
+        driver_payment_reason: formData.paid_by_driver && formData.driver_payment_reason ? formData.driver_payment_reason : null
       };
 
       if (lumperService) {
@@ -389,6 +436,7 @@ export default function DriverLoadDetails() {
       setSavingLumper(false);
     }
   };
+
 
 
 
@@ -565,16 +613,32 @@ export default function DriverLoadDetails() {
 
         {/* Lumper Service */}
         <div className="driver-load-details-section">
-          <h2 className="heading-md">Lumper Service</h2>
+          <div className="driver-section-header">
+            <h2 className="heading-md">Lumper Service</h2>
+            {savingLumper && (
+              <div className="driver-auto-save-indicator">
+                <span className="driver-save-spinner">⟳</span>
+                <span className="driver-save-text">Saving...</span>
+              </div>
+            )}
+          </div>
           
-          <div className="driver-lumper-form">
+          {load.status === 'Delivered' && (
+            <div className="driver-section-disabled-notice">
+              <span className="driver-disabled-icon">🔒</span>
+              <span className="driver-disabled-text">Load is delivered - lumper service cannot be modified</span>
+            </div>
+          )}
+          
+          <div className={`driver-lumper-form ${load.status === 'Delivered' ? 'disabled' : ''}`}>
             <div className="driver-lumper-checkboxes">
               <div className="driver-lumper-checkbox-item">
                 <label className="driver-checkbox-label">
                   <input
                     type="checkbox"
                     checked={lumperForm.no_lumper}
-                    onChange={() => handleLumperCheckboxChange('no_lumper')}
+                    onChange={() => load.status !== 'Delivered' && handleLumperCheckboxChange('no_lumper')}
+                    disabled={load.status === 'Delivered'}
                     className="driver-checkbox"
                   />
                   <span className="driver-checkbox-text">No Lumper</span>
@@ -586,7 +650,8 @@ export default function DriverLoadDetails() {
                   <input
                     type="checkbox"
                     checked={lumperForm.paid_by_broker}
-                    onChange={() => handleLumperCheckboxChange('paid_by_broker')}
+                    onChange={() => load.status !== 'Delivered' && handleLumperCheckboxChange('paid_by_broker')}
+                    disabled={load.status === 'Delivered'}
                     className="driver-checkbox"
                   />
                   <span className="driver-checkbox-text">Paid by Broker</span>
@@ -596,7 +661,8 @@ export default function DriverLoadDetails() {
                     type="number"
                     placeholder="Amount"
                     value={lumperForm.broker_amount}
-                    onChange={(e) => handleLumperInputChange('broker_amount', e.target.value)}
+                    onChange={(e) => load.status !== 'Delivered' && handleLumperInputChange('broker_amount', e.target.value)}
+                    disabled={load.status === 'Delivered'}
                     className="input-field driver-lumper-amount-input"
                     step="0.01"
                     min="0"
@@ -609,7 +675,8 @@ export default function DriverLoadDetails() {
                   <input
                     type="checkbox"
                     checked={lumperForm.paid_by_company}
-                    onChange={() => handleLumperCheckboxChange('paid_by_company')}
+                    onChange={() => load.status !== 'Delivered' && handleLumperCheckboxChange('paid_by_company')}
+                    disabled={load.status === 'Delivered'}
                     className="driver-checkbox"
                   />
                   <span className="driver-checkbox-text">Paid by Company</span>
@@ -619,7 +686,8 @@ export default function DriverLoadDetails() {
                     type="number"
                     placeholder="Amount"
                     value={lumperForm.company_amount}
-                    onChange={(e) => handleLumperInputChange('company_amount', e.target.value)}
+                    onChange={(e) => load.status !== 'Delivered' && handleLumperInputChange('company_amount', e.target.value)}
+                    disabled={load.status === 'Delivered'}
                     className="input-field driver-lumper-amount-input"
                     step="0.01"
                     min="0"
@@ -632,7 +700,8 @@ export default function DriverLoadDetails() {
                   <input
                     type="checkbox"
                     checked={lumperForm.paid_by_driver}
-                    onChange={() => handleLumperCheckboxChange('paid_by_driver')}
+                    onChange={() => load.status !== 'Delivered' && handleLumperCheckboxChange('paid_by_driver')}
+                    disabled={load.status === 'Delivered'}
                     className="driver-checkbox"
                   />
                   <span className="driver-checkbox-text">Paid by Driver</span>
@@ -643,7 +712,8 @@ export default function DriverLoadDetails() {
                       type="number"
                       placeholder="Amount"
                       value={lumperForm.driver_amount}
-                      onChange={(e) => handleLumperInputChange('driver_amount', e.target.value)}
+                      onChange={(e) => load.status !== 'Delivered' && handleLumperInputChange('driver_amount', e.target.value)}
+                      disabled={load.status === 'Delivered'}
                       className="input-field driver-lumper-amount-input"
                       step="0.01"
                       min="0"
@@ -651,7 +721,8 @@ export default function DriverLoadDetails() {
                     <textarea
                       placeholder="Reason for payment"
                       value={lumperForm.driver_payment_reason}
-                      onChange={(e) => handleLumperInputChange('driver_payment_reason', e.target.value)}
+                      onChange={(e) => load.status !== 'Delivered' && handleLumperInputChange('driver_payment_reason', e.target.value)}
+                      disabled={load.status === 'Delivered'}
                       className="input-field driver-lumper-reason-input"
                       rows={3}
                     />
@@ -660,21 +731,35 @@ export default function DriverLoadDetails() {
               </div>
             </div>
 
-            <div className="driver-lumper-actions">
-              <button
-                onClick={saveLumperService}
-                disabled={savingLumper}
-                className="btn-primary"
-              >
-                {savingLumper ? 'Saving...' : 'Save Lumper Service'}
-              </button>
-            </div>
           </div>
         </div>
 
         {/* Status Update */}
         <div className="driver-load-details-section">
           <h2 className="heading-md">Update Status</h2>
+          
+          {load.status === 'In-Transit' && (
+            <div className="driver-delivery-requirements">
+              <h3 className="heading-sm">Requirements to Mark as Delivered:</h3>
+              <div className="driver-requirements-checklist">
+                <div className={`driver-requirement-item ${
+                  (lumperService || lumperForm.no_lumper || lumperForm.paid_by_broker || lumperForm.paid_by_company || lumperForm.paid_by_driver) 
+                    ? 'completed' : 'incomplete'
+                }`}>
+                  <span className="driver-requirement-icon">
+                    {(lumperService || lumperForm.no_lumper || lumperForm.paid_by_broker || lumperForm.paid_by_company || lumperForm.paid_by_driver) ? '✅' : '❌'}
+                  </span>
+                  <span className="driver-requirement-text">Lumper service information</span>
+                </div>
+                <div className={`driver-requirement-item ${documents.length > 0 ? 'completed' : 'incomplete'}`}>
+                  <span className="driver-requirement-icon">
+                    {documents.length > 0 ? '✅' : '❌'}
+                  </span>
+                  <span className="driver-requirement-text">Document upload ({documents.length} uploaded)</span>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="driver-status-buttons">
             {load.status === 'Scheduled' && (
@@ -689,6 +774,10 @@ export default function DriverLoadDetails() {
               <button
                 onClick={() => updateLoadStatus('Delivered')}
                 className="btn-success"
+                disabled={
+                  !(lumperService || lumperForm.no_lumper || lumperForm.paid_by_broker || lumperForm.paid_by_company || lumperForm.paid_by_driver) ||
+                  documents.length === 0
+                }
               >
                 Mark Delivered
               </button>
@@ -700,25 +789,34 @@ export default function DriverLoadDetails() {
         <div className="driver-load-details-section">
           <h2 className="heading-md">Upload Documents</h2>
           
-          <div className="driver-upload-section">
-            <div className="driver-upload-item">
-              <label className="label-text">
-                Upload PDF Documents
-              </label>
-              <input
-                type="file"
-                accept=".pdf,application/pdf"
-                onChange={handleFileUpload}
-                disabled={uploading}
-                className="driver-file-input"
-              />
-              <p className="text-hint">
-                Select PDF files (max 25MB each)
-              </p>
-              <p className="text-hint text-hint-small text-success">
-                Large files will be compressed.
-              </p>
+          {load.status === 'Delivered' && (
+            <div className="driver-section-disabled-notice">
+              <span className="driver-disabled-icon">🔒</span>
+              <span className="driver-disabled-text">Load is delivered - documents cannot be modified</span>
             </div>
+          )}
+          
+          <div className={`driver-upload-section ${load.status === 'Delivered' ? 'disabled' : ''}`}>
+            {load.status !== 'Delivered' && (
+              <div className="driver-upload-item">
+                <label className="label-text">
+                  Upload PDF Documents
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="driver-file-input"
+                />
+                <p className="text-hint">
+                  Select PDF files (max 25MB each)
+                </p>
+                <p className="text-hint text-hint-small text-success">
+                  Large files will be compressed.
+                </p>
+              </div>
+            )}
 
             {/* Upload Progress */}
             {Object.keys(uploadProgress).length > 0 && (
