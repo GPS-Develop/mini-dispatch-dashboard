@@ -2422,7 +2422,6 @@ select.input-field {
 }
 
 .sidebar-signout {
-  margin-top: auto;
   padding-top: var(--spacing-lg);
 }
 

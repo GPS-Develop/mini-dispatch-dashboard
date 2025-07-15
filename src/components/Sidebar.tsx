@@ -100,17 +100,17 @@ export default function Sidebar({ isMobileOpen = false, onMobileClose }: Sidebar
               {item.label}
             </Link>
           ))}
+          
+          {/* Sign Out Button */}
+          <div className="sidebar-signout">
+            <Button
+              onClick={handleSignOut}
+              variant="danger"
+            >
+              Sign Out
+            </Button>
+          </div>
         </nav>
-
-        {/* Sign Out Button */}
-        <div className="sidebar-signout">
-          <Button
-            onClick={handleSignOut}
-            variant="danger"
-          >
-            Sign Out
-          </Button>
-        </div>
       </>
     );
   };
