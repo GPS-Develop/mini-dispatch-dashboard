@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { sanitizePhone } from '../../utils/validation';
 import DocumentUploadModal from '../../components/DocumentUploadModal/DocumentUploadModal';
 import { EmptyLoads } from '../../components/EmptyState/EmptyState';
-import { Pickup, Delivery, InputChangeEvent, SelectChangeEvent, TextareaChangeEvent, FormSubmitEvent } from '../../types';
+import { Pickup, Delivery, LumperService, LumperServiceForm, InputChangeEvent, SelectChangeEvent, TextareaChangeEvent, FormSubmitEvent } from '../../types';
 import { LoadFilters } from './components/LoadFilters';
 import { LoadCard } from './components/LoadCard';
 import { LoadDetailsModal } from './components/LoadDetailsModal';
@@ -28,6 +28,17 @@ export default function LoadsPage() {
   const [editForm, setEditForm] = useState<LoadEditForm | null>(null);
   const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
   const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
+  const [lumperMap, setLumperMap] = useState<Record<string, LumperService>>({});
+  const [lumperForm, setLumperForm] = useState<LumperServiceForm>({
+    no_lumper: false,
+    paid_by_broker: false,
+    paid_by_company: false,
+    paid_by_driver: false,
+    broker_amount: '',
+    company_amount: '',
+    driver_amount: '',
+    driver_payment_reason: ''
+  });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -86,13 +97,65 @@ export default function LoadsPage() {
 
   useEffect(() => {
     if (selected && editMode) {
+      const fetchLumperForEdit = async () => {
+        try {
+          // Fetch lumper service for this specific load
+          const { data: lumperService } = await supabase
+            .from('lumper_services')
+            .select('*')
+            .eq('load_id', selected.id)
+            .single();
+
+          if (lumperService) {
+            setLumperForm({
+              no_lumper: lumperService.no_lumper || false,
+              paid_by_broker: lumperService.paid_by_broker,
+              paid_by_company: lumperService.paid_by_company,
+              paid_by_driver: lumperService.paid_by_driver,
+              broker_amount: lumperService.broker_amount?.toString() || '',
+              company_amount: lumperService.company_amount?.toString() || '',
+              driver_amount: lumperService.driver_amount?.toString() || '',
+              driver_payment_reason: lumperService.driver_payment_reason || ''
+            });
+          } else {
+            // Reset form for new lumper service
+            setLumperForm({
+              no_lumper: false,
+              paid_by_broker: false,
+              paid_by_company: false,
+              paid_by_driver: false,
+              broker_amount: '',
+              company_amount: '',
+              driver_amount: '',
+              driver_payment_reason: ''
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching lumper service for edit:', error);
+          // Reset form on error
+          setLumperForm({
+            no_lumper: false,
+            paid_by_broker: false,
+            paid_by_company: false,
+            paid_by_driver: false,
+            broker_amount: '',
+            company_amount: '',
+            driver_amount: '',
+            driver_payment_reason: ''
+          });
+        }
+      };
+
       setEditForm({
         ...selected,
         pickups: pickupsMap[selected.id] ? pickupsMap[selected.id].map(p => ({ ...p })) : [],
         deliveries: deliveriesMap[selected.id] ? deliveriesMap[selected.id].map(d => ({ ...d })) : [],
       });
+      
+      // Fetch lumper data specifically for this load
+      fetchLumperForEdit();
     }
-  }, [selected, editMode, pickupsMap, deliveriesMap]);
+  }, [selected, editMode, pickupsMap, deliveriesMap, supabase]);
 
   const fetchAllPickupsDeliveries = useCallback(async () => {
     if (loads.length === 0) return;
@@ -100,14 +163,17 @@ export default function LoadsPage() {
     const loadIds = loads.map(l => l.id);
       const { data: pickups, error: pickupsError } = await supabase.from("pickups").select("*").in("load_id", loadIds);
       const { data: deliveries, error: deliveriesError } = await supabase.from("deliveries").select("*").in("load_id", loadIds);
+      const { data: lumperServices, error: lumperError } = await supabase.from("lumper_services").select("*").in("load_id", loadIds);
       
-      if (pickupsError || deliveriesError) {
-        setError(pickupsError?.message || deliveriesError?.message || 'Failed to fetch pickup/delivery data');
+      if (pickupsError || deliveriesError || lumperError) {
+        setError(pickupsError?.message || deliveriesError?.message || lumperError?.message || 'Failed to fetch load data');
         return;
       }
       
     const pickupsByLoad: Record<string, Pickup[]> = {};
     const deliveriesByLoad: Record<string, Delivery[]> = {};
+    const lumperByLoad: Record<string, LumperService> = {};
+    
     pickups?.forEach(p => {
       if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
       pickupsByLoad[p.load_id].push(p);
@@ -116,10 +182,15 @@ export default function LoadsPage() {
       if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
       deliveriesByLoad[d.load_id].push(d);
     });
+    lumperServices?.forEach(l => {
+      lumperByLoad[l.load_id] = l;
+    });
+    
     setPickupsMap(pickupsByLoad);
     setDeliveriesMap(deliveriesByLoad);
+    setLumperMap(lumperByLoad);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch pickup/delivery data');
+      setError(err instanceof Error ? err.message : 'Failed to fetch load data');
     }
   }, [loads, supabase]);
 
@@ -198,6 +269,37 @@ export default function LoadsPage() {
     });
   }
 
+  function handleLumperCheckboxChange(field: keyof Pick<LumperServiceForm, 'no_lumper' | 'paid_by_broker' | 'paid_by_company' | 'paid_by_driver'>) {
+    setLumperForm(prev => {
+      const newForm = { ...prev, [field]: !prev[field] };
+      
+      // If "No Lumper" is checked, uncheck all other options
+      if (field === 'no_lumper' && newForm.no_lumper) {
+        return {
+          no_lumper: true,
+          paid_by_broker: false,
+          paid_by_company: false,
+          paid_by_driver: false,
+          broker_amount: '',
+          company_amount: '',
+          driver_amount: '',
+          driver_payment_reason: ''
+        };
+      }
+      
+      // If any other option is checked, uncheck "No Lumper"
+      if (field !== 'no_lumper' && newForm[field]) {
+        newForm.no_lumper = false;
+      }
+      
+      return newForm;
+    });
+  }
+
+  function handleLumperInputChange(field: keyof LumperServiceForm, value: string) {
+    setLumperForm(prev => ({ ...prev, [field]: value }));
+  }
+
   async function handleEditSubmit(e: FormSubmitEvent) {
     e.preventDefault();
     if (!selected || !editForm) return;
@@ -264,12 +366,59 @@ export default function LoadsPage() {
         }
     }
       
-      // Refresh pickup/delivery data
+      // Handle lumper service
+      const existingLumperService = lumperMap[selected.id];
+      
+      // Prepare lumper service data
+      const lumperData = {
+        load_id: selected.id,
+        no_lumper: lumperForm.no_lumper,
+        paid_by_broker: lumperForm.paid_by_broker,
+        paid_by_company: lumperForm.paid_by_company,
+        paid_by_driver: lumperForm.paid_by_driver,
+        broker_amount: lumperForm.broker_amount ? parseFloat(lumperForm.broker_amount) : null,
+        company_amount: lumperForm.company_amount ? parseFloat(lumperForm.company_amount) : null,
+        driver_amount: lumperForm.driver_amount ? parseFloat(lumperForm.driver_amount) : null,
+        driver_payment_reason: lumperForm.driver_payment_reason || null
+      };
+      
+      if (existingLumperService) {
+        // Update existing lumper service
+        const { error: lumperError } = await supabase
+          .from('lumper_services')
+          .update(lumperData)
+          .eq('id', existingLumperService.id);
+          
+        if (lumperError) {
+          throw new Error(`Failed to update lumper service: ${lumperError.message}`);
+        }
+      } else {
+        // Create new lumper service
+        const { error: lumperError } = await supabase
+          .from('lumper_services')
+          .insert([lumperData]);
+          
+        if (lumperError) {
+          throw new Error(`Failed to create lumper service: ${lumperError.message}`);
+        }
+      }
+      
+      // Refresh pickup/delivery/lumper data
     await fetchAllPickupsDeliveries();
       
       setEditMode(false);
       setSelected(null);
       setEditForm(null);
+      setLumperForm({
+        no_lumper: false,
+        paid_by_broker: false,
+        paid_by_company: false,
+        paid_by_driver: false,
+        broker_amount: '',
+        company_amount: '',
+        driver_amount: '',
+        driver_payment_reason: ''
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update load');
     } finally {
@@ -337,11 +486,14 @@ export default function LoadsPage() {
                 <LoadEditForm
                   load={selected}
                   editForm={editForm}
+                  lumperForm={lumperForm}
                   drivers={drivers}
                   isSubmitting={isSubmitting}
                   onFormChange={handleEditChange}
                   onPickupChange={handlePickupChange}
                   onDeliveryChange={handleDeliveryChange}
+                  onLumperCheckboxChange={handleLumperCheckboxChange}
+                  onLumperInputChange={handleLumperInputChange}
                   onSubmit={handleEditSubmit}
                   onCancel={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
                 />

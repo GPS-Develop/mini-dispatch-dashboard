@@ -1,7 +1,7 @@
 "use client";
 import { Load } from "../LoadContext";
 import { Driver } from "../../drivers/DriverContext";
-import { Pickup, Delivery, InputChangeEvent, SelectChangeEvent, TextareaChangeEvent, FormSubmitEvent } from "../../../types";
+import { Pickup, Delivery, LumperServiceForm, InputChangeEvent, SelectChangeEvent, TextareaChangeEvent, FormSubmitEvent } from "../../../types";
 import { US_STATES } from "../../../utils/constants";
 import Button from "../../../components/Button/Button";
 
@@ -30,11 +30,14 @@ interface LoadEditForm {
 interface LoadEditFormProps {
   load: Load;
   editForm: LoadEditForm;
+  lumperForm: LumperServiceForm;
   drivers: Driver[];
   isSubmitting: boolean;
   onFormChange: (e: InputChangeEvent | SelectChangeEvent | TextareaChangeEvent) => void;
   onPickupChange: (idx: number, e: InputChangeEvent | SelectChangeEvent) => void;
   onDeliveryChange: (idx: number, e: InputChangeEvent | SelectChangeEvent) => void;
+  onLumperCheckboxChange: (field: keyof Pick<LumperServiceForm, 'no_lumper' | 'paid_by_broker' | 'paid_by_company' | 'paid_by_driver'>) => void;
+  onLumperInputChange: (field: keyof LumperServiceForm, value: string) => void;
   onSubmit: (e: FormSubmitEvent) => void;
   onCancel: () => void;
 }
@@ -42,11 +45,14 @@ interface LoadEditFormProps {
 export function LoadEditForm({
   load,
   editForm,
+  lumperForm,
   drivers,
   isSubmitting,
   onFormChange,
   onPickupChange,
   onDeliveryChange,
+  onLumperCheckboxChange,
+  onLumperInputChange,
   onSubmit,
   onCancel
 }: LoadEditFormProps) {
@@ -335,6 +341,104 @@ export function LoadEditForm({
                   className="input-field"
                   aria-label="Broker email address"
                 />
+              </div>
+            </div>
+          </div>
+          
+          {/* Lumper Service */}
+          <div className="edit-form-section">
+            <div className="edit-form-section-title">Lumper Service</div>
+            <div className="admin-lumper-form">
+              <div className="admin-lumper-checkboxes">
+                <div className="admin-lumper-checkbox-item">
+                  <label className="admin-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={lumperForm.no_lumper}
+                      onChange={() => onLumperCheckboxChange('no_lumper')}
+                      className="admin-checkbox"
+                    />
+                    <span className="admin-checkbox-text">No Lumper</span>
+                  </label>
+                </div>
+
+                <div className="admin-lumper-checkbox-item">
+                  <label className="admin-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={lumperForm.paid_by_broker}
+                      onChange={() => onLumperCheckboxChange('paid_by_broker')}
+                      className="admin-checkbox"
+                    />
+                    <span className="admin-checkbox-text">Paid by Broker</span>
+                  </label>
+                  {lumperForm.paid_by_broker && (
+                    <input
+                      type="number"
+                      placeholder="Amount"
+                      value={lumperForm.broker_amount}
+                      onChange={(e) => onLumperInputChange('broker_amount', e.target.value)}
+                      className="input-field admin-lumper-amount-input"
+                      step="0.01"
+                      min="0"
+                    />
+                  )}
+                </div>
+
+                <div className="admin-lumper-checkbox-item">
+                  <label className="admin-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={lumperForm.paid_by_company}
+                      onChange={() => onLumperCheckboxChange('paid_by_company')}
+                      className="admin-checkbox"
+                    />
+                    <span className="admin-checkbox-text">Paid by Company</span>
+                  </label>
+                  {lumperForm.paid_by_company && (
+                    <input
+                      type="number"
+                      placeholder="Amount"
+                      value={lumperForm.company_amount}
+                      onChange={(e) => onLumperInputChange('company_amount', e.target.value)}
+                      className="input-field admin-lumper-amount-input"
+                      step="0.01"
+                      min="0"
+                    />
+                  )}
+                </div>
+
+                <div className="admin-lumper-checkbox-item">
+                  <label className="admin-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={lumperForm.paid_by_driver}
+                      onChange={() => onLumperCheckboxChange('paid_by_driver')}
+                      className="admin-checkbox"
+                    />
+                    <span className="admin-checkbox-text">Paid by Driver</span>
+                  </label>
+                  {lumperForm.paid_by_driver && (
+                    <div className="admin-lumper-driver-fields">
+                      <input
+                        type="number"
+                        placeholder="Amount"
+                        value={lumperForm.driver_amount}
+                        onChange={(e) => onLumperInputChange('driver_amount', e.target.value)}
+                        className="input-field admin-lumper-amount-input"
+                        step="0.01"
+                        min="0"
+                      />
+                      <textarea
+                        placeholder="Reason for payment"
+                        value={lumperForm.driver_payment_reason}
+                        onChange={(e) => onLumperInputChange('driver_payment_reason', e.target.value)}
+                        className="input-field admin-lumper-reason-input"
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

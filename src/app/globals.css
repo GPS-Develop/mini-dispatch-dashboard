@@ -4230,3 +4230,70 @@ select.input-field {
   font-weight: 600;
   font-size: 0.95rem;
 }
+
+/* ==============================================
+   ADMIN LUMPER SERVICE STYLES
+   ============================================== */
+
+.admin-lumper-form {
+  padding: var(--spacing-lg);
+  background: var(--color-bg-section);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.admin-lumper-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.admin-lumper-checkbox-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
+}
+
+.admin-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.admin-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.admin-checkbox-text {
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.admin-lumper-amount-input {
+  width: 100%;
+  max-width: 200px;
+  margin-top: var(--spacing-xs);
+}
+
+.admin-lumper-driver-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.admin-lumper-reason-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+}
