@@ -16,6 +16,7 @@ export interface CompressionResult {
 // Configuration
 const STORAGE_BUCKET = 'load-pdfs';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const SMALL_FILE_FALLBACK_SIZE = 200 * 1024; // 200KB - allow upload without compression for small files
 const MAX_FILE_SIZE_WITH_COMPRESSION = 25 * 1024 * 1024; // 25MB - allow larger files if compression is enabled
 const VERCEL_COMPRESSION_LIMIT = 4 * 1024 * 1024; // 4MB - Vercel serverless function limit
 const ALLOWED_TYPES = ['application/pdf'];
@@ -205,12 +206,16 @@ export const uploadDocument = async (
           };
         }
       } else {
-        // If compression fails, check if we can offer fallback
-        if (file.size <= MAX_FILE_SIZE) {
+        // If compression fails for small files (under 200KB), automatically proceed without compression
+        if (file.size <= SMALL_FILE_FALLBACK_SIZE) {
+          fileToUpload = file; // Use original file
+          compressionStats = `Compression failed, uploaded without compression (${(file.size / 1024).toFixed(1)}KB)`;
+          onProgress?.('compressing', 50);
+        } else if (file.size <= MAX_FILE_SIZE) {
+          // File is between 200KB and 10MB - compression failed, no fallback
           return { 
             success: false, 
-            error: `Compression failed: ${compressionResult.error}`,
-            allowFallback: true
+            error: `Cannot upload file: ${compressionResult.error}. File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) requires compression but compression failed.` 
           };
         } else {
           // File is too large and compression failed
