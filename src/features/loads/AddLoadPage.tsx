@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { sanitizePhone, validateRate } from '../../utils/validation';
 import BrokerAutocomplete from '../../components/BrokerAutocomplete/BrokerAutocomplete';
 import { US_STATES } from '../../utils/constants';
+import AiPdfUpload from '../../components/AiPdfUpload/AiPdfUpload';
+import { ExtractedLoadData } from '../../config/aiConfig';
 
 export default function AddLoadPage() {
   const { drivers } = useDrivers();
@@ -30,10 +32,110 @@ export default function AddLoadPage() {
   });
   const [showTemp, setShowTemp] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [aiError, setAiError] = useState<string>('');
+  const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setShowTemp(form.loadType === "Reefer");
   }, [form.loadType]);
+
+  const handleAiDataExtracted = (data: ExtractedLoadData) => {
+    setAiError('');
+    const filledFields = new Set<string>();
+    
+    // Update form with extracted data
+    setForm(prev => {
+      const newForm = { ...prev };
+      
+      // Fill basic load info
+      if (data.referenceId) {
+        newForm.referenceId = data.referenceId;
+        filledFields.add('referenceId');
+      }
+      if (data.loadType) {
+        newForm.loadType = data.loadType;
+        filledFields.add('loadType');
+      }
+      if (data.temperature !== undefined) {
+        newForm.temperature = data.temperature.toString();
+        filledFields.add('temperature');
+      }
+      if (data.rate !== undefined) {
+        newForm.rate = data.rate.toString();
+        filledFields.add('rate');
+      }
+      
+      // Fill broker information
+      if (data.brokerInfo?.name) {
+        newForm.brokerName = data.brokerInfo.name;
+        filledFields.add('brokerName');
+      }
+      if (data.brokerInfo?.contact) {
+        newForm.brokerContact = data.brokerInfo.contact;
+        filledFields.add('brokerContact');
+      }
+      if (data.brokerInfo?.email) {
+        newForm.brokerEmail = data.brokerInfo.email;
+        filledFields.add('brokerEmail');
+      }
+      
+      // Fill pickup locations
+      if (data.pickupLocations && data.pickupLocations.length > 0) {
+        newForm.pickups = data.pickupLocations.map(location => ({
+          name: location.locationName || '',
+          address: location.address || '',
+          city: location.city || '',
+          state: location.state || '',
+          postal_code: location.postalCode || '',
+          datetime: location.dateTime || ''
+        }));
+        filledFields.add('pickups');
+      }
+      
+      // Fill delivery locations
+      if (data.deliveryLocations && data.deliveryLocations.length > 0) {
+        newForm.deliveries = data.deliveryLocations.map(location => ({
+          name: location.locationName || '',
+          address: location.address || '',
+          city: location.city || '',
+          state: location.state || '',
+          postal_code: location.postalCode || '',
+          datetime: location.dateTime || ''
+        }));
+        filledFields.add('deliveries');
+      }
+      
+      return newForm;
+    });
+    
+    setAutoFilledFields(filledFields);
+  };
+
+  const handleAiError = (error: string) => {
+    setAiError(error);
+  };
+
+  const clearAutoFill = () => {
+    setForm({
+      referenceId: "",
+      pickups: [
+        { name: "", address: "", city: "", state: "", postal_code: "", datetime: "" }
+      ],
+      deliveries: [
+        { name: "", address: "", city: "", state: "", postal_code: "", datetime: "" }
+      ],
+      loadType: "Reefer",
+      temperature: "",
+      rate: "",
+      driver: "",
+      notes: "",
+      brokerName: "",
+      brokerContact: "",
+      brokerEmail: "",
+    });
+    setAutoFilledFields(new Set());
+    setAiError('');
+  };
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -158,6 +260,43 @@ export default function AddLoadPage() {
   return (
     <div className="form-page-container">
       <h1 className="heading-lg">Add Load</h1>
+      
+      {/* AI PDF Upload Component */}
+      <AiPdfUpload 
+        onDataExtracted={handleAiDataExtracted}
+        onError={handleAiError}
+      />
+      
+      {/* AI Error Display */}
+      {aiError && (
+        <div className="alert-error mb-4">
+          <strong>AI Extraction Error:</strong> {aiError}
+        </div>
+      )}
+      
+      {/* Auto-fill indicator */}
+      {autoFilledFields.size > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="text-green-600 mr-2">✓</div>
+              <span className="text-green-800 font-medium">
+                Form auto-filled with AI extracted data
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={clearAutoFill}
+              className="text-sm text-red-600 hover:text-red-800"
+            >
+              Clear Auto-Fill
+            </button>
+          </div>
+          <p className="text-sm text-green-700 mt-2">
+            Review and modify the extracted information as needed before submitting.
+          </p>
+        </div>
+      )}
       
       <form className="form-container" onSubmit={handleSubmit}>
         {/* Basic Load Information */}
