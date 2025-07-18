@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
  */
 export function useAccessibility() {
   const announceRef = useRef<HTMLDivElement | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize screen reader announcement area
   useEffect(() => {
@@ -23,6 +24,11 @@ export function useAccessibility() {
     }
 
     return () => {
+      // Clear any pending timeouts
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
       if (announceRef.current && document.body.contains(announceRef.current)) {
         document.body.removeChild(announceRef.current);
       }
@@ -36,10 +42,16 @@ export function useAccessibility() {
       announceRef.current.textContent = message;
       
       // Clear after announcing to allow for repeat announcements
-      setTimeout(() => {
+      // Clear any existing timeout first
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      timeoutRef.current = setTimeout(() => {
         if (announceRef.current) {
           announceRef.current.textContent = '';
         }
+        timeoutRef.current = null;
       }, 1000);
     }
   };

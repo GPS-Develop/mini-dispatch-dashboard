@@ -21,6 +21,15 @@ export type Load = {
   broker_contact: number;
   broker_email: string;
   status: "Scheduled" | "In-Transit" | "Delivered";
+  drivers?: {
+    id: string;
+    name: string;
+    phone: number;
+    email?: string;
+    status: "Available" | "On Load";
+    pay_rate: number;
+    driver_status: "active" | "inactive";
+  };
 };
 
 const LoadContext = createContext<{
@@ -46,7 +55,10 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
     try {
     const { data, error } = await supabase
       .from("loads")
-      .select("*")
+      .select(`
+        *,
+        drivers!inner(id, name, phone, email, status, pay_rate, driver_status)
+      `)
       .order("created_at", { ascending: false });
       
       if (error) {

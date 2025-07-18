@@ -106,23 +106,31 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Only update driver status if both contexts have finished their initial loading
     if (!loadsLoading && hasInitiallyLoaded && drivers.length > 0) {
-    setDrivers((prevDrivers) =>
+      // Pre-compute load mappings to avoid N+1 filtering
+      const loadsByDriverId = loads.reduce((acc, load) => {
+        if (!acc[load.driver_id]) {
+          acc[load.driver_id] = { scheduled: [], inTransit: [] };
+        }
+        if (load.status === "Scheduled") {
+          acc[load.driver_id].scheduled.push(load.reference_id);
+        } else if (load.status === "In-Transit") {
+          acc[load.driver_id].inTransit.push(load.reference_id);
+        }
+        return acc;
+      }, {} as Record<string, { scheduled: string[]; inTransit: string[] }>);
+
+      setDrivers((prevDrivers) =>
         sortDrivers(prevDrivers.map((driver) => {
-        const scheduledLoads = loads
-          .filter((l) => l.driver_id === driver.id && l.status === "Scheduled")
-          .map((l) => l.reference_id);
-        const inTransitLoads = loads
-          .filter((l) => l.driver_id === driver.id && l.status === "In-Transit")
-          .map((l) => l.reference_id);
-        const status = (scheduledLoads.length > 0 || inTransitLoads.length > 0) ? "On Load" : "Available";
-        return {
-          ...driver,
-          status,
-          scheduledLoads,
-          inTransitLoads,
-        };
+          const driverLoads = loadsByDriverId[driver.id] || { scheduled: [], inTransit: [] };
+          const status = (driverLoads.scheduled.length > 0 || driverLoads.inTransit.length > 0) ? "On Load" : "Available";
+          return {
+            ...driver,
+            status,
+            scheduledLoads: driverLoads.scheduled,
+            inTransitLoads: driverLoads.inTransit,
+          };
         }))
-    );
+      );
     }
   }, [loads, loadsLoading, hasInitiallyLoaded, drivers.length]);
 

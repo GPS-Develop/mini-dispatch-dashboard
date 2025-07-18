@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { usePayStatements } from "./PayStatementContext";
 import { useDrivers } from "../drivers/DriverContext";
 import { useRouter } from "next/navigation";
@@ -16,35 +16,44 @@ export default function PayStatementsPage() {
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  function getDriverName(driverId: string) {
-    const driver = drivers.find((d) => d.id === driverId);
-    return driver ? driver.name : "Unknown Driver";
-  }
+  // Memoize driver lookup map to avoid repeated finds
+  const driverMap = useMemo(() => {
+    return drivers.reduce((acc, driver) => {
+      acc[driver.id] = driver;
+      return acc;
+    }, {} as Record<string, typeof drivers[0]>);
+  }, [drivers]);
 
-  function formatCurrency(amount: number) {
+  const getDriverName = useCallback((driverId: string) => {
+    const driver = driverMap[driverId];
+    return driver ? driver.name : "Unknown Driver";
+  }, [driverMap]);
+
+  // Memoize formatters to avoid recreation on every render
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
-  }
+  }, []);
 
-  function formatDate(dateString: string) {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString();
-  }
+  }, []);
 
-  function calculateNetPay(payStatement: PayStatement) {
+  const calculateNetPay = useCallback((payStatement: PayStatement) => {
     const totalAdditions = Object.values(payStatement.additions).reduce((sum: number, val: number) => sum + val, 0);
     const totalDeductions = Object.values(payStatement.deductions).reduce((sum: number, val: number) => sum + val, 0);
     return payStatement.gross_pay + totalAdditions - totalDeductions;
-  }
+  }, []);
 
-  function handleDeleteRequest(id: string) {
+  const handleDeleteRequest = useCallback((id: string) => {
     setConfirmingDelete(id);
     setDeleteError("");
     setSuccessMessage("");
-  }
+  }, []);
 
-  async function confirmDelete() {
+  const confirmDelete = useCallback(async () => {
     if (!confirmingDelete) return;
     
     try {
@@ -59,20 +68,20 @@ export default function PayStatementsPage() {
       setDeleteError(err instanceof Error ? err.message : 'Failed to delete pay statement');
       setConfirmingDelete(null);
     }
-  }
+  }, [confirmingDelete, deletePayStatement]);
 
-  function cancelDelete() {
+  const cancelDelete = useCallback(() => {
     setConfirmingDelete(null);
     setDeleteError("");
-  }
+  }, []);
 
-  function handleCreateNew() {
+  const handleCreateNew = useCallback(() => {
     router.push("/pay-statements/create");
-  }
+  }, [router]);
 
-  function handleView(id: string) {
+  const handleView = useCallback((id: string) => {
     router.push(`/pay-statements/${id}`);
-  }
+  }, [router]);
 
   return (
     <div className="page-container-xl">

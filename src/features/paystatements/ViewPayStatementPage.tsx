@@ -4,8 +4,6 @@ import { useRouter } from "next/navigation";
 import { usePayStatements } from "./PayStatementContext";
 import { useDrivers } from "../drivers/DriverContext";
 import Button from '../../components/Button/Button';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import styles from './ViewPayStatementPage.module.css';
 import { PayStatement, TripSummary } from '../../types';
 
@@ -79,6 +77,12 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
     
     try {
       console.log('Starting PDF generation...');
+      
+      // Dynamically import heavy libraries only when needed
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf')
+      ]);
       
       // Wait a bit to ensure all content is rendered
       await new Promise(resolve => setTimeout(resolve, 500));

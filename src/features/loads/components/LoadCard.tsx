@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { Load } from "../LoadContext";
 import { Pickup, Delivery } from "../../../types";
 import { formatRateForDisplay } from "../../../utils/validation";
@@ -11,7 +12,7 @@ interface LoadCardProps {
   onClick: () => void;
 }
 
-export function LoadCard({ load, pickups, deliveries, getDriverName, onClick }: LoadCardProps) {
+export const LoadCard = React.memo(({ load, pickups, deliveries, getDriverName, onClick }: LoadCardProps) => {
   return (
     <div
       className="load-card"
@@ -58,4 +59,6 @@ export function LoadCard({ load, pickups, deliveries, getDriverName, onClick }: 
       </div>
     </div>
   );
-}
+});
+
+LoadCard.displayName = 'LoadCard';

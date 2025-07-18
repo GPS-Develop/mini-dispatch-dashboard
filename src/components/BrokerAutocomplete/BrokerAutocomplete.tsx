@@ -38,6 +38,7 @@ export default function BrokerAutocomplete({
   const [editFormErrors, setEditFormErrors] = useState({ name: '', email: '', contact: '' });
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
 
   // Search function
@@ -89,6 +90,15 @@ export default function BrokerAutocomplete({
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Cleanup validation timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleSelectBroker = (broker: Broker) => {
@@ -188,7 +198,12 @@ export default function BrokerAutocomplete({
     }
     
     // Validate the specific field after a short delay
-    setTimeout(() => {
+    // Clear existing timeout
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+    
+    validationTimeoutRef.current = setTimeout(() => {
       const errors = { name: '', email: '', contact: '' };
       
       if (field === 'name' && !value.trim()) {
