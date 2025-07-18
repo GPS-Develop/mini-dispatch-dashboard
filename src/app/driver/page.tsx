@@ -354,9 +354,9 @@ export default function DriverDashboard() {
                     </div>
                     <button
                       onClick={() => router.push(`/driver/load/${load.id}`)}
-                      className="driver-load-details-btn"
+                      className="driver-action-btn driver-action-btn-primary"
                     >
-                      View Details →
+                      View Details
                     </button>
                   </div>
 

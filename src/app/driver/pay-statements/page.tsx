@@ -185,7 +185,20 @@ export default function DriverPayStatements() {
         lumper_service: lumperByLoad[load.id]
       }));
 
-      setDeliveredLoads(loadsWithDetails);
+      // Sort loads by pickup date (early to late)
+      const sortedLoads = loadsWithDetails.sort((a, b) => {
+        const aPickupDate = a.pickups?.[0]?.datetime;
+        const bPickupDate = b.pickups?.[0]?.datetime;
+        
+        // Handle cases where pickup date might not exist
+        if (!aPickupDate && !bPickupDate) return 0;
+        if (!aPickupDate) return 1; // Move loads without pickup date to end
+        if (!bPickupDate) return -1; // Move loads without pickup date to end
+        
+        return new Date(aPickupDate).getTime() - new Date(bPickupDate).getTime();
+      });
+
+      setDeliveredLoads(sortedLoads);
     } catch {
       setError('Failed to fetch load details');
     }
@@ -393,7 +406,7 @@ export default function DriverPayStatements() {
                 <div className="driver-pay-table-cell driver-pay-table-load">Load #</div>
                 <div className="driver-pay-table-cell driver-pay-table-route">Route</div>
                 <div className="driver-pay-table-cell driver-pay-table-type">Type</div>
-                <div className="driver-pay-table-cell driver-pay-table-date">Completed</div>
+                <div className="driver-pay-table-cell driver-pay-table-date">Pickup Date</div>
                 <div className="driver-pay-table-cell driver-pay-table-rate">Total Pay</div>
               </div>
               
@@ -413,8 +426,8 @@ export default function DriverPayStatements() {
                       <span className="driver-pay-temperature">{load.temperature}°F</span>
                     )}
                   </div>
-                  <div className="driver-pay-table-cell driver-pay-table-date" data-label="Completed">
-                    <span className="driver-pay-completion-date">{formatDateTime(load.created_at)}</span>
+                  <div className="driver-pay-table-cell driver-pay-table-date" data-label="Pickup Date">
+                    <span className="driver-pay-completion-date">{load.pickups?.[0]?.datetime ? formatDateTime(load.pickups[0].datetime) : 'N/A'}</span>
                   </div>
                   <div className="driver-pay-table-cell driver-pay-table-rate" data-label="Total Pay">
                     <span className="driver-pay-load-rate">${load.rate.toLocaleString()}</span>
