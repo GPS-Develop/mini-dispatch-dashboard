@@ -25,8 +25,8 @@ export default function AiPdfUpload({ onDataExtracted, onError }: AiPdfUploadPro
         throw new Error('Please upload a PDF file');
       }
 
-      if (file.size > 10 * 1024 * 1024) {
-        throw new Error('File too large. Maximum size is 10MB');
+      if (file.size > 25 * 1024 * 1024) {
+        throw new Error('File too large. Maximum size is 25MB');
       }
 
       setProcessingState('processing');

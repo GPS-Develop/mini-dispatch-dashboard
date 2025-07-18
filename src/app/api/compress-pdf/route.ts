@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { compressPDFBuffer } from '../../../utils/pdfCompression';
+import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Get the form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -14,10 +26,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate file type
-    if (file.type !== 'application/pdf') {
+    // Validate file type and structure
+    try {
+      const { validatePdfFile } = await import('@/utils/pdfUtils');
+      await validatePdfFile(file);
+    } catch (validationError) {
       return NextResponse.json(
-        { error: 'Only PDF files are supported' },
+        { error: validationError instanceof Error ? validationError.message : 'Invalid PDF file' },
         { status: 400 }
       );
     }
@@ -58,13 +73,23 @@ export async function POST(request: NextRequest) {
 }
 
 // Handle OPTIONS for CORS
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://localhost:3000',
+    process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  ].filter(Boolean);
+
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
+
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'http://localhost:3000',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
     },
   });
 }

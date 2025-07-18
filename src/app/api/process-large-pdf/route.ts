@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { del } from '@vercel/blob';
 import { createClient } from '@supabase/supabase-js';
 import { compressPDFBuffer } from '../../../utils/pdfCompression';
+import { createClient as createServerClient } from '@/utils/supabase/server';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
@@ -12,9 +13,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       body,
       request,
       onBeforeGenerateToken: async (pathname: string, clientPayload: string | null) => {
-        // TODO: Add authentication check here
-        // const { user } = await auth(request);
-        // if (!user) throw new Error('Not authenticated');
+        // Check authentication
+        const supabase = await createServerClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          throw new Error('Not authenticated');
+        }
 
         // Parse the client payload to get loadId
         let loadId = '';

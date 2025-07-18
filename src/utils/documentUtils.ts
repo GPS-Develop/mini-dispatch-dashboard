@@ -15,7 +15,7 @@ export interface CompressionResult {
 
 // Configuration
 const STORAGE_BUCKET = 'load-pdfs';
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 const SMALL_FILE_FALLBACK_SIZE = 200 * 1024; // 200KB - allow upload without compression for small files
 const MAX_FILE_SIZE_WITH_COMPRESSION = 25 * 1024 * 1024; // 25MB - allow larger files if compression is enabled
 const VERCEL_COMPRESSION_LIMIT = 4 * 1024 * 1024; // 4MB - Vercel serverless function limit
@@ -202,7 +202,7 @@ export const uploadDocument = async (
         if (fileToUpload.size > MAX_FILE_SIZE) {
           return { 
             success: false, 
-            error: `Compressed file size (${(fileToUpload.size / (1024 * 1024)).toFixed(2)}MB) still exceeds 10MB limit. Try using 'extreme' compression level.` 
+            error: `Compressed file size (${(fileToUpload.size / (1024 * 1024)).toFixed(2)}MB) still exceeds 25MB limit. Try using 'extreme' compression level.` 
           };
         }
       } else {
@@ -212,7 +212,7 @@ export const uploadDocument = async (
           compressionStats = `Compression failed, uploaded without compression (${(file.size / 1024).toFixed(1)}KB)`;
           onProgress?.('compressing', 50);
         } else if (file.size <= MAX_FILE_SIZE) {
-          // File is between 200KB and 10MB - compression failed, no fallback
+          // File is between 200KB and 25MB - compression failed, no fallback
           return { 
             success: false, 
             error: `Cannot upload file: ${compressionResult.error}. File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) requires compression but compression failed.` 
@@ -221,7 +221,7 @@ export const uploadDocument = async (
           // File is too large and compression failed
           return { 
             success: false, 
-            error: `Cannot upload file: ${compressionResult.error}. File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds 10MB limit and compression is required.` 
+            error: `Cannot upload file: ${compressionResult.error}. File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds 25MB limit and compression is required.` 
           };
         }
       }

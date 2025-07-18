@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGeminiClient, ExtractedLoadData } from '@/config/aiConfig';
 import { convertPdfToBase64, validatePdfFile } from '@/utils/pdfUtils';
 import { GenerateContentResult } from '@google/generative-ai';
+import { createClient } from '@/utils/supabase/server';
 
 const LOAD_EXTRACTION_PROMPT = `
 You are a logistics expert that extracts load information from shipping documents, bills of lading, and load sheets.
@@ -58,6 +59,17 @@ Instructions:
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
@@ -69,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate PDF file
-    validatePdfFile(file);
+    await validatePdfFile(file);
     
     // Convert PDF to base64 for AI processing
     const base64Pdf = await convertPdfToBase64(file);
