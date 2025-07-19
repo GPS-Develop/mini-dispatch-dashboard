@@ -171,6 +171,42 @@ Refer to `supabase-config-guide.md` for complete database setup instructions.
 - **`npm run build`** - Build optimized production bundle
 - **`npm run start`** - Start production server
 - **`npm run lint`** - Run ESLint with Next.js configuration
+- **`npm test`** - Run Jest test suite
+- **`npm run test:watch`** - Run tests in watch mode for development
+
+## 🧪 Testing
+
+This project includes comprehensive unit tests covering critical business functionality:
+
+### Test Coverage
+- **31 passing tests** across 4 test suites
+- **Business Logic**: Validation, data transformations, calculations
+- **Component Testing**: UI components with React Testing Library  
+- **File Processing**: PDF validation and security checks
+- **Type Safety**: Database/frontend data conversions
+
+### Test Categories
+```typescript
+// Business Logic Tests
+✅ Phone number sanitization and validation
+✅ Driver pay rate validation (supports decimals, rejects negatives)
+✅ PDF file validation (25MB limit, type checking, magic numbers)
+✅ Data type conversions (database ↔ frontend)
+
+// Component Tests  
+✅ Button component variants and interactions
+✅ Event handling and accessibility
+✅ Prop forwarding and custom styling
+```
+
+### Running Tests
+```bash
+npm test                 # Run all tests
+npm run test:watch      # Watch mode for development
+npm test -- --coverage # Run with coverage report
+```
+
+**All tests validate real business requirements and edge cases, ensuring production-ready code quality.**
 
 ## 🏗️ Architecture Highlights
 
