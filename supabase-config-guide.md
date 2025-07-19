@@ -1,23 +1,39 @@
 # Supabase Configuration Guide
 
-## 1. Run the User Roles Migration
+## 1. Run the Database Migration
 
-First, run the SQL migration in your Supabase SQL Editor:
+First, run the complete SQL migration in your Supabase SQL Editor:
 
-```sql
--- Copy and paste the entire content from user-roles-migration.sql
-```
-
-**Important:** Before running the migration, update line 37 in the migration file to set your admin emails:
+1. **Open the migration file:** `user-roles-migration.sql` in the project root
+2. **Important:** Before running the migration, update section 14 to set your admin emails:
 
 ```sql
--- 6. Update specific emails to admin role (REPLACE WITH YOUR ADMIN EMAILS)
+-- 14. Set Initial Admin Users
 UPDATE public.users
 SET role = 'admin'
 WHERE email IN ('your-admin-email@example.com', 'another-admin@example.com');
 ```
 
-## 2. Disable Public Signup
+3. **Copy the entire file content** and paste it into your Supabase SQL Editor
+4. **Execute the migration** - this will create:
+   - All required tables with proper relationships
+   - Row Level Security (RLS) policies for data access control
+   - Database triggers for user creation and activity logging
+   - Functions for status updates and document management
+   - Proper CASCADE DELETE relationships
+   - Check constraints for data validation
+
+## 2. Create Storage Bucket
+
+Create the storage bucket for PDF documents:
+
+1. Go to **Storage** in your Supabase dashboard
+2. Click **Create a new bucket**
+3. **Bucket name:** `load-pdfs`
+4. **Public:** No (keep private)
+5. Click **Create bucket**
+
+## 3. Disable Public Signup
 
 In your Supabase Dashboard:
 
@@ -26,13 +42,13 @@ In your Supabase Dashboard:
 3. **Disable** the "Enable email signups" toggle
 4. This ensures only invited users can create accounts
 
-## 3. Configure Email Settings (if not already done)
+## 4. Configure Email Settings (if not already done)
 
 1. Go to **Authentication** → **Settings** → **Email Templates**
 2. Configure your SMTP settings or use Supabase's built-in email service
 3. Customize the "Invite user" email template if desired
 
-## 4. Environment Variables
+## 5. Environment Variables
 
 Make sure you have these environment variables set:
 
@@ -43,7 +59,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000  # or your production URL
 ```
 
-## 5. Test the Setup
+## 6. Test the Setup
 
 1. **Create your first admin:**
    - If you already have an account, update your role manually in the database
@@ -61,7 +77,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000  # or your production URL
    - Ensure drivers are restricted to driver routes only
    - Ensure non-authenticated users are redirected to login
 
-## 6. Row Level Security Policies
+## 7. Row Level Security Policies
 
 The migration automatically creates RLS policies for:
 - Users can read their own data
@@ -69,7 +85,7 @@ The migration automatically creates RLS policies for:
 - Admins can update user roles
 - Admins can insert new users (for invites)
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 **If you get "Only admins can invite other admins" error:**
 - Check that your user has `role = 'admin'` in the `users` table
