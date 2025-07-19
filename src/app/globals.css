@@ -3921,7 +3921,7 @@ select.input-field {
 
 .driver-pay-table-header {
   display: grid;
-  grid-template-columns: 100px 1fr 120px 150px 100px;
+  grid-template-columns: 100px 1fr 1fr 120px 150px;
   background-color: var(--color-gray-50);
   border-bottom: 1px solid var(--color-border);
   font-weight: 600;
@@ -3931,7 +3931,7 @@ select.input-field {
 
 .driver-pay-table-row {
   display: grid;
-  grid-template-columns: 100px 1fr 120px 150px 100px;
+  grid-template-columns: 100px 1fr 1fr 120px 150px;
   border-bottom: 1px solid var(--color-border);
 }
 

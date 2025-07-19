@@ -241,10 +241,8 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
                 <thead>
                   <tr className={styles.tableHeader}>
                     <th className={styles.tableHeaderCell}>Trip#</th>
-                    <th className={styles.tableHeaderCell}>Picked</th>
-                    <th className={styles.tableHeaderCell}>From Location(s)</th>
-                    <th className={styles.tableHeaderCell}>Drop</th>
-                    <th className={styles.tableHeaderCell}>To Location(s)</th>
+                    <th className={styles.tableHeaderCell}>📦 Pickup Location(s)</th>
+                    <th className={styles.tableHeaderCell}>🚚 Delivery Location(s)</th>
                     <th className={styles.tableHeaderCellRight}>Amount</th>
                   </tr>
                 </thead>
@@ -252,13 +250,17 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
                   {trips.map((trip, index) => (
                     <tr key={index} className={styles.tableRow}>
                       <td className={styles.tableCell}>{trip.trip_number}</td>
-                      <td className={styles.tableCell}>{trip.picked_date}</td>
                       <td className={styles.tableCellMaxWidth}>
-                        <div className={styles.tableCellContent}>{trip.from_city}</div>
+                        <div className={styles.tableCellContent}>
+                          <div className="font-medium">{trip.from_city}</div>
+                          <div className="text-sm text-muted">{trip.picked_date}</div>
+                        </div>
                       </td>
-                      <td className={styles.tableCell}>{trip.drop_date}</td>
                       <td className={styles.tableCellMaxWidth}>
-                        <div className={styles.tableCellContent}>{trip.to_city}</div>
+                        <div className={styles.tableCellContent}>
+                          <div className="font-medium">{trip.to_city}</div>
+                          <div className="text-sm text-muted">{trip.drop_date}</div>
+                        </div>
                       </td>
                       <td className={styles.tableCellRight}>{formatCurrency(trip.amount)}</td>
                     </tr>
@@ -276,25 +278,20 @@ export default function ViewPayStatementPage({ payStatementId }: ViewPayStatemen
                     <div className={styles.tripCardAmount}>{formatCurrency(trip.amount)}</div>
                   </div>
                   
-                  <div className={styles.tripCardDetails}>
-                    <div className={styles.tripCardDetail}>
-                      <div className={styles.tripCardDetailLabel}>Picked</div>
-                      <div className={styles.tripCardDetailValue}>{trip.picked_date}</div>
-                    </div>
-                    <div className={styles.tripCardDetail}>
-                      <div className={styles.tripCardDetailLabel}>Drop</div>
-                      <div className={styles.tripCardDetailValue}>{trip.drop_date}</div>
-                    </div>
-                  </div>
-                  
                   <div className={styles.tripCardLocations}>
                     <div className={styles.tripCardLocation}>
-                      <div className={styles.tripCardLocationLabel}>From Location(s)</div>
-                      <div className={styles.tripCardLocationValue}>{trip.from_city}</div>
+                      <div className={styles.tripCardLocationLabel}>📦 Pickup Location(s)</div>
+                      <div className={styles.tripCardLocationValue}>
+                        <div className="font-medium">{trip.from_city}</div>
+                        <div className="text-sm text-muted">{trip.picked_date}</div>
+                      </div>
                     </div>
                     <div className={styles.tripCardLocation}>
-                      <div className={styles.tripCardLocationLabel}>To Location(s)</div>
-                      <div className={styles.tripCardLocationValue}>{trip.to_city}</div>
+                      <div className={styles.tripCardLocationLabel}>🚚 Delivery Location(s)</div>
+                      <div className={styles.tripCardLocationValue}>
+                        <div className="font-medium">{trip.to_city}</div>
+                        <div className="text-sm text-muted">{trip.drop_date}</div>
+                      </div>
                     </div>
                   </div>
                 </div>

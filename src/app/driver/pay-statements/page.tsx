@@ -270,12 +270,6 @@ export default function DriverPayStatements() {
     }).join('\n');
   };
 
-  const formatRoute = (load: LoadWithDetails) => {
-    const pickup = formatLocationString(load.pickups);
-    const delivery = formatLocationString(load.deliveries);
-    return `${pickup} → ${delivery}`;
-  };
-
   // Calculate totals
   const totalEarnings = deliveredLoads.reduce((sum, load) => sum + load.rate, 0);
   const totalLumperReimbursements = deliveredLoads.reduce((sum, load) => {
@@ -424,9 +418,9 @@ export default function DriverPayStatements() {
             <div className="driver-pay-loads-table">
               <div className="driver-pay-table-header">
                 <div className="driver-pay-table-cell driver-pay-table-load">Load #</div>
-                <div className="driver-pay-table-cell driver-pay-table-route">Route</div>
+                <div className="driver-pay-table-cell driver-pay-table-pickup-location">📦 Pickup Location(s)</div>
+                <div className="driver-pay-table-cell driver-pay-table-delivery-location">🚚 Delivery Location(s)</div>
                 <div className="driver-pay-table-cell driver-pay-table-type">Type</div>
-                <div className="driver-pay-table-cell driver-pay-table-date">Pickup Date</div>
                 <div className="driver-pay-table-cell driver-pay-table-rate">Total Pay</div>
               </div>
               
@@ -435,9 +429,16 @@ export default function DriverPayStatements() {
                   <div className="driver-pay-table-cell driver-pay-table-load" data-label="Load #">
                     <span className="driver-pay-load-reference">#{load.reference_id}</span>
                   </div>
-                  <div className="driver-pay-table-cell driver-pay-table-route" data-label="Route">
+                  <div className="driver-pay-table-cell driver-pay-table-pickup-location" data-label="📦 Pickup Location(s)">
                     <div className="driver-pay-route-content">
-                      {formatRoute(load)}
+                      <div className="font-medium">{formatLocationString(load.pickups)}</div>
+                      <div className="text-sm text-muted">{load.pickups?.[0]?.datetime ? formatDateTime(load.pickups[0].datetime) : 'N/A'}</div>
+                    </div>
+                  </div>
+                  <div className="driver-pay-table-cell driver-pay-table-delivery-location" data-label="🚚 Delivery Location(s)">
+                    <div className="driver-pay-route-content">
+                      <div className="font-medium">{formatLocationString(load.deliveries)}</div>
+                      <div className="text-sm text-muted">{load.deliveries?.[0]?.datetime ? formatDateTime(load.deliveries[0].datetime) : 'N/A'}</div>
                     </div>
                   </div>
                   <div className="driver-pay-table-cell driver-pay-table-type" data-label="Type">
@@ -445,9 +446,6 @@ export default function DriverPayStatements() {
                     {load.temperature && (
                       <span className="driver-pay-temperature">{load.temperature}°F</span>
                     )}
-                  </div>
-                  <div className="driver-pay-table-cell driver-pay-table-date" data-label="Pickup Date">
-                    <span className="driver-pay-completion-date">{load.pickups?.[0]?.datetime ? formatDateTime(load.pickups[0].datetime) : 'N/A'}</span>
                   </div>
                   <div className="driver-pay-table-cell driver-pay-table-rate" data-label="Total Pay">
                     <span className="driver-pay-load-rate">${load.rate.toLocaleString()}</span>
@@ -463,9 +461,9 @@ export default function DriverPayStatements() {
                 <div className="driver-pay-table-cell driver-pay-table-load">
                   <span className="driver-pay-total-label">Total</span>
                 </div>
-                <div className="driver-pay-table-cell driver-pay-table-route"></div>
-                <div className="driver-pay-table-cell driver-pay-table-type"></div>
-                <div className="driver-pay-table-cell driver-pay-table-date">
+                <div className="driver-pay-table-cell driver-pay-table-pickup-location"></div>
+                <div className="driver-pay-table-cell driver-pay-table-delivery-location"></div>
+                <div className="driver-pay-table-cell driver-pay-table-type">
                   <span className="driver-pay-total-loads">{totalLoads} loads</span>
                 </div>
                 <div className="driver-pay-table-cell driver-pay-table-rate">

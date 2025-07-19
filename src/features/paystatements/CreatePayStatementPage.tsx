@@ -216,7 +216,7 @@ export default function CreatePayStatementPage() {
   const { totalAdditions, totalDeductions, netPay } = calculateTotals();
 
   return (
-    <div className="page-container-lg">
+    <div className="page-container-xl">
       <div className="page-header">
         <h1 className="heading-xl">Create Pay Statement</h1>
         <Button 
@@ -279,8 +279,8 @@ export default function CreatePayStatementPage() {
         </div>
 
         {/* Calculate Gross Pay */}
-        <div className="form-section-card">
-          <div className="page-header">
+        <div className="form-section-card" style={{ minHeight: '500px' }}>
+          <div className="page-header mb-6">
             <h3 className="form-section-title">Gross Pay Calculation</h3>
             <Button
               type="button"
@@ -294,45 +294,48 @@ export default function CreatePayStatementPage() {
 
           {grossPay > 0 && (
             <>
-              <div className="mb-4">
-                <div className="heading-lg text-success">
+              <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-lg">
+                <div className="heading-xl text-success mb-2">
                   Gross Pay: {formatCurrency(grossPay)}
                 </div>
-                <div className="text-muted">
+                <div className="text-lg text-muted">
                   Based on {trips.length} delivered load(s) in the selected period
                 </div>
               </div>
 
               {trips.length > 0 && (
-                <div className="table-container">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="table-header">
-                        <th className="table-cell text-left">Trip#</th>
-                        <th className="table-cell text-left">Picked</th>
-                        <th className="table-cell text-left">From Location(s)</th>
-                        <th className="table-cell text-left">Drop</th>
-                        <th className="table-cell text-left">To Location(s)</th>
-                        <th className="table-cell text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {trips.map((trip, index) => (
-                        <tr key={index} className="table-row-hover">
-                          <td className="table-cell">{trip.trip_number}</td>
-                          <td className="table-cell">{trip.picked_date}</td>
-                          <td className="table-cell max-w-xs">
-                            <div className="whitespace-pre-line text-sm">{trip.from_city}</div>
-                          </td>
-                          <td className="table-cell">{trip.drop_date}</td>
-                          <td className="table-cell max-w-xs">
-                            <div className="whitespace-pre-line text-sm">{trip.to_city}</div>
-                          </td>
-                          <td className="table-cell text-right font-semibold">{formatCurrency(trip.amount)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="w-full">
+                  <h4 className="heading-md mb-4">Trip Details</h4>
+                  <div className="overflow-x-auto">
+                    <div className="table-container" style={{ minWidth: '100%' }}>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="table-header">
+                            <th className="table-cell text-left" style={{ minWidth: '100px' }}>Trip#</th>
+                            <th className="table-cell text-left" style={{ minWidth: '200px' }}>📦 Pickup Location(s)</th>
+                            <th className="table-cell text-left" style={{ minWidth: '200px' }}>🚚 Delivery Location(s)</th>
+                            <th className="table-cell text-right" style={{ minWidth: '120px' }}>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {trips.map((trip, index) => (
+                            <tr key={index} className="table-row-hover">
+                              <td className="table-cell font-medium">{trip.trip_number}</td>
+                              <td className="table-cell">
+                                <div className="font-medium">{trip.from_city}</div>
+                                <div className="text-sm text-muted">{trip.picked_date}</div>
+                              </td>
+                              <td className="table-cell">
+                                <div className="font-medium">{trip.to_city}</div>
+                                <div className="text-sm text-muted">{trip.drop_date}</div>
+                              </td>
+                              <td className="table-cell text-right font-bold text-lg text-success">{formatCurrency(trip.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               )}
             </>

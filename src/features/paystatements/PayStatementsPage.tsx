@@ -15,6 +15,11 @@ export default function PayStatementsPage() {
   const [deleteError, setDeleteError] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
+  
+  // Filter states
+  const [selectedDriver, setSelectedDriver] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   // Memoize driver lookup map to avoid repeated finds
   const driverMap = useMemo(() => {
@@ -83,6 +88,38 @@ export default function PayStatementsPage() {
     router.push(`/pay-statements/${id}`);
   }, [router]);
 
+  // Filter pay statements based on selected criteria
+  const filteredPayStatements = useMemo(() => {
+    let filtered = payStatements;
+
+    // Filter by driver
+    if (selectedDriver) {
+      filtered = filtered.filter(ps => ps.driver_id === selectedDriver);
+    }
+
+    // Filter by date range
+    if (startDate && endDate) {
+      const startDateTime = new Date(startDate + 'T00:00:00');
+      const endDateTime = new Date(endDate + 'T23:59:59');
+      
+      filtered = filtered.filter(ps => {
+        const periodStart = new Date(ps.period_start);
+        const periodEnd = new Date(ps.period_end);
+        
+        // Check if pay statement period overlaps with filter date range
+        return (periodStart <= endDateTime && periodEnd >= startDateTime);
+      });
+    }
+
+    return filtered;
+  }, [payStatements, selectedDriver, startDate, endDate]);
+
+  const clearFilters = useCallback(() => {
+    setSelectedDriver("");
+    setStartDate("");
+    setEndDate("");
+  }, []);
+
   return (
     <div className="page-container-xl">
       <div className="page-header">
@@ -93,6 +130,51 @@ export default function PayStatementsPage() {
         >
           + Create Pay Statement
         </Button>
+      </div>
+
+      {/* Filter Section */}
+      <div className="form-section-card">
+        <h2 className="form-section-title">Filter Pay Statements</h2>
+        <div className="form-three-column">
+          <div className="form-field-container">
+            <label className="label-text">Driver</label>
+            <select
+              value={selectedDriver}
+              onChange={(e) => setSelectedDriver(e.target.value)}
+              className="input-field"
+            >
+              <option value="">All Drivers</option>
+              {drivers.filter(d => d.driver_status === "active").map((driver) => (
+                <option key={driver.id} value={driver.id}>{driver.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-field-container">
+            <label className="label-text">Start Date</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="input-field"
+            />
+          </div>
+          <div className="form-field-container">
+            <label className="label-text">End Date</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="input-field"
+            />
+          </div>
+        </div>
+        {(selectedDriver || startDate || endDate) && (
+          <div className="mt-4">
+            <Button variant="secondary" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          </div>
+        )}
       </div>
 
       {successMessage && (
@@ -131,7 +213,16 @@ export default function PayStatementsPage() {
         <EmptyPayStatements onCreatePayStatement={() => router.push('/pay-statements/create')} />
       )}
       
-      {!loading && payStatements.length > 0 && (
+      {!loading && filteredPayStatements.length === 0 && payStatements.length > 0 && (
+        <div className="text-center py-8">
+          <div className="text-muted mb-4">No pay statements found matching your filters.</div>
+          <Button variant="secondary" onClick={clearFilters}>
+            Clear Filters
+          </Button>
+        </div>
+      )}
+      
+      {!loading && filteredPayStatements.length > 0 && (
         <>
           {/* Desktop Table View */}
           <div className="table-container">
@@ -147,7 +238,7 @@ export default function PayStatementsPage() {
                 </tr>
               </thead>
               <tbody>
-                {payStatements.map((ps) => (
+                {filteredPayStatements.map((ps) => (
                   <tr key={ps.id} className="table-row-hover">
                     <td className="table-cell font-medium">{getDriverName(ps.driver_id)}</td>
                     <td className="table-cell">
@@ -186,7 +277,7 @@ export default function PayStatementsPage() {
 
           {/* Mobile Card View */}
           <div className="pay-statement-cards">
-            {payStatements.map((ps) => (
+            {filteredPayStatements.map((ps) => (
               <div key={ps.id} className="pay-statement-card">
                 <div className="pay-statement-card-header">
                   <div>
