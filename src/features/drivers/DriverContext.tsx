@@ -1,34 +1,11 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useLoads } from "../loads/LoadContext";
 import { createClient } from "../../utils/supabase/client";
 import { validateDriverPayRate } from "../../utils/validation";
+import { convertDatabaseDriverToFrontend, FrontendDriver, DatabaseDriver } from "../../utils/typeConversions";
 
-export type Driver = {
-  id: string;
-  name: string;
-  phone: number; // Changed to number to match database bigint field
-  email?: string;
-  status: "Available" | "On Load";
-  payRate: number;
-  driver_status: "active" | "inactive";
-  scheduledLoads?: string[];
-  inTransitLoads?: string[];
-  auth_user_id?: string;
-};
-
-// Type for DB fields
-export type DriverDB = {
-  id?: string;
-  name: string;
-  phone: string; // Keep as string for database operations (will be converted to/from number)
-  email?: string;
-  status: "Available" | "On Load";
-  pay_rate: number;
-  created_at?: string;
-  driver_status?: "active" | "inactive";
-  auth_user_id?: string;
-};
+export type Driver = FrontendDriver;
+export type DriverDB = Partial<DatabaseDriver>;
 
 const DriverContext = createContext<{
   drivers: Driver[];
@@ -44,8 +21,6 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { loads, loading: loadsLoading } = useLoads();
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const supabase = createClient();
 
   // Helper function to sort drivers: active first, then inactive
@@ -70,16 +45,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
         setError(error.message);
         return;
       }
-      const mappedDrivers = (data as DriverDB[]).map((d) => ({
-        id: d.id!,
-        name: d.name,
-        phone: typeof d.phone === 'string' ? parseInt(d.phone) || 0 : d.phone,
-        email: d.email,
-        status: d.status,
-        payRate: typeof d.pay_rate === 'string' ? parseFloat(d.pay_rate) || 0 : d.pay_rate,
-        driver_status: d.driver_status || "active",
-        auth_user_id: d.auth_user_id,
-      }));
+      const mappedDrivers = (data as DatabaseDriver[]).map(convertDatabaseDriverToFrontend);
       
       // Sort drivers: active first, then inactive
       const sortedDrivers = mappedDrivers.sort((a, b) => {
@@ -90,7 +56,6 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
       });
       
       setDrivers(sortedDrivers);
-      setHasInitiallyLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -102,37 +67,6 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
     fetchDrivers();
   }, [fetchDrivers]);
 
-  // Automatically update driver status and load lists based on assigned loads
-  useEffect(() => {
-    // Only update driver status if both contexts have finished their initial loading
-    if (!loadsLoading && hasInitiallyLoaded && drivers.length > 0) {
-      // Pre-compute load mappings to avoid N+1 filtering
-      const loadsByDriverId = loads.reduce((acc, load) => {
-        if (!acc[load.driver_id]) {
-          acc[load.driver_id] = { scheduled: [], inTransit: [] };
-        }
-        if (load.status === "Scheduled") {
-          acc[load.driver_id].scheduled.push(load.reference_id);
-        } else if (load.status === "In-Transit") {
-          acc[load.driver_id].inTransit.push(load.reference_id);
-        }
-        return acc;
-      }, {} as Record<string, { scheduled: string[]; inTransit: string[] }>);
-
-      setDrivers((prevDrivers) =>
-        sortDrivers(prevDrivers.map((driver) => {
-          const driverLoads = loadsByDriverId[driver.id] || { scheduled: [], inTransit: [] };
-          const status = (driverLoads.scheduled.length > 0 || driverLoads.inTransit.length > 0) ? "On Load" : "Available";
-          return {
-            ...driver,
-            status,
-            scheduledLoads: driverLoads.scheduled,
-            inTransitLoads: driverLoads.inTransit,
-          };
-        }))
-      );
-    }
-  }, [loads, loadsLoading, hasInitiallyLoaded, drivers.length]);
 
   async function addDriver(driver: DriverDB) {
     setError(null);
@@ -161,15 +95,7 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (data) {
-        const newDriver: Driver = {
-          id: data.id,
-          name: data.name,
-          phone: typeof data.phone === 'string' ? parseInt(data.phone) || 0 : data.phone,
-          status: data.status,
-          payRate: typeof data.pay_rate === 'string' ? parseFloat(data.pay_rate) || 0 : data.pay_rate,
-          driver_status: data.driver_status || "active",
-        };
-        
+        const newDriver = convertDatabaseDriverToFrontend(data as DatabaseDriver);
         setDrivers(prev => sortDrivers([newDriver, ...prev]));
       }
     } catch (err) {
@@ -205,17 +131,9 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (data) {
+        const updatedDriver = convertDatabaseDriverToFrontend(data as DatabaseDriver);
         setDrivers(prev => sortDrivers(prev.map(d => 
-          d.id === id 
-            ? {
-                ...d,
-                name: data.name,
-                phone: typeof data.phone === 'string' ? parseInt(data.phone) || 0 : data.phone,
-                status: data.status,
-                payRate: typeof data.pay_rate === 'string' ? parseFloat(data.pay_rate) || 0 : data.pay_rate,
-                driver_status: data.driver_status || "active",
-              }
-            : d
+          d.id === id ? { ...d, ...updatedDriver } : d
         )));
       }
     } catch (err) {
@@ -226,19 +144,21 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
   async function deleteDriver(id: string) {
     setError(null);
     try {
-      // Check if driver is currently assigned to any active loads
-      const activeLoads = loads.filter(load => 
-        load.driver_id === id && 
-        (load.status === "Scheduled" || load.status === "In-Transit")
-      );
+      // Check if driver is currently assigned to any active loads by querying the database
+      const { data: activeLoads, error: loadCheckError } = await supabase
+        .from('loads')
+        .select('reference_id')
+        .eq('driver_id', id)
+        .in('status', ['Scheduled', 'In-Transit']);
       
-      if (activeLoads.length > 0) {
+      if (loadCheckError) {
+        throw new Error(`Failed to check driver loads: ${loadCheckError.message}`);
+      }
+      
+      if (activeLoads && activeLoads.length > 0) {
         const loadReferences = activeLoads.map(load => `#${load.reference_id}`).join(", ");
         throw new Error(`Driver is currently on load(s): ${loadReferences}. Please mark the load(s) as delivered before deactivating the driver.`);
       }
-      
-      // Note: We don't need to clear driver_id from delivered loads since we're using soft delete
-      // Historical data should be preserved to maintain load assignment records
       
       // Soft delete: set driver_status to 'inactive'
       const { error } = await supabase

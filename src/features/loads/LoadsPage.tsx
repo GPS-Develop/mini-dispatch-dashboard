@@ -1,34 +1,35 @@
 "use client";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLoads, Load } from "./LoadContext";
 import { useDrivers } from "../../features/drivers/DriverContext";
 import { createClient } from "../../utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { sanitizePhone } from '../../utils/validation';
 import DocumentUploadModal from '../../components/DocumentUploadModal/DocumentUploadModal';
 import { EmptyLoads } from '../../components/EmptyState/EmptyState';
-import { Pickup, Delivery, LumperService, LumperServiceForm, InputChangeEvent, SelectChangeEvent, TextareaChangeEvent, FormSubmitEvent } from '../../types';
+import { LumperServiceForm, InputChangeEvent, SelectChangeEvent, TextareaChangeEvent, FormSubmitEvent } from '../../types';
 import { LoadFilters } from './components/LoadFilters';
 import { LoadCard } from './components/LoadCard';
 import { LoadDetailsModal } from './components/LoadDetailsModal';
 import { DeleteConfirmationModal } from './components/DeleteConfirmationModal';
+import { LoadEditModal } from './components/LoadEditModal';
 import { LoadEditForm } from './components/LoadEditForm';
 import ModalErrorBoundary from '../../components/ErrorBoundary/ModalErrorBoundary';
-import FormErrorBoundary from '../../components/ErrorBoundary/FormErrorBoundary';
+import { useLoadData } from './hooks/useLoadData';
+import { useLoadFiltering } from './hooks/useLoadFiltering';
+import { useLoadActions } from './hooks/useLoadActions';
+import { useDriverStatus } from '../../hooks/useDriverStatus';
 
 
 export default function LoadsPage() {
-  const { loads, updateLoad, deleteLoad, error: loadError } = useLoads();
-  const { drivers } = useDrivers();
+  const { loads, error: loadError } = useLoads();
+  const { drivers: rawDrivers } = useDrivers();
+  const { driversWithStatus: drivers } = useDriverStatus(rawDrivers, loads);
   const [statusFilter, setStatusFilter] = useState("All");
   const [driverFilter, setDriverFilter] = useState("");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Load | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<LoadEditForm | null>(null);
-  const [pickupsMap, setPickupsMap] = useState<Record<string, Pickup[]>>({});
-  const [deliveriesMap, setDeliveriesMap] = useState<Record<string, Delivery[]>>({});
-  const [lumperMap, setLumperMap] = useState<Record<string, LumperService>>({});
   const [lumperForm, setLumperForm] = useState<LumperServiceForm>({
     no_lumper: false,
     paid_by_broker: false,
@@ -39,64 +40,30 @@ export default function LoadsPage() {
     driver_amount: '',
     driver_payment_reason: ''
   });
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loadToDelete, setLoadToDelete] = useState<Load | null>(null);
+  
+  // Custom hooks
+  const { pickupsMap, deliveriesMap, lumperMap, error: dataError, setError, fetchAllPickupsDeliveries } = useLoadData();
+  const { filteredLoads } = useLoadFiltering({
+    loads,
+    drivers,
+    pickupsMap,
+    deliveriesMap,
+    lumperMap,
+    statusFilter,
+    driverFilter,
+    search
+  });
+  const { error: actionError, isSubmitting, handleStatusUpdate, handleLoadDelete, handleLoadEdit } = useLoadActions();
 
-  // Define the edit form type
-  interface LoadEditForm {
-    id: string;
-    reference_id: string;
-    driver_id: string;
-    rate: number;
-    notes?: string;
-    broker_name: string;
-    broker_contact: number;
-    broker_email: string;
-    load_type: string;
-    temperature?: number | null;
-    pickups: Pickup[];
-    deliveries: Delivery[];
-    pickup_address: string;
-    pickup_state: string;
-    pickup_datetime: string;
-    delivery_address: string;
-    delivery_state: string;
-    delivery_datetime: string;
-    status: "Scheduled" | "In-Transit" | "Delivered";
-  }
   const router = useRouter();
   const supabase = createClient();
+  
+  // Combine all errors
+  const error = loadError || dataError || actionError;
 
-  const filteredLoads = useMemo(() => {
-    return loads.filter((l) => {
-      const lumperService = lumperMap[l.id];
-      const matchesStatus = statusFilter === "All" || 
-        (statusFilter === "Loads with Lumper" && lumperService && !lumperService.no_lumper) ||
-        (statusFilter !== "Loads with Lumper" && l.status === statusFilter);
-      const driver = drivers.find((d) => d.id === l.driver_id);
-      const matchesDriver = !driverFilter || (driver && driver.name === driverFilter);
-      const pickupSearch = (pickupsMap[l.id] || []).some(
-        (p) =>
-          (p.address || "").toLowerCase().includes(search.toLowerCase()) ||
-          (p.city || "").toLowerCase().includes(search.toLowerCase()) ||
-          (p.state || "").toLowerCase().includes(search.toLowerCase())
-      );
-      const deliverySearch = (deliveriesMap[l.id] || []).some(
-        (d) =>
-          (d.address || "").toLowerCase().includes(search.toLowerCase()) ||
-          (d.city || "").toLowerCase().includes(search.toLowerCase()) ||
-          (d.state || "").toLowerCase().includes(search.toLowerCase())
-      );
-      const matchesSearch =
-        (l.reference_id || "").toLowerCase().includes(search.toLowerCase()) ||
-        pickupSearch ||
-        deliverySearch;
-      return matchesStatus && matchesDriver && matchesSearch;
-    });
-  }, [loads, pickupsMap, deliveriesMap, lumperMap, statusFilter, driverFilter, search, drivers]);
 
   useEffect(() => {
     if (selected && editMode) {
@@ -107,7 +74,7 @@ export default function LoadsPage() {
             .from('lumper_services')
             .select('*')
             .eq('load_id', selected.id)
-            .single();
+            .maybeSingle();
 
           if (lumperService) {
             setLumperForm({
@@ -160,46 +127,6 @@ export default function LoadsPage() {
     }
   }, [selected, editMode, pickupsMap, deliveriesMap, supabase]);
 
-  const fetchAllPickupsDeliveries = useCallback(async () => {
-    if (loads.length === 0) return;
-    try {
-    const loadIds = loads.map(l => l.id);
-      const { data: pickups, error: pickupsError } = await supabase.from("pickups").select("*").in("load_id", loadIds);
-      const { data: deliveries, error: deliveriesError } = await supabase.from("deliveries").select("*").in("load_id", loadIds);
-      const { data: lumperServices, error: lumperError } = await supabase.from("lumper_services").select("*").in("load_id", loadIds);
-      
-      if (pickupsError || deliveriesError || lumperError) {
-        setError(pickupsError?.message || deliveriesError?.message || lumperError?.message || 'Failed to fetch load data');
-        return;
-      }
-      
-    const pickupsByLoad: Record<string, Pickup[]> = {};
-    const deliveriesByLoad: Record<string, Delivery[]> = {};
-    const lumperByLoad: Record<string, LumperService> = {};
-    
-    pickups?.forEach(p => {
-      if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
-      pickupsByLoad[p.load_id].push(p);
-    });
-    deliveries?.forEach(d => {
-      if (!deliveriesByLoad[d.load_id]) deliveriesByLoad[d.load_id] = [];
-      deliveriesByLoad[d.load_id].push(d);
-    });
-    lumperServices?.forEach(l => {
-      lumperByLoad[l.load_id] = l;
-    });
-    
-    setPickupsMap(pickupsByLoad);
-    setDeliveriesMap(deliveriesByLoad);
-    setLumperMap(lumperByLoad);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch load data');
-    }
-  }, [loads, supabase]);
-
-  useEffect(() => {
-    fetchAllPickupsDeliveries();
-  }, [loads, fetchAllPickupsDeliveries]);
 
   function getDriverName(driverId: string) {
     const driver = drivers.find((d) => d.id === driverId);
@@ -211,12 +138,11 @@ export default function LoadsPage() {
   }
 
   async function setStatus(load: Load, status: "Scheduled" | "In-Transit" | "Delivered") {
-    setError("");
     try {
-      await updateLoad(load.id, { status });
-    setSelected(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update load status');
+      await handleStatusUpdate(load, status);
+      setSelected(null);
+    } catch {
+      // Error is already handled in the hook
     }
   }
 
@@ -228,14 +154,13 @@ export default function LoadsPage() {
   async function confirmDelete() {
     if (!loadToDelete) return;
     
-    setError("");
     try {
-      await deleteLoad(loadToDelete.id);
+      await handleLoadDelete(loadToDelete.id);
       setSelected(null);
       setShowDeleteConfirm(false);
       setLoadToDelete(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete load');
+    } catch {
+      // Error is already handled in the hook
     }
   }
 
@@ -307,108 +232,8 @@ export default function LoadsPage() {
     e.preventDefault();
     if (!selected || !editForm) return;
     
-    setIsSubmitting(true);
-    setError("");
-    
-    // Validate broker contact before submission
-    const brokerContactStr = typeof editForm.broker_contact === 'number' ? 
-      editForm.broker_contact.toString() : 
-      editForm.broker_contact || '';
-    const sanitizedBrokerContact = sanitizePhone(brokerContactStr);
-    if (!sanitizedBrokerContact || sanitizedBrokerContact.length < 10) {
-      setError("Broker contact must be a valid phone number");
-      setIsSubmitting(false);
-      return;
-    }
-    
     try {
-    // Update main load
-    const convertedRate = editForm.rate || 0;
-    
-    const updatedData = {
-      driver_id: editForm.driver_id,
-      rate: convertedRate,
-      notes: editForm.notes,
-      broker_name: editForm.broker_name,
-      broker_contact: parseInt(sanitizedBrokerContact) || 0,
-      broker_email: editForm.broker_email,
-      load_type: editForm.load_type,
-      temperature: editForm.temperature == null ? null : editForm.temperature,
-    };
-    await updateLoad(selected.id, updatedData);
-      
-    // Update pickups
-    for (const p of editForm.pickups) {
-        const { error: pickupError } = await supabase.from("pickups").update({
-        name: p.name,
-        address: p.address,
-        city: p.city,
-        state: p.state,
-        postal_code: p.postal_code,
-        datetime: p.datetime,
-      }).eq("id", p.id);
-        
-        if (pickupError) {
-          throw new Error(`Failed to update pickup: ${pickupError.message}`);
-        }
-    }
-      
-    // Update deliveries
-    for (const d of editForm.deliveries) {
-        const { error: deliveryError } = await supabase.from("deliveries").update({
-        name: d.name,
-        address: d.address,
-        city: d.city,
-        state: d.state,
-        postal_code: d.postal_code,
-        datetime: d.datetime,
-      }).eq("id", d.id);
-        
-        if (deliveryError) {
-          throw new Error(`Failed to update delivery: ${deliveryError.message}`);
-        }
-    }
-      
-      // Handle lumper service
-      const existingLumperService = lumperMap[selected.id];
-      
-      // Prepare lumper service data
-      const lumperData = {
-        load_id: selected.id,
-        no_lumper: lumperForm.no_lumper,
-        paid_by_broker: lumperForm.paid_by_broker,
-        paid_by_company: lumperForm.paid_by_company,
-        paid_by_driver: lumperForm.paid_by_driver,
-        broker_amount: lumperForm.broker_amount ? parseFloat(lumperForm.broker_amount) : null,
-        company_amount: lumperForm.company_amount ? parseFloat(lumperForm.company_amount) : null,
-        driver_amount: lumperForm.driver_amount ? parseFloat(lumperForm.driver_amount) : null,
-        driver_payment_reason: lumperForm.driver_payment_reason || null
-      };
-      
-      if (existingLumperService) {
-        // Update existing lumper service
-        const { error: lumperError } = await supabase
-          .from('lumper_services')
-          .update(lumperData)
-          .eq('id', existingLumperService.id);
-          
-        if (lumperError) {
-          throw new Error(`Failed to update lumper service: ${lumperError.message}`);
-        }
-      } else {
-        // Create new lumper service
-        const { error: lumperError } = await supabase
-          .from('lumper_services')
-          .insert([lumperData]);
-          
-        if (lumperError) {
-          throw new Error(`Failed to create lumper service: ${lumperError.message}`);
-        }
-      }
-      
-      // Refresh pickup/delivery/lumper data
-    await fetchAllPickupsDeliveries();
-      
+      await handleLoadEdit(selected, editForm, lumperForm, lumperMap, fetchAllPickupsDeliveries);
       setEditMode(false);
       setSelected(null);
       setEditForm(null);
@@ -422,10 +247,8 @@ export default function LoadsPage() {
         driver_amount: '',
         driver_payment_reason: ''
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update load');
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Error is already handled in the hook
     }
   }
 
@@ -435,9 +258,9 @@ export default function LoadsPage() {
         <h1 className="heading-xl">Loads</h1>
       </div>
       
-      {(error || loadError) && (
+      {error && (
         <div className="alert-error">
-          {error || loadError}
+          {error}
         </div>
       )}
       
@@ -485,22 +308,20 @@ export default function LoadsPage() {
                 onDelete={() => handleDeleteClick(selected)}
               />
             ) : editForm ? (
-              <FormErrorBoundary>
-                <LoadEditForm
-                  load={selected}
-                  editForm={editForm}
-                  lumperForm={lumperForm}
-                  drivers={drivers}
-                  isSubmitting={isSubmitting}
-                  onFormChange={handleEditChange}
-                  onPickupChange={handlePickupChange}
-                  onDeliveryChange={handleDeliveryChange}
-                  onLumperCheckboxChange={handleLumperCheckboxChange}
-                  onLumperInputChange={handleLumperInputChange}
-                  onSubmit={handleEditSubmit}
-                  onCancel={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
-                />
-              </FormErrorBoundary>
+              <LoadEditModal
+                load={selected}
+                editForm={editForm}
+                lumperForm={lumperForm}
+                drivers={drivers}
+                isSubmitting={isSubmitting}
+                onFormChange={handleEditChange}
+                onPickupChange={handlePickupChange}
+                onDeliveryChange={handleDeliveryChange}
+                onLumperCheckboxChange={handleLumperCheckboxChange}
+                onLumperInputChange={handleLumperInputChange}
+                onSubmit={handleEditSubmit}
+                onCancel={() => { setSelected(null); setEditMode(false); setError(""); setShowUploadModal(false); }}
+              />
             ) : null}
           </div>
         </ModalErrorBoundary>

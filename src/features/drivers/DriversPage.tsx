@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useDrivers, Driver } from "./DriverContext";
+import { useLoads } from '../loads/LoadContext';
+import { useDriverStatus } from '../../hooks/useDriverStatus';
 import Button from '../../components/Button/Button';
 import { formatPhoneForDisplay, formatDriverPayRateForDisplay } from '../../utils/validation';
 import CreateDriverAccountModal from "../../components/CreateDriverAccountModal";
@@ -8,7 +10,9 @@ import { SkeletonTable } from '../../components/Skeleton/Skeleton';
 import { EmptyDrivers } from '../../components/EmptyState/EmptyState';
 
 export default function DriversPage() {
-  const { drivers, deleteDriver, reactivateDriver, updateDriver, loading, error: contextError } = useDrivers();
+  const { drivers: rawDrivers, deleteDriver, reactivateDriver, updateDriver, loading, error: contextError } = useDrivers();
+  const { loads } = useLoads();
+  const { driversWithStatus: drivers } = useDriverStatus(rawDrivers, loads);
 
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

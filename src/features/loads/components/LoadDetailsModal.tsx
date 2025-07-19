@@ -40,7 +40,7 @@ export function LoadDetailsModal({
           .from('lumper_services')
           .select('*')
           .eq('load_id', load.id)
-          .single();
+          .maybeSingle();
 
         if (!error && data) {
           setLumperService(data);

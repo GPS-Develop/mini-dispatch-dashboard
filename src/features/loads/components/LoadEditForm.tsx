@@ -5,7 +5,7 @@ import { Pickup, Delivery, LumperServiceForm, InputChangeEvent, SelectChangeEven
 import { US_STATES } from "../../../utils/constants";
 import Button from "../../../components/Button/Button";
 
-interface LoadEditForm {
+export interface LoadEditForm {
   id: string;
   reference_id: string;
   driver_id: string;

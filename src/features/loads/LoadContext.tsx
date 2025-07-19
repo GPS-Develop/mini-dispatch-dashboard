@@ -2,25 +2,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { createClient } from "../../utils/supabase/client";
 import { validateRate } from "../../utils/validation";
+import { convertDatabaseLoadToFrontend, FrontendLoad } from "../../utils/typeConversions";
 
-export type Load = {
-  id: string;
-  reference_id: string;
-  pickup_address: string;
-  pickup_state: string;
-  pickup_datetime: string;
-  delivery_address: string;
-  delivery_state: string;
-  delivery_datetime: string;
-  load_type: string;
-  temperature?: number | null;
-  rate: number;
-  driver_id: string;
-  notes?: string;
-  broker_name: string;
-  broker_contact: number;
-  broker_email: string;
-  status: "Scheduled" | "In-Transit" | "Delivered";
+export type Load = FrontendLoad & {
   drivers?: {
     id: string;
     name: string;
@@ -66,13 +50,8 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      // Convert broker_contact to number if it comes as string from database
-      const mappedLoads = (data || []).map((load: Record<string, unknown>) => ({
-        ...load,
-        broker_contact: typeof load.broker_contact === 'string' ? 
-          parseInt(load.broker_contact) || 0 : 
-          load.broker_contact
-      }));
+      // Convert database loads to frontend format
+      const mappedLoads = (data || []).map(load => convertDatabaseLoadToFrontend(load));
       setLoads(mappedLoads as Load[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -112,13 +91,8 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (data) {
-        // Convert broker_contact to number if needed
-        const mappedLoad = {
-          ...data,
-          broker_contact: typeof data.broker_contact === 'string' ? 
-            parseInt(data.broker_contact) || 0 : 
-            data.broker_contact
-        };
+        // Convert database load to frontend format
+        const mappedLoad = convertDatabaseLoadToFrontend(data);
         setLoads(prev => [mappedLoad as Load, ...prev]);
       }
     } catch (err) {
@@ -158,13 +132,8 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (data) {
-        // Convert broker_contact to number if needed
-        const mappedLoad = {
-          ...data,
-          broker_contact: typeof data.broker_contact === 'string' ? 
-            parseInt(data.broker_contact) || 0 : 
-            data.broker_contact
-        };
+        // Convert database load to frontend format
+        const mappedLoad = convertDatabaseLoadToFrontend(data);
         setLoads(prev => prev.map(l => 
           l.id === id ? mappedLoad as Load : l
         ));
@@ -309,13 +278,8 @@ export function LoadProvider({ children }: { children: React.ReactNode }) {
       }
     }
       
-      // Add the new load to the state with broker_contact converted to number
-      const mappedLoad = {
-        ...data,
-        broker_contact: typeof data.broker_contact === 'string' ? 
-          parseInt(data.broker_contact) || 0 : 
-          data.broker_contact
-      };
+      // Convert database load to frontend format and add to state
+      const mappedLoad = convertDatabaseLoadToFrontend(data);
       setLoads(prev => [mappedLoad as Load, ...prev]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add full load');

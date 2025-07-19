@@ -139,12 +139,12 @@ export default function DriverLoadDetails() {
         .from('lumper_services')
         .select('*')
         .eq('load_id', params.id)
-        .single();
+        .maybeSingle();
 
       if (lumperError) {
         // No lumper service exists yet - that's fine
         setLumperService(null);
-      } else {
+      } else if (lumperData) {
         setLumperService(lumperData);
         // Populate form with existing data
         setLumperForm({
@@ -157,6 +157,9 @@ export default function DriverLoadDetails() {
           driver_amount: lumperData.driver_amount?.toString() || '',
           driver_payment_reason: lumperData.driver_payment_reason || ''
         });
+      } else {
+        // No lumper service exists - set to null and keep default form
+        setLumperService(null);
       }
     } catch {
       setError('An unexpected error occurred');

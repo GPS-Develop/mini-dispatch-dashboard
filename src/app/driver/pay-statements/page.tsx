@@ -124,15 +124,37 @@ export default function DriverPayStatements() {
         return;
       }
 
-      // Filter by date range on the client side if dates are provided
+      // First fetch pickup data to filter by pickup dates instead of created_at
+      const loadIds = loadsData.map(l => l.id);
+      
+      const { data: pickups } = await supabase
+        .from("pickups")
+        .select("*")
+        .in("load_id", loadIds);
+
+      // Filter by date range using pickup dates if dates are provided
       let filteredLoads = loadsData;
-      if (startDate && endDate) {
+      if (startDate && endDate && pickups) {
         const startDateTime = new Date(startDate + 'T00:00:00');
         const endDateTime = new Date(endDate + 'T23:59:59');
         
+        // Create a map of load_id to earliest pickup date
+        const pickupDatesByLoad: Record<string, Date> = {};
+        pickups.forEach(pickup => {
+          const pickupDate = new Date(pickup.datetime);
+          if (!pickupDatesByLoad[pickup.load_id] || pickupDate < pickupDatesByLoad[pickup.load_id]) {
+            pickupDatesByLoad[pickup.load_id] = pickupDate;
+          }
+        });
+        
         filteredLoads = loadsData.filter(load => {
-          const loadDate = new Date(load.created_at);
-          return loadDate >= startDateTime && loadDate <= endDateTime;
+          const pickupDate = pickupDatesByLoad[load.id];
+          if (!pickupDate) {
+            // If no pickup date, fall back to created_at for filtering
+            const loadDate = new Date(load.created_at);
+            return loadDate >= startDateTime && loadDate <= endDateTime;
+          }
+          return pickupDate >= startDateTime && pickupDate <= endDateTime;
         });
       }
 
@@ -141,29 +163,27 @@ export default function DriverPayStatements() {
         return;
       }
 
-      // Fetch pickup and delivery data for the filtered loads
-      const loadIds = filteredLoads.map(l => l.id);
+      // Fetch delivery data for the filtered loads (pickups already fetched above)
+      const filteredLoadIds = filteredLoads.map(l => l.id);
       
-      const { data: pickups } = await supabase
-        .from("pickups")
-        .select("*")
-        .in("load_id", loadIds);
+      // Re-filter pickups to only include those for filtered loads
+      const filteredPickups = pickups?.filter(p => filteredLoadIds.includes(p.load_id)) || [];
         
       const { data: deliveries } = await supabase
         .from("deliveries")
         .select("*")  
-        .in("load_id", loadIds);
+        .in("load_id", filteredLoadIds);
 
       const { data: lumperServices } = await supabase
         .from("lumper_services")
         .select("*")
-        .in("load_id", loadIds);
+        .in("load_id", filteredLoadIds);
 
       const pickupsByLoad: Record<string, Pickup[]> = {};
       const deliveriesByLoad: Record<string, Delivery[]> = {};
       const lumperByLoad: Record<string, LumperService> = {};
       
-      pickups?.forEach(p => {
+      filteredPickups.forEach(p => {
         if (!pickupsByLoad[p.load_id]) pickupsByLoad[p.load_id] = [];
         pickupsByLoad[p.load_id].push(p);
       });
